@@ -5,274 +5,289 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Vehicle Dynamics Calculator · v0.1</title>
 <style>
-/* ── Design tokens ─────────────────────────────────────────────────────────── */
-:root {
-  --bg:           #f2f2f7;
-  --surface:      #ffffff;
-  --fill:         rgba(120,120,128,0.12);
-  --fill-hover:   rgba(120,120,128,0.20);
-  --accent:       #007aff;
-  --accent-bg:    rgba(0,122,255,0.10);
-  --label:        #1d1d1f;
-  --label2:       #6e6e73;
-  --label3:       #aeaeb2;
-  --sep:          #e5e5ea;
-  --green:        #34c759;
-  --orange:       #ff9500;
-  --orange-bg:    rgba(255,149,0,0.10);
-  --red:          #ff3b30;
-  --red-bg:       rgba(255,59,48,0.08);
-  --radius-xl:    20px;
-  --radius-lg:    14px;
-  --radius-md:    10px;
-  --radius-sm:    7px;
-  --shadow:       0 2px 16px rgba(0,0,0,0.07);
-  --shadow-sm:    0 1px 6px rgba(0,0,0,0.05);
+/* ── Tokens ─────────────────────────────────────────────────────────────────── */
+:root{
+  --bg:#f2f2f7;
+  --surface:#ffffff;
+  --fill:rgba(120,120,128,.16);
+  --fill2:rgba(120,120,128,.09);
+  --accent:#007aff;
+  --accent-bg:rgba(0,122,255,.10);
+  --green:#34c759;
+  --green-bg:rgba(52,199,89,.12);
+  --orange:#ff9500;
+  --orange-bg:rgba(255,149,0,.12);
+  --red:#ff3b30;
+  --red-bg:rgba(255,59,48,.10);
+  --lbl:#1d1d1f;
+  --lbl2:rgba(60,60,67,.60);
+  --lbl3:rgba(60,60,67,.30);
+  --sep:rgba(60,60,67,.18);
+  --r-xl:22px;
+  --r-lg:16px;
+  --r-md:11px;
+  --r-sm:8px;
+  --sh:0 4px 24px rgba(0,0,0,.06),0 1px 4px rgba(0,0,0,.04);
+  --sh-sm:0 2px 12px rgba(0,0,0,.05);
 }
 
-/* ── Reset ─────────────────────────────────────────────────────────────────── */
+/* ── Reset ──────────────────────────────────────────────────────────────────── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{
   font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
-  font-size:15px;line-height:1.5;
-  background:var(--bg);color:var(--label);
-  -webkit-font-smoothing:antialiased;
+  font-size:15px;line-height:1.5;background:var(--bg);color:var(--lbl);
+  -webkit-font-smoothing:antialiased;min-height:100vh;
 }
 
-/* ── Header ────────────────────────────────────────────────────────────────── */
+/* ── Header ─────────────────────────────────────────────────────────────────── */
 .hdr{
-  position:sticky;top:0;z-index:100;
-  background:rgba(255,255,255,0.82);
-  backdrop-filter:saturate(180%) blur(20px);
-  -webkit-backdrop-filter:saturate(180%) blur(20px);
-  border-bottom:1px solid var(--sep);
-  height:52px;padding:0 28px;
+  position:sticky;top:0;z-index:200;height:56px;padding:0 32px;
   display:flex;align-items:center;justify-content:space-between;
+  background:rgba(255,255,255,.88);
+  backdrop-filter:saturate(180%) blur(24px);
+  -webkit-backdrop-filter:saturate(180%) blur(24px);
+  border-bottom:1px solid var(--sep);
 }
-.hdr-left{display:flex;align-items:baseline;gap:10px}
-.hdr-title{font-size:17px;font-weight:600;letter-spacing:-.02em}
-.hdr-sub{font-size:12px;color:var(--label2)}
+.hdr-brand{display:flex;align-items:baseline;gap:10px}
+.hdr-name{font-size:18px;font-weight:700;letter-spacing:-.03em}
+.hdr-tag{font-size:12px;color:var(--lbl2);font-weight:400}
 
-/* ── Layout ────────────────────────────────────────────────────────────────── */
-.layout{
-  display:grid;grid-template-columns:320px 1fr;
-  gap:20px;max-width:1080px;margin:24px auto;padding:0 20px;
-}
-@media(max-width:740px){
-  .layout{grid-template-columns:1fr;padding:0 14px;margin:16px auto}
+/* ── Layout ─────────────────────────────────────────────────────────────────── */
+.wrap{max-width:1120px;margin:0 auto;padding:28px 24px 0}
+.cols{display:grid;grid-template-columns:308px 1fr;gap:20px;align-items:start}
+.dtls{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:20px 24px 40px;max-width:1120px;margin:0 auto}
+@media(max-width:760px){
+  .cols,.dtls{grid-template-columns:1fr}
+  .wrap,.dtls{padding-left:16px;padding-right:16px}
 }
 
-/* ── Card ──────────────────────────────────────────────────────────────────── */
+/* ── Card ───────────────────────────────────────────────────────────────────── */
 .card{
-  background:var(--surface);border-radius:var(--radius-xl);
-  box-shadow:var(--shadow);padding:20px;margin-bottom:16px;
+  background:var(--surface);border-radius:var(--r-xl);
+  box-shadow:var(--sh);padding:22px 20px;margin-bottom:16px;
 }
-.card-title{
-  font-size:11px;font-weight:700;text-transform:uppercase;
-  letter-spacing:.07em;color:var(--label2);margin-bottom:14px;
+.card-ttl{
+  font-size:11px;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--lbl2);margin-bottom:16px;
 }
 
 /* ── Tire code ──────────────────────────────────────────────────────────────── */
-.tire-hint{font-size:12px;color:var(--label3);margin-bottom:8px}
-.tire-row{display:flex;align-items:center;gap:8px;margin-bottom:12px}
-.tire-box{
-  width:68px;height:48px;
-  background:var(--fill);border:none;border-radius:var(--radius-md);
-  font-size:20px;font-weight:500;text-align:center;color:var(--label);
-  outline:none;transition:background .15s;
-  -moz-appearance:textfield;
+.tire-hint{font-size:12px;color:var(--lbl3);margin-bottom:10px}
+.tire-hint strong{color:var(--lbl2)}
+.tire-row{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.tbox{
+  width:72px;height:52px;border:none;border-radius:var(--r-md);
+  background:var(--fill);font-size:22px;font-weight:600;
+  text-align:center;color:var(--lbl);outline:none;
+  transition:background .15s;-moz-appearance:textfield;
 }
-.tire-box::-webkit-inner-spin-button{-webkit-appearance:none}
-.tire-box:focus{background:var(--accent-bg)}
-.tire-slash{font-size:22px;font-weight:200;color:var(--label3)}
-.tire-r{font-size:13px;font-weight:600;color:var(--label2);margin-right:-4px}
-
-/* ── Form controls ──────────────────────────────────────────────────────────── */
-select,.finput{
-  height:42px;background:var(--fill);border:none;
-  border-radius:var(--radius-md);padding:0 12px;
-  font-size:14px;color:var(--label);outline:none;width:100%;
-  transition:background .15s;
-}
-select:focus,.finput:focus{background:var(--accent-bg)}
-.finput{-moz-appearance:textfield}
-.finput::-webkit-inner-spin-button{-webkit-appearance:none}
-
-.add-row{display:grid;grid-template-columns:1fr 78px 60px;gap:8px;margin-top:8px}
+.tbox::-webkit-inner-spin-button{-webkit-appearance:none}
+.tbox:focus{background:var(--accent-bg)}
+.tslash{font-size:24px;font-weight:200;color:var(--lbl3)}
+.tr{font-size:13px;font-weight:600;color:var(--lbl3)}
 
 /* ── Buttons ────────────────────────────────────────────────────────────────── */
 .btn{
-  height:40px;padding:0 18px;border:none;border-radius:var(--radius-md);
-  font-size:14px;font-weight:500;cursor:pointer;transition:opacity .15s;
-  white-space:nowrap;
+  height:44px;padding:0 20px;border:none;border-radius:var(--r-md);
+  font-size:15px;font-weight:500;cursor:pointer;
+  transition:filter .15s,transform .1s;white-space:nowrap;
 }
-.btn:active{opacity:.75}
+.btn:active{filter:brightness(.9);transform:scale(.98)}
 .btn-blue{background:var(--accent);color:#fff}
-.btn-blue:hover{background:#0070eb}
-.btn-block{width:100%;display:block;height:42px}
+.btn-full{width:100%;display:block}
 
-/* ── Input pills ────────────────────────────────────────────────────────────── */
-.pills{display:flex;flex-direction:column;gap:7px}
-.pill{
+/* ── Form fields ────────────────────────────────────────────────────────────── */
+.fsel,.finput{
+  height:44px;background:var(--fill);border:none;
+  border-radius:var(--r-md);padding:0 13px;
+  font-size:15px;color:var(--lbl);outline:none;width:100%;
+  transition:background .15s,box-shadow .15s;
+}
+.fsel:focus,.finput:focus{background:var(--accent-bg);box-shadow:0 0 0 3px rgba(0,122,255,.15)}
+.finput{-moz-appearance:textfield}
+.finput::-webkit-inner-spin-button{-webkit-appearance:none}
+.finput.i-warn{background:var(--red-bg);color:var(--red)}
+.finput.i-warn:focus{box-shadow:0 0 0 3px rgba(255,59,48,.15)}
+.finput.i-ok{background:var(--green-bg)}
+
+/* ── Variable adder ─────────────────────────────────────────────────────────── */
+.vadd-sel{margin-bottom:10px}
+.vadd-row{display:grid;grid-template-columns:1fr 74px 56px;gap:8px}
+.range-hint{
+  font-size:12px;min-height:18px;margin:6px 0 10px;
+  padding:0 2px;transition:color .15s;color:var(--lbl3);
+}
+.range-hint.ok{color:var(--green)}
+.range-hint.warn{color:var(--orange)}
+
+/* ── Input list ─────────────────────────────────────────────────────────────── */
+.ilist{display:flex;flex-direction:column;gap:1px}
+.ipill{
   display:flex;align-items:center;justify-content:space-between;
-  background:var(--fill);border-radius:var(--radius-md);padding:10px 14px;
-}
-.pill-left{display:flex;align-items:center;gap:10px}
-.pill-sym{
-  font-size:16px;font-weight:700;color:var(--accent);
-  min-width:36px;line-height:1.2;
-}
-.pill-sym sub{font-size:.55em;vertical-align:sub}
-.pill-info{}
-.pill-val{font-size:14px;font-weight:500}
-.pill-name{font-size:11px;color:var(--label2);margin-top:1px}
-.pill-rm{
-  width:22px;height:22px;flex-shrink:0;border:none;
-  border-radius:50%;background:var(--label3);color:#fff;
-  font-size:13px;font-weight:700;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
+  padding:11px 14px;border-radius:var(--r-md);
+  background:var(--fill2);margin-bottom:6px;
   transition:background .15s;
 }
-.pill-rm:hover{background:var(--red)}
-.empty-state{text-align:center;color:var(--label3);font-size:13px;padding:14px 0}
+.ipill.p-warn{background:var(--red-bg)}
+.pill-l{display:flex;align-items:center;gap:12px}
+.psym{
+  font-size:17px;font-weight:700;color:var(--accent);
+  min-width:34px;line-height:1;
+}
+.psym sub{font-size:.52em;vertical-align:sub}
+.pinfo{}
+.pval{font-size:15px;font-weight:500}
+.pval.v-warn{color:var(--red);font-weight:700}
+.pname{font-size:11px;color:var(--lbl2);margin-top:1px}
+.prm{
+  width:24px;height:24px;flex-shrink:0;border:none;border-radius:50%;
+  background:var(--lbl3);color:#fff;font-size:14px;font-weight:700;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:background .15s;
+}
+.prm:hover{background:var(--red)}
+.empty-h{text-align:center;color:var(--lbl3);font-size:13px;padding:16px 0}
 
-/* ── Results grid ───────────────────────────────────────────────────────────── */
-.rg{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}
+/* ── Result cards ───────────────────────────────────────────────────────────── */
+.rgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:14px}
 .rc{
-  background:var(--surface);border-radius:var(--radius-lg);
-  box-shadow:var(--shadow-sm);padding:16px;
-  position:relative;border:1px solid var(--sep);
-  transition:box-shadow .15s;
+  background:var(--surface);border-radius:var(--r-lg);
+  box-shadow:var(--sh-sm);padding:18px;position:relative;
+  transition:box-shadow .2s,transform .15s;
 }
-.rc:hover{box-shadow:var(--shadow)}
-.rc-sym{font-size:17px;font-weight:700;line-height:1.2;letter-spacing:-.02em}
-.rc-sym sub{font-size:.52em;vertical-align:sub}
-.rc-val{
-  font-size:28px;font-weight:700;letter-spacing:-.04em;
-  margin:6px 0 1px;line-height:1.1;
+.rc:hover{box-shadow:var(--sh);transform:translateY(-1px)}
+.rcsym{font-size:17px;font-weight:700;line-height:1.2;letter-spacing:-.02em}
+.rcsym sub{font-size:.52em;vertical-align:sub}
+.rcval{
+  font-size:30px;font-weight:700;letter-spacing:-.04em;
+  line-height:1.1;margin:7px 0 2px;
+  font-feature-settings:'tnum';
 }
-.rc-unit{font-size:16px;font-weight:400;color:var(--label2);margin-left:2px}
-.rc-alt{font-size:12px;color:var(--label3);min-height:16px;margin-bottom:8px}
-.rc-name{font-size:11px;color:var(--label2);line-height:1.3}
-.rc-badge{
-  position:absolute;top:12px;right:12px;
-  font-size:9px;font-weight:800;letter-spacing:.04em;
+.rcunit{font-size:16px;font-weight:400;color:var(--lbl2);margin-left:2px}
+.rcalt{font-size:12px;color:var(--lbl3);min-height:16px;margin-bottom:8px}
+.rcname{font-size:11px;color:var(--lbl2);line-height:1.3}
+.rcbadge{
+  position:absolute;top:14px;right:14px;
+  font-size:9px;font-weight:800;letter-spacing:.05em;
   background:var(--accent-bg);color:var(--accent);
-  border-radius:5px;padding:2px 6px;
+  border-radius:5px;padding:2px 7px;
 }
 .rg-empty{
   grid-column:1/-1;text-align:center;
-  color:var(--label3);font-size:14px;padding:48px 0;line-height:1.8;
-}
-
-/* ── Details strip ──────────────────────────────────────────────────────────── */
-.details{
-  display:grid;grid-template-columns:1fr 1fr;
-  gap:20px;max-width:1080px;margin:0 auto 40px;padding:0 20px;
-}
-@media(max-width:740px){
-  .details{grid-template-columns:1fr;padding:0 14px}
+  color:var(--lbl3);font-size:14px;line-height:1.9;
+  padding:52px 0;
 }
 
 /* ── Steps ──────────────────────────────────────────────────────────────────── */
-.step{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--sep)}
+.step{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--sep)}
 .step:last-child{border-bottom:none}
-.step-fid{
-  font-size:10px;font-weight:800;letter-spacing:.04em;
+.sfid{
+  font-size:9px;font-weight:800;letter-spacing:.06em;
   background:var(--accent-bg);color:var(--accent);
-  border-radius:5px;padding:2px 7px;white-space:nowrap;margin-top:2px;flex-shrink:0;
+  border-radius:5px;padding:2px 7px;white-space:nowrap;
+  margin-top:3px;flex-shrink:0;
 }
-.step-txt{font-size:13px;line-height:1.4;color:var(--label)}
-.step-sym{font-weight:700}
-.step-sym sub{font-size:.55em;vertical-align:sub}
+.stxt{font-size:13px;line-height:1.45;color:var(--lbl)}
+.stxt strong sub{font-size:.55em;vertical-align:sub}
 
 /* ── Notifications ──────────────────────────────────────────────────────────── */
 .notif{
-  display:flex;gap:10px;padding:11px 13px;
-  border-radius:var(--radius-md);font-size:13px;
-  line-height:1.45;margin-bottom:8px;
+  display:flex;gap:10px;padding:12px 14px;
+  border-radius:var(--r-md);font-size:13px;
+  line-height:1.5;margin-bottom:8px;
 }
-.notif-ico{flex-shrink:0;margin-top:-1px;font-style:normal}
-.notif-warn{background:var(--orange-bg);color:#6d3900}
-.notif-info{background:var(--accent-bg);color:#003a8c}
+.nicon{flex-shrink:0;font-size:14px;line-height:1.5}
+.n-warn{background:var(--orange-bg);color:#7d4600}
+.n-info{background:var(--accent-bg);color:#003a8c}
+.notif strong sub{font-size:.55em;vertical-align:sub}
 
 /* ── Missing ────────────────────────────────────────────────────────────────── */
-.sep{border:none;border-top:1px solid var(--sep);margin:12px 0}
-.miss{padding:9px 0;border-bottom:1px solid var(--sep);font-size:13px}
+.msep{border:none;border-top:1px solid var(--sep);margin:12px 0}
+.miss{padding:10px 0;border-bottom:1px solid var(--sep);font-size:13px}
 .miss:last-child{border-bottom:none}
-.miss-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px}
-.miss-out{font-weight:700;color:var(--green)}
-.miss-out sub{font-size:.55em;vertical-align:sub}
-.miss-fid{font-size:9px;font-weight:800;background:var(--fill);color:var(--label2);border-radius:5px;padding:2px 6px}
-.miss-need{color:var(--red);font-weight:600}
-.miss-need sub{font-size:.55em;vertical-align:sub}
-.miss-lbl{color:var(--label2)}
+.miss-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px}
+.mout{font-weight:700;color:var(--green)}
+.mout sub{font-size:.55em;vertical-align:sub}
+.mfid{font-size:9px;font-weight:800;background:var(--fill);color:var(--lbl2);border-radius:5px;padding:2px 7px;letter-spacing:.04em}
+.mneed{color:var(--red);font-weight:600}
+.mneed sub{font-size:.55em;vertical-align:sub}
+.mlbl{color:var(--lbl2)}
 </style>
 </head>
 <body>
 
 <header class="hdr">
-  <div class="hdr-left">
-    <span class="hdr-title">Vehicle Dynamics</span>
-    <span class="hdr-sub">v0.1 · Ch 2 Acceleration · P1-core</span>
+  <div class="hdr-brand">
+    <span class="hdr-name">Vehicle Dynamics</span>
+    <span class="hdr-tag">v0.1 · Ch 2 Acceleration · P1-core</span>
   </div>
 </header>
 
-<div class="layout">
-  <!-- ── Sidebar ─────────────────────────────────────────────────────────── -->
+<div class="wrap">
+<div class="cols">
+
+  <!-- ── Sidebar ───────────────────────────────────────────────────────── -->
   <aside>
+    <!-- Tire code -->
     <div class="card">
-      <div class="card-title">Tire Code</div>
+      <div class="card-ttl">Tire Specification</div>
       <p class="tire-hint">e.g. &ensp;<strong>225 / 55 R 17</strong></p>
       <div class="tire-row">
-        <input class="tire-box" type="number" id="tc-width" placeholder="225">
-        <span class="tire-slash">/</span>
-        <input class="tire-box" type="number" id="tc-aspect" placeholder="55">
-        <span class="tire-r">R</span>
-        <input class="tire-box" type="number" id="tc-rim" placeholder="17">
+        <input class="tbox" type="number" id="tc-w" placeholder="225">
+        <span class="tslash">/</span>
+        <input class="tbox" type="number" id="tc-a" placeholder="55">
+        <span class="tr">R</span>
+        <input class="tbox" type="number" id="tc-r" placeholder="17">
       </div>
-      <button class="btn btn-blue btn-block" onclick="parseTireCode()">Add Tire Inputs</button>
+      <button class="btn btn-blue btn-full" onclick="parseTireCode()">Add Tire Inputs</button>
     </div>
 
+    <!-- Add variable -->
     <div class="card">
-      <div class="card-title">Add Variable</div>
-      <select id="var-select" onchange="onVarSelect()"></select>
-      <div class="add-row">
-        <input class="finput" type="number" id="var-value" placeholder="value" step="any">
-        <select id="unit-select"></select>
+      <div class="card-ttl">Add Variable</div>
+      <div class="vadd-sel">
+        <select class="fsel" id="var-sel" onchange="onVarSel()"></select>
+      </div>
+      <div class="vadd-row">
+        <input class="finput" type="number" id="var-val" placeholder="Value" step="any" oninput="onValChange()">
+        <select class="fsel" id="unit-sel" onchange="onValChange()"></select>
         <button class="btn btn-blue" onclick="addInput()">Add</button>
       </div>
+      <div class="range-hint" id="rhint"></div>
     </div>
 
+    <!-- Inputs list -->
     <div class="card">
-      <div class="card-title">Known Inputs</div>
-      <div id="inputs-list"><div class="empty-state">No inputs yet.</div></div>
+      <div class="card-ttl">Known Inputs</div>
+      <div id="ilist"><div class="empty-h">No inputs yet.</div></div>
     </div>
   </aside>
 
-  <!-- ── Results ────────────────────────────────────────────────────────── -->
+  <!-- ── Results ───────────────────────────────────────────────────────── -->
   <main>
     <div class="card">
-      <div class="card-title">Computed Results</div>
-      <div class="rg" id="results-content">
+      <div class="card-ttl">Computed Results</div>
+      <div class="rgrid" id="rgrid">
         <div class="rg-empty">
-          Add known values on the left to begin.<br>
-          <span style="font-size:12px">Tire size → gear ratio → engine torque → vehicle weight</span>
+          Add known values on the left to begin solving.<br>
+          <span style="font-size:13px;color:var(--lbl3)">Tire size → gear ratio → engine torque → vehicle weight</span>
         </div>
       </div>
     </div>
   </main>
-</div>
 
-<div class="details">
+</div><!-- .cols -->
+</div><!-- .wrap -->
+
+<div class="dtls">
   <div class="card" style="margin-bottom:0">
-    <div class="card-title">Derivation Steps</div>
-    <div id="steps-content"><div class="empty-state">No steps yet.</div></div>
+    <div class="card-ttl">Derivation Steps</div>
+    <div id="steps"><div class="empty-h">No steps yet.</div></div>
   </div>
   <div class="card" style="margin-bottom:0">
-    <div class="card-title">Warnings &amp; Missing</div>
-    <div id="warn-content"></div>
-    <div id="miss-content"></div>
+    <div class="card-ttl">Warnings &amp; Missing</div>
+    <div id="warns"></div>
+    <div id="misses"></div>
   </div>
 </div>
 
@@ -280,15 +295,14 @@ select:focus,.finput:focus{background:var(--accent-bg)}
 // ─── Constants ────────────────────────────────────────────────────────────────
 const G = 9.80665;
 
-// ─── Symbol renderer ──────────────────────────────────────────────────────────
-// Converts "η_tf" → "η<sub>tf</sub>", "r_w" → "r<sub>w</sub>", "V" → "V"
-function sym(s) {
-  return s.replace(/^([^_]+)_(.+)$/, '$1<sub>$2</sub>');
+// ─── Symbol renderer (HTML) ───────────────────────────────────────────────────
+function sym(s){
+  return s.replace(/^([^_]+)_(.+)$/,'$1<sub>$2</sub>');
 }
 
 // ─── Unit converters ─────────────────────────────────────────────────────────
-function toSI(v, u) {
-  switch(u) {
+function toSI(v,u){
+  switch(u){
     case 'm':return v; case 'in':return v*.0254; case 'ft':return v*.3048; case 'mm':return v/1000;
     case 'N':return v; case 'lb':return v*4.44822;
     case 'm/s':return v; case 'mph':return v*.44704; case 'ft/s':return v*.3048;
@@ -298,11 +312,11 @@ function toSI(v, u) {
     case 'm/s²':return v; case 'ft/s²':return v*.3048; case 'g':return v*G;
     case 'rad':return v; case 'deg':return v*Math.PI/180;
     case '% grade':return Math.atan(v/100);
-    default:return v; // mm_nat, %_nat, in_nat → stored as-is
+    default:return v; // mm_nat, %_nat, in_nat stored as-is
   }
 }
-function fromSI(v, u) {
-  switch(u) {
+function fromSI(v,u){
+  switch(u){
     case 'm':return v; case 'in':return v/.0254; case 'ft':return v/.3048; case 'mm':return v*1000;
     case 'N':return v; case 'lb':return v/4.44822;
     case 'm/s':return v; case 'mph':return v/.44704; case 'ft/s':return v/.3048;
@@ -315,7 +329,7 @@ function fromSI(v, u) {
     default:return v;
   }
 }
-function fmt(v) {
+function fmt(v){
   if(!isFinite(v)) return 'N/A';
   const a=Math.abs(v);
   if(a===0) return '0';
@@ -323,300 +337,359 @@ function fmt(v) {
   if(a<1) return v.toPrecision(4);
   return parseFloat(v.toFixed(3)).toString();
 }
+// Rounded formatter for range hints (fewer sig figs, no trailing noise)
+function fmtR(v){
+  if(!isFinite(v)) return 'N/A';
+  const a=Math.abs(v);
+  if(a===0) return '0';
+  if(a<.001||a>=1e6) return v.toExponential(2);
+  return parseFloat(v.toPrecision(3)).toString();
+}
 
 // ─── Variables ────────────────────────────────────────────────────────────────
-const VARS = {
-  V221:{id:'V221',sym:'width', name:'Tire Section Width',
-        input:[['mm_nat','mm']],   disp:[['mm_nat','mm']],   range:[155,335]},
-  V222:{id:'V222',sym:'aspect',name:'Tire Aspect Ratio',
-        input:[['%_nat','%']],    disp:[['%_nat','%']],     range:[30,80]},
-  V223:{id:'V223',sym:'rim',   name:'Rim Diameter',
-        input:[['in_nat','in']],  disp:[['in_nat','in']],   range:[14,22]},
-  V009:{id:'V009',sym:'r_w',   name:'Tire Nominal Radius',
+const VARS={
+  V221:{id:'V221',sym:'width', name:'Section Width',
+        input:[['mm_nat','mm']], disp:[['mm_nat','mm']], range:[155,335]},
+  V222:{id:'V222',sym:'aspect',name:'Aspect Ratio',
+        input:[['%_nat','%']], disp:[['%_nat','%']], range:[30,80]},
+  V223:{id:'V223',sym:'rim',  name:'Rim Diameter',
+        input:[['in_nat','in']], disp:[['in_nat','in']], range:[14,22]},
+  V009:{id:'V009',sym:'r_w',  name:'Tire Nominal Radius',
         input:[['in','in'],['m','m']], disp:[['in','in'],['m','m']], range:[.254,.457]},
-  V202:{id:'V202',sym:'N_tf',  name:'Overall Gear Ratio',
-        input:[['—','(ratio)']],  disp:[['—','']],          range:[2.5,20]},
-  V204:{id:'V204',sym:'ω_e',   name:'Engine Speed',
+  V202:{id:'V202',sym:'N_tf', name:'Overall Gear Ratio',
+        input:[['—','(ratio)']], disp:[['—','']], range:[2.5,20]},
+  V204:{id:'V204',sym:'ω_e',  name:'Engine Speed',
         input:[['RPM','RPM'],['rad/s','rad/s']], disp:[['RPM','RPM'],['rad/s','rad/s']], range:[62.8,837.8]},
-  V010:{id:'V010',sym:'V',     name:'Vehicle Speed',
+  V010:{id:'V010',sym:'V',    name:'Vehicle Speed',
         input:[['mph','mph'],['m/s','m/s']], disp:[['mph','mph'],['m/s','m/s']], range:[0,67.1]},
-  V201:{id:'V201',sym:'T_e',   name:'Engine Torque',
+  V201:{id:'V201',sym:'T_e',  name:'Engine Torque',
         input:[['ft·lb','ft·lb'],['N·m','N·m']], disp:[['ft·lb','ft·lb'],['N·m','N·m']], range:[67.8,1356]},
-  V203:{id:'V203',sym:'η_tf',  name:'Drivetrain Efficiency',
-        input:[['—','(0 – 1)']],  disp:[['—','']],          range:[.82,.97]},
-  V206:{id:'V206',sym:'P',     name:'Engine Power',
+  V203:{id:'V203',sym:'η_tf', name:'Drivetrain Efficiency',
+        input:[['—','(0 – 1)']], disp:[['—','']], range:[.82,.97]},
+  V206:{id:'V206',sym:'P',    name:'Engine Power',
         input:[['hp','hp'],['kW','kW'],['W','W']], disp:[['hp','hp'],['kW','kW']], range:[37300,746000]},
-  V207:{id:'V207',sym:'M_f',   name:'Mass Factor',
-        input:[['—','(ratio)']],  disp:[['—','']],          range:[1.05,1.5]},
-  V209:{id:'V209',sym:'F_x',   name:'Tractive Force (engine-limited)',
+  V207:{id:'V207',sym:'M_f',  name:'Mass Factor',
+        input:[['—','(ratio)']], disp:[['—','']], range:[1.05,1.5]},
+  V209:{id:'V209',sym:'F_x',  name:'Tractive Force (engine-limited)',
         input:[['lb','lb'],['N','N']], disp:[['lb','lb'],['N','N']], range:[0,44482]},
-  V001:{id:'V001',sym:'W',     name:'Vehicle Weight',
+  V001:{id:'V001',sym:'W',    name:'Vehicle Weight',
         input:[['lb','lb'],['N','N']], disp:[['lb','lb'],['N','N']], range:[6672,35584]},
-  V011:{id:'V011',sym:'D_A',   name:'Aero Drag',
+  V011:{id:'V011',sym:'D_A',  name:'Aerodynamic Drag',
         input:[['lb','lb'],['N','N']], disp:[['lb','lb'],['N','N']], range:[0,1335]},
-  V012:{id:'V012',sym:'R_x',   name:'Rolling Resistance',
+  V012:{id:'V012',sym:'R_x',  name:'Rolling Resistance',
         input:[['lb','lb'],['N','N']], disp:[['lb','lb'],['N','N']], range:[0,445]},
-  V013:{id:'V013',sym:'θ',     name:'Road Grade Angle',
+  V013:{id:'V013',sym:'θ',    name:'Road Grade Angle',
         input:[['% grade','% grade'],['deg','deg']], disp:[['% grade','% grade'],['deg','deg']], range:[-.149,.149]},
-  V101:{id:'V101',sym:'R_hx',  name:'Hitch Force (horizontal)',
+  V101:{id:'V101',sym:'R_hx', name:'Hitch Force (horizontal)',
         input:[['lb','lb'],['N','N']], disp:[['lb','lb'],['N','N']], range:[0,22241]},
-  V007:{id:'V007',sym:'a_x',   name:'Longitudinal Acceleration',
+  V007:{id:'V007',sym:'a_x',  name:'Longitudinal Acceleration',
         input:[['g','g'],['m/s²','m/s²']], disp:[['g','g'],['m/s²','m/s²'],['ft/s²','ft/s²']], range:[-11.77,4.9]},
 };
 
-const VAR_ORDER = [
-  'V221','V222','V223','V001','V009',
-  'V201','V202','V203','V204','V206',
-  'V010','V011','V012','V013','V101',
-  'V207','V209','V007',
+// Dropdown groups — clean English names, no raw symbols
+const GROUPS=[
+  {label:'Tire Specification',
+   vars:[{id:'V221',label:'Section Width'},
+         {id:'V222',label:'Aspect Ratio'},
+         {id:'V223',label:'Rim Diameter'}]},
+  {label:'Vehicle',
+   vars:[{id:'V001',label:'Vehicle Weight'},
+         {id:'V009',label:'Tire Radius (direct input)'},
+         {id:'V010',label:'Vehicle Speed'}]},
+  {label:'Engine & Drivetrain',
+   vars:[{id:'V201',label:'Engine Torque'},
+         {id:'V202',label:'Total Gear Ratio'},
+         {id:'V203',label:'Drivetrain Efficiency'},
+         {id:'V204',label:'Engine Speed'},
+         {id:'V206',label:'Engine Power'}]},
+  {label:'Road Conditions (optional)',
+   vars:[{id:'V011',label:'Aerodynamic Drag'},
+         {id:'V012',label:'Rolling Resistance'},
+         {id:'V013',label:'Road Grade Angle'},
+         {id:'V101',label:'Hitch Force'}]},
+  {label:'Computed (can also be set directly)',
+   vars:[{id:'V209',label:'Tractive Force'},
+         {id:'V207',label:'Mass Factor'},
+         {id:'V007',label:'Longitudinal Acceleration'}]},
 ];
 
 // ─── Formulas ─────────────────────────────────────────────────────────────────
-const FORMULAS = [
-  { id:'F201', name:'Tire Spec → Nominal Radius',
-    req:['V221','V222','V223'], out:['V009'],
-    go(k){ return { V009:(k.V221.si*k.V222.si/100/1000)+(k.V223.si*.0254/2) }; }
-  },
-  { id:'F202', name:'Vehicle Speed from Engine Speed',
-    req:['V009','V204','V202'], out:['V010'],
-    go(k){ return { V010:k.V009.si*k.V204.si/k.V202.si }; }
-  },
-  { id:'F203', name:'Engine Speed from Vehicle Speed',
-    req:['V010','V202','V009'], out:['V204'],
-    go(k){ return { V204:k.V010.si*k.V202.si/k.V009.si }; }
-  },
-  { id:'F204', name:'Engine Power',
-    req:['V201','V204'], out:['V206'],
-    go(k){ return { V206:k.V201.si*k.V204.si }; }
-  },
-  { id:'F205', name:'Tractive Force (engine-limited)',
-    req:['V201','V202','V203','V009'], out:['V209'],
-    go(k){ return { V209:k.V201.si*k.V202.si*k.V203.si/k.V009.si }; }
-  },
-  { id:'F206', name:'Mass Factor',
-    req:['V202'], out:['V207'],
-    go(k){ const n=k.V202.si; return { V207:1+.04*n+.0025*n*n }; }
-  },
-  { id:'F207', name:'Acceleration (engine-limited)',
-    req:['V209','V207','V001'], opt:['V011','V012','V013','V101'], out:['V007'],
-    go(k){
-      const Fx=k.V209.si, Mf=k.V207.si, W=k.V001.si;
-      const DA=k.V011?.si??0, Rx=k.V012?.si??0, th=k.V013?.si??0, Rh=k.V101?.si??0;
-      return { V007:(Fx-DA-Rx-W*Math.sin(th)-Rh)/(Mf*(W/G)) };
-    }
-  },
-  { id:'F208', name:'Acceleration (constant power, ideal)',
-    req:['V206','V010','V001'], out:['V007'],
-    go(k){
-      const V=k.V010.si; if(V<=0) return null;
-      return { V007:k.V206.si/((k.V001.si/G)*V) };
-    }
-  },
+const FORMULAS=[
+  {id:'F201',name:'Tire Spec → Nominal Radius',
+   req:['V221','V222','V223'],out:['V009'],
+   go(k){return{V009:(k.V221.si*k.V222.si/100/1000)+(k.V223.si*.0254/2)};}},
+  {id:'F202',name:'Vehicle Speed from Engine Speed',
+   req:['V009','V204','V202'],out:['V010'],
+   go(k){return{V010:k.V009.si*k.V204.si/k.V202.si};}},
+  {id:'F203',name:'Engine Speed from Vehicle Speed',
+   req:['V010','V202','V009'],out:['V204'],
+   go(k){return{V204:k.V010.si*k.V202.si/k.V009.si};}},
+  {id:'F204',name:'Engine Power',
+   req:['V201','V204'],out:['V206'],
+   go(k){return{V206:k.V201.si*k.V204.si};}},
+  {id:'F205',name:'Tractive Force (engine-limited)',
+   req:['V201','V202','V203','V009'],out:['V209'],
+   go(k){return{V209:k.V201.si*k.V202.si*k.V203.si/k.V009.si};}},
+  {id:'F206',name:'Mass Factor',
+   req:['V202'],out:['V207'],
+   go(k){const n=k.V202.si;return{V207:1+.04*n+.0025*n*n};}},
+  {id:'F207',name:'Acceleration (engine-limited)',
+   req:['V209','V207','V001'],opt:['V011','V012','V013','V101'],out:['V007'],
+   go(k){
+     const Fx=k.V209.si,Mf=k.V207.si,W=k.V001.si;
+     const DA=k.V011?.si??0,Rx=k.V012?.si??0,th=k.V013?.si??0,Rh=k.V101?.si??0;
+     return{V007:(Fx-DA-Rx-W*Math.sin(th)-Rh)/(Mf*(W/G))};
+   }},
+  {id:'F208',name:'Acceleration (constant power, ideal)',
+   req:['V206','V010','V001'],out:['V007'],
+   go(k){
+     const V=k.V010.si;if(V<=0)return null;
+     return{V007:k.V206.si/((k.V001.si/G)*V)};
+   }},
 ];
 
+// ─── Range helpers ────────────────────────────────────────────────────────────
+function varRange(id){
+  const d=VARS[id];if(!d?.range)return null;
+  const[mn,mx]=d.range;
+  const[pu0]=d.disp[0];
+  const u=pu0==='mm_nat'?'mm':pu0==='%_nat'?'%':pu0==='in_nat'?'in':pu0;
+  return{mn,mx,u,mnD:fmtR(fromSI(mn,u)),mxD:fmtR(fromSI(mx,u))};
+}
+function inRange(id,si){
+  const d=VARS[id];if(!d?.range)return true;
+  return si>=d.range[0]&&si<=d.range[1];
+}
+
 // ─── Solver ───────────────────────────────────────────────────────────────────
-function solve(inputs) {
-  const known = {};
-  for(const [id,e] of Object.entries(inputs))
-    known[id]={ si:e.si, source:'user', dv:e.dv, du:e.du };
+function solve(inputs){
+  const known={};
+  for(const[id,e]of Object.entries(inputs))
+    known[id]={si:e.si,source:'user',dv:e.dv,du:e.du};
 
-  const steps=[], warnings=[], seen=new Set();
-
+  const steps=[],warnings=[],seen=new Set();
   let changed=true;
-  while(changed) {
+  while(changed){
     changed=false;
-    for(const f of FORMULAS) {
-      if(!f.req.every(id=>id in known)) continue;
-      let res; try{ res=f.go(known); }catch(e){ continue; }
-      if(!res) continue;
-      for(const [id,si] of Object.entries(res)) {
-        if(!isFinite(si)) continue;
-        if(id in known) {
-          if(known[id].source!==f.id) {
+    for(const f of FORMULAS){
+      if(!f.req.every(id=>id in known))continue;
+      let res;try{res=f.go(known);}catch(e){continue;}
+      if(!res)continue;
+      for(const[id,si]of Object.entries(res)){
+        if(!isFinite(si))continue;
+        if(id in known){
+          if(known[id].source!==f.id){
             const k=`${id}|${known[id].source}|${f.id}`;
-            if(!seen.has(k)) {
+            if(!seen.has(k)){
               seen.add(k);
-              const ex=known[id].si, diff=Math.abs(si-ex)/(Math.abs(ex)+1e-12);
-              if(diff>.001) warnings.push({type:'conflict',varId:id,f1:known[id].source,v1:ex,f2:f.id,v2:si,pct:(diff*100).toFixed(1)});
+              const ex=known[id].si,diff=Math.abs(si-ex)/(Math.abs(ex)+1e-12);
+              if(diff>.001)warnings.push({type:'conflict',varId:id,f1:known[id].source,v1:ex,f2:f.id,v2:si,pct:(diff*100).toFixed(1)});
             }
           }
-        } else {
-          known[id]={ si, source:f.id };
-          steps.push({ fid:f.id, fname:f.name, varId:id });
+        }else{
+          known[id]={si,source:f.id};
+          steps.push({fid:f.id,fname:f.name,varId:id});
           changed=true;
         }
       }
     }
   }
 
-  // Range checks
-  for(const [id,e] of Object.entries(known)) {
-    const d=VARS[id]; if(!d?.range) continue;
-    const [mn,mx]=d.range;
-    if(e.si<mn||e.si>mx) warnings.push({type:e.source==='user'?'range_in':'range_out', varId:id});
+  // Range checks on computed values
+  for(const[id,e]of Object.entries(known)){
+    if(e.source==='user')continue;
+    const d=VARS[id];if(!d?.range)continue;
+    if(!inRange(id,e.si))warnings.push({type:'range_out',varId:id});
   }
 
   // Missing (partially satisfied formulas)
   const missing=[];
-  for(const f of FORMULAS) {
+  for(const f of FORMULAS){
     const need=f.req.filter(id=>!(id in known));
-    if(need.length>0 && need.length<f.req.length)
+    if(need.length>0&&need.length<f.req.length)
       missing.push({fid:f.id,fname:f.name,out:f.out,need});
   }
-
-  return {known,steps,warnings,missing};
+  return{known,steps,warnings,missing};
 }
 
 // ─── State ────────────────────────────────────────────────────────────────────
-const state={inputs:{}};
+const ST={inputs:{}};
 
 // ─── Populate dropdown ────────────────────────────────────────────────────────
-function populateVarSelect() {
-  const el=document.getElementById('var-select');
+function populateVarSel(){
+  const el=document.getElementById('var-sel');
   const blank=document.createElement('option');
-  blank.value=''; blank.textContent='— select variable —'; el.appendChild(blank);
-  for(const id of VAR_ORDER) {
-    const d=VARS[id]; if(!d) continue;
-    const o=document.createElement('option');
-    o.value=id; o.textContent=`${d.sym} · ${d.name}`; el.appendChild(o);
+  blank.value='';blank.textContent='Select a variable…';el.appendChild(blank);
+  for(const g of GROUPS){
+    const og=document.createElement('optgroup');
+    og.label=g.label;
+    for(const{id,label}of g.vars){
+      const o=document.createElement('option');
+      o.value=id;o.textContent=label;og.appendChild(o);
+    }
+    el.appendChild(og);
   }
 }
-function onVarSelect() {
-  const id=document.getElementById('var-select').value;
-  const us=document.getElementById('unit-select'); us.innerHTML='';
-  if(!id||!VARS[id]) return;
-  for(const [u,lbl] of VARS[id].input) {
-    const o=document.createElement('option'); o.value=u; o.textContent=lbl||u; us.appendChild(o);
+
+function onVarSel(){
+  const id=document.getElementById('var-sel').value;
+  const us=document.getElementById('unit-sel');
+  const hi=document.getElementById('rhint');
+  const fi=document.getElementById('var-val');
+  us.innerHTML='';fi.value='';fi.className='finput';hi.textContent='';hi.className='range-hint';
+  if(!id||!VARS[id])return;
+  for(const[u,lbl]of VARS[id].input){
+    const o=document.createElement('option');o.value=u;o.textContent=lbl||u;us.appendChild(o);
+  }
+  const r=varRange(id);
+  if(r){hi.textContent=`Typical range: ${r.mnD} – ${r.mxD} ${r.u}`;hi.className='range-hint';}
+}
+
+function onValChange(){
+  const id=document.getElementById('var-sel').value;
+  const raw=parseFloat(document.getElementById('var-val').value);
+  const unit=document.getElementById('unit-sel').value;
+  const hi=document.getElementById('rhint');
+  const fi=document.getElementById('var-val');
+  if(!id||!VARS[id]){return;}
+  const r=varRange(id);
+  if(!r){hi.textContent='';return;}
+  if(isNaN(raw)){
+    hi.textContent=`Typical range: ${r.mnD} – ${r.mxD} ${r.u}`;
+    hi.className='range-hint';fi.className='finput';return;
+  }
+  const si=toSI(raw,unit);
+  if(inRange(id,si)){
+    hi.textContent='✓ Within typical range';
+    hi.className='range-hint ok';fi.className='finput i-ok';
+  }else{
+    hi.textContent=`⚠ Out of typical range (${r.mnD} – ${r.mxD} ${r.u})`;
+    hi.className='range-hint warn';fi.className='finput i-warn';
   }
 }
 
 // ─── Add / Remove ─────────────────────────────────────────────────────────────
-function addInputEntry(varId, raw, unit) {
-  const si=toSI(raw,unit); if(!isFinite(si)){alert('Invalid value');return false;}
-  const du = unit==='mm_nat'?'mm':unit==='%_nat'?'%':unit==='in_nat'?'in':unit;
-  state.inputs[varId]={si,dv:raw,du}; render(); return true;
+function addInputEntry(varId,raw,unit){
+  const si=toSI(raw,unit);if(!isFinite(si)){alert('Invalid value');return false;}
+  const du=unit==='mm_nat'?'mm':unit==='%_nat'?'%':unit==='in_nat'?'in':unit;
+  ST.inputs[varId]={si,dv:raw,du};render();return true;
 }
-function addInput() {
-  const id=document.getElementById('var-select').value;
-  const v=parseFloat(document.getElementById('var-value').value);
-  const u=document.getElementById('unit-select').value;
+function addInput(){
+  const id=document.getElementById('var-sel').value;
+  const v=parseFloat(document.getElementById('var-val').value);
+  const u=document.getElementById('unit-sel').value;
   if(!id){alert('Select a variable');return;}
   if(isNaN(v)){alert('Enter a number');return;}
-  if(addInputEntry(id,v,u)) document.getElementById('var-value').value='';
+  if(addInputEntry(id,v,u)){
+    document.getElementById('var-val').value='';
+    document.getElementById('rhint').textContent='';
+    document.getElementById('rhint').className='range-hint';
+    document.getElementById('var-val').className='finput';
+  }
 }
-function parseTireCode() {
-  const w=parseFloat(document.getElementById('tc-width').value);
-  const a=parseFloat(document.getElementById('tc-aspect').value);
-  const r=parseFloat(document.getElementById('tc-rim').value);
+function parseTireCode(){
+  const w=parseFloat(document.getElementById('tc-w').value);
+  const a=parseFloat(document.getElementById('tc-a').value);
+  const r=parseFloat(document.getElementById('tc-r').value);
   if(isNaN(w)||isNaN(a)||isNaN(r)){alert('Fill in all three tire fields');return;}
-  addInputEntry('V221',w,'mm_nat');
-  addInputEntry('V222',a,'%_nat');
-  addInputEntry('V223',r,'in_nat');
+  addInputEntry('V221',w,'mm_nat');addInputEntry('V222',a,'%_nat');addInputEntry('V223',r,'in_nat');
 }
-function removeInput(id){ delete state.inputs[id]; render(); }
+function removeInput(id){delete ST.inputs[id];render();}
 
 // ─── Render ───────────────────────────────────────────────────────────────────
-function render() {
+function render(){
   renderInputs();
-  const {known,steps,warnings,missing}=solve(state.inputs);
-  renderResults(known);
-  renderSteps(steps);
-  renderWarnings(warnings,missing);
+  const{known,steps,warnings,missing}=solve(ST.inputs);
+  renderResults(known);renderSteps(steps);renderWarn(warnings,missing);
 }
 
-function renderInputs() {
-  const el=document.getElementById('inputs-list');
-  const ents=Object.entries(state.inputs);
-  if(!ents.length){ el.innerHTML='<div class="empty-state">No inputs yet.</div>'; return; }
-  el.innerHTML=`<div class="pills">`+ents.map(([id,e])=>{
+function renderInputs(){
+  const el=document.getElementById('ilist');
+  const ents=Object.entries(ST.inputs);
+  if(!ents.length){el.innerHTML='<div class="empty-h">No inputs yet.</div>';return;}
+  el.innerHTML=ents.map(([id,e])=>{
     const d=VARS[id];
-    return `<div class="pill">
-      <div class="pill-left">
-        <span class="pill-sym">${sym(d?.sym||id)}</span>
-        <div class="pill-info">
-          <div class="pill-val">${fmt(e.dv)} ${e.du}</div>
-          <div class="pill-name">${d?.name||id}</div>
+    const bad=!inRange(id,e.si);
+    return`<div class="ipill${bad?' p-warn':''}">
+      <div class="pill-l">
+        <span class="psym">${sym(d?.sym||id)}</span>
+        <div class="pinfo">
+          <div class="pval${bad?' v-warn':''}">${fmt(e.dv)} ${e.du}</div>
+          <div class="pname">${d?.name||id}</div>
         </div>
       </div>
-      <button class="pill-rm" onclick="removeInput('${id}')" title="Remove">×</button>
+      <button class="prm" onclick="removeInput('${id}')" title="Remove">×</button>
     </div>`;
-  }).join('')+`</div>`;
+  }).join('');
 }
 
-function renderResults(known) {
-  const el=document.getElementById('results-content');
-  const computed=Object.entries(known).filter(([,e])=>e.source!=='user');
-  if(!computed.length){
-    el.innerHTML=`<div class="rg-empty">Add known values on the left to begin.<br><span style="font-size:12px">Tire size → gear ratio → engine torque → vehicle weight</span></div>`;
+function renderResults(known){
+  const el=document.getElementById('rgrid');
+  const comp=Object.entries(known).filter(([,e])=>e.source!=='user');
+  if(!comp.length){
+    el.innerHTML=`<div class="rg-empty">Add known values on the left to begin solving.<br><span style="font-size:13px;color:var(--lbl3)">Tire size → gear ratio → engine torque → vehicle weight</span></div>`;
     return;
   }
-  el.innerHTML=computed.map(([id,e])=>{
-    const d=VARS[id]; if(!d) return '';
-    const [pu0,pl0]=d.disp[0];
+  el.innerHTML=comp.map(([id,e])=>{
+    const d=VARS[id];if(!d)return'';
+    const[pu0,pl0]=d.disp[0];
     const pu=pu0==='mm_nat'?'mm':pu0==='%_nat'?'%':pu0==='in_nat'?'in':pu0;
     const pv=fmt(fromSI(e.si,pu));
     const alts=d.disp.slice(1).map(([u,l])=>{
       const uc=u==='mm_nat'?'mm':u==='%_nat'?'%':u==='in_nat'?'in':u;
-      return `${fmt(fromSI(e.si,uc))} ${l}`;
+      return`${fmt(fromSI(e.si,uc))} ${l}`;
     }).join(' · ');
-    return `<div class="rc">
-      <span class="rc-badge">${e.source}</span>
-      <div class="rc-sym">${sym(d.sym)}</div>
-      <div class="rc-val">${pv}<span class="rc-unit">${pu!=='—'?pu:''}</span></div>
-      <div class="rc-alt">${alts}</div>
-      <div class="rc-name">${d.name}</div>
+    return`<div class="rc">
+      <span class="rcbadge">${e.source}</span>
+      <div class="rcsym">${sym(d.sym)}</div>
+      <div class="rcval">${pv}<span class="rcunit">${pu!=='—'?pu:''}</span></div>
+      <div class="rcalt">${alts}</div>
+      <div class="rcname">${d.name}</div>
     </div>`;
   }).join('');
 }
 
-function renderSteps(steps) {
-  const el=document.getElementById('steps-content');
-  if(!steps.length){ el.innerHTML='<div class="empty-state">No steps yet.</div>'; return; }
+function renderSteps(steps){
+  const el=document.getElementById('steps');
+  if(!steps.length){el.innerHTML='<div class="empty-h">No steps yet.</div>';return;}
   el.innerHTML=steps.map(s=>{
     const d=VARS[s.varId];
-    return `<div class="step">
-      <span class="step-fid">${s.fid}</span>
-      <span class="step-txt">computed <span class="step-sym">${sym(d?.sym||s.varId)}</span> — ${s.fname}</span>
+    return`<div class="step">
+      <span class="sfid">${s.fid}</span>
+      <span class="stxt">computed <strong>${sym(d?.sym||s.varId)}</strong> — ${s.fname}</span>
     </div>`;
   }).join('');
 }
 
-function renderWarnings(warnings,missing) {
-  const wEl=document.getElementById('warn-content');
-  const mEl=document.getElementById('miss-content');
-
-  // Warnings
+function renderWarn(warnings,missing){
+  const wEl=document.getElementById('warns');
+  const mEl=document.getElementById('misses');
   let wh='';
-  for(const w of warnings) {
-    const d=VARS[w.varId]; const s=d?sym(d.sym):w.varId;
+  for(const w of warnings){
+    const d=VARS[w.varId];const s=d?sym(d.sym):w.varId;
     if(w.type==='conflict')
-      wh+=`<div class="notif notif-warn"><span class="notif-ico">⚠</span>
-        <span><strong>${s}</strong> — ${w.f1} gives ${fmt(w.v1)}, ${w.f2} gives ${fmt(w.v2)} <em>(${w.pct}% difference)</em>.
-        These two formulas model different scenarios.</span></div>`;
-    else if(w.type==='range_in')
-      wh+=`<div class="notif notif-warn"><span class="notif-ico">⚠</span>
-        <span><strong>${s}</strong> is outside the expected engineering range — verify the unit and value.</span></div>`;
+      wh+=`<div class="notif n-warn"><span class="nicon">⚠</span><span>
+        <strong>${s}</strong> — ${w.f1} gives ${fmt(w.v1)}, ${w.f2} gives ${fmt(w.v2)} <em>(${w.pct}% difference)</em>.
+        The two formulas model different physical scenarios.</span></div>`;
     else if(w.type==='range_out')
-      wh+=`<div class="notif notif-info"><span class="notif-ico">ℹ</span>
-        <span>Computed <strong>${s}</strong> is outside the typical range — check inputs.</span></div>`;
+      wh+=`<div class="notif n-info"><span class="nicon">ℹ</span><span>
+        Computed <strong>${s}</strong> is outside the typical engineering range — verify inputs.</span></div>`;
   }
-  wEl.innerHTML=wh||'<div class="empty-state" style="margin-bottom:4px">No warnings.</div>';
-
-  // Missing
+  wEl.innerHTML=wh||'<div class="empty-h" style="margin-bottom:4px">No warnings.</div>';
   const show=missing.filter(m=>m.need.length<=2);
-  if(!show.length){ mEl.innerHTML=''; return; }
-  mEl.innerHTML=`<hr class="sep">`+show.map(m=>{
-    const outs=m.out.map(id=>{ const d=VARS[id]; return `<span class="miss-out">${sym(d?.sym||id)}</span>`; }).join(', ');
-    const needs=m.need.map(id=>{ const d=VARS[id]; return `<span class="miss-need">${sym(d?.sym||id)}</span>`; }).join(' and ');
-    return `<div class="miss">
-      <div class="miss-top">${outs}<span class="miss-fid">${m.fid}</span></div>
-      <span class="miss-lbl">Also needs: </span>${needs}
+  if(!show.length){mEl.innerHTML='';return;}
+  mEl.innerHTML=`<hr class="msep">`+show.map(m=>{
+    const outs=m.out.map(id=>{const d=VARS[id];return`<span class="mout">${sym(d?.sym||id)}</span>`;}).join(', ');
+    const needs=m.need.map(id=>{const d=VARS[id];return`<span class="mneed">${sym(d?.sym||id)}</span>`;}).join(' and ');
+    return`<div class="miss">
+      <div class="miss-top">${outs}<span class="mfid">${m.fid}</span></div>
+      <span class="mlbl">Also needs: </span>${needs}
     </div>`;
   }).join('');
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
-populateVarSelect(); onVarSelect(); render();
+populateVarSel(); onVarSel(); render();
 </script>
 </body>
 </html>
