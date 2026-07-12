@@ -17,3 +17,6 @@ Desktop.ini
 
 # Dependencies, if introduced later
 node_modules/
+.Rhistory
+.claude/
+__pycache__/

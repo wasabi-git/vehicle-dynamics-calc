@@ -1,7 +1,13 @@
 {
   "schema_version": "1.0.0",
   "data_version": "0.1.0",
-  "generated_at": "2026-07-12T01:52:59.804650+00:00",
+  "generated_at": "2026-07-12T19:05:37.162815+00:00",
+  "validator": {
+    "path": "tools/validate_catalog.py",
+    "version": "1.0.0",
+    "python": "3.13.5",
+    "json_schema_draft": "2020-12"
+  },
   "overall_status": "pass_with_warnings",
   "counts": {
     "variables": 20,
@@ -82,20 +88,22 @@
     "error_count": 0,
     "errors": [],
     "checks": [
+      "Required catalog files and version alignment",
       "Unique IDs across each registry",
       "Variable, unit, model, source, formula, and recommendation references",
       "Unit dimension and canonical-SI consistency",
-      "Default-unit and allowed-unit consistency",
-      "Assumption and constant requirements",
+      "Default-unit, allowed-unit, range, assumption, and constant consistency",
       "Source-native substitution-unit coverage",
-      "Calculation-expression identifier restrictions",
-      "Formula-constraint input membership",
+      "Restricted calculation-expression syntax and identifiers",
+      "Formula-constraint input membership and explicit-all semantics",
       "Recommendation model/formula/output consistency",
       "Gravity and standard_gravity single-source consistency"
     ]
   },
   "graph_validation": {
     "status": "pass",
+    "error_count": 0,
+    "errors": [],
     "is_dag": true,
     "maximum_formula_depth": 3,
     "configured_reverse_depth_limit": 5,

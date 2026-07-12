@@ -1,9 +1,18 @@
-# Vehicle Dynamics — Formula Notes（已清洗版）
+# Vehicle Dynamics — Formula Notes（Phase 2 历史参考）
+
+> [!IMPORTANT]
+> **文档定位：历史参考，不是当前运行时权威公式库。**  
+> 本文保留旧项目结构下完成的公式清洗、来源判断、OCR 修正和未来模块参考材料。  
+> 当前 v0.1 机器权威公式数据位于 `data/formulas.v0.1.json`；变量数据位于 `data/variables.v0.1.json`；模型显示名称位于 `data/models.v0.1.json`。  
+> 文中的 F101、F201、F207 等编号属于 Phase 2 旧编号体系，仅用于历史追溯，不得作为新引擎的 `formula_id`。  
+> OCR 与版本差异的正式处置记录见 `DISCREPANCIES.md`。
+
+---
 
 > Version: 3.0 | Phase 2 final
-> **权威来源**：Vehicle_Dynamics_Formulae.pdf（老师原版）+ 课堂字幕（争议处以字幕为准）
+> **原始公式来源**：Vehicle_Dynamics_Formulae.pdf（老师原版）+ 课堂字幕（争议处以字幕为准）
 > **b/c 定义（字幕确认）**：b = 前轴到质心；c = 质心到后轴
-> 符号冲突解决方案、变量 ID、公式 ID 见 VARIABLES.md 和 FORMULAS.md
+> 旧版符号冲突、变量 ID 与公式 ID 曾记录于 `VARIABLES.md` 和 `FORMULAS.md`；这两份旧文件已被当前结构取代。现行定义以 `data/*.json` 为准。
 
 ---
 
