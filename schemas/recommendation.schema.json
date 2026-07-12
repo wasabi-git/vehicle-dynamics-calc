@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "recommendation.schema.json",
+  "title": "Vehicle Dynamics Recommendations File",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "data_version",
+    "recommendations"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "data_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "recommendations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "recommendation_id",
+          "output",
+          "model_group",
+          "recommended_model_name",
+          "applicability_reference",
+          "recommendation_reason",
+          "fallback_behavior",
+          "status"
+        ],
+        "properties": {
+          "recommendation_id": {
+            "type": "string",
+            "pattern": "^R\\d{3}_[a-z0-9_]+$"
+          },
+          "output": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "model_group": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "recommended_model_name": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "applicability_reference": {
+            "type": "object",
+            "required": [
+              "formula_id",
+              "require"
+            ],
+            "properties": {
+              "formula_id": {
+                "type": "string",
+                "pattern": "^F\\d{3}_[a-z0-9_]+$"
+              },
+              "require": {
+                "type": "array",
+                "uniqueItems": true,
+                "items": {
+                  "enum": [
+                    "computability",
+                    "required_inputs",
+                    "applicability_conditions",
+                    "formula_constraints"
+                  ]
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          "recommendation_reason": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "fallback_behavior": {
+            "type": "object",
+            "required": [
+              "automatic_switch",
+              "mode",
+              "alternative_models",
+              "message"
+            ],
+            "properties": {
+              "automatic_switch": {
+                "type": "boolean"
+              },
+              "mode": {
+                "enum": [
+                  "require_user_selection",
+                  "automatic_fallback",
+                  "no_fallback"
+                ]
+              },
+              "alternative_models": {
+                "type": "array",
+                "uniqueItems": true,
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_]*$"
+                }
+              },
+              "message": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "additionalProperties": false
+          },
+          "status": {
+            "enum": [
+              "confirmed",
+              "needs_review",
+              "deprecated"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,151 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "condition.schema.json",
+  "title": "Vehicle Dynamics Condition Schema",
+  "$defs": {
+    "comparisonCondition": {
+      "type": "object",
+      "required": [
+        "operator",
+        "value",
+        "unit"
+      ],
+      "properties": {
+        "variable": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "operator": {
+          "enum": [
+            "gt",
+            "gte",
+            "lt",
+            "lte",
+            "eq",
+            "neq"
+          ]
+        },
+        "value": {
+          "type": "number"
+        },
+        "unit": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "betweenCondition": {
+      "type": "object",
+      "required": [
+        "operator",
+        "min",
+        "max",
+        "unit",
+        "min_inclusive",
+        "max_inclusive"
+      ],
+      "properties": {
+        "variable": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "operator": {
+          "const": "between"
+        },
+        "min": {
+          "type": "number"
+        },
+        "max": {
+          "type": "number"
+        },
+        "unit": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "min_inclusive": {
+          "type": "boolean"
+        },
+        "max_inclusive": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "finiteCondition": {
+      "type": "object",
+      "required": [
+        "operator"
+      ],
+      "properties": {
+        "variable": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "operator": {
+          "enum": [
+            "finite",
+            "not_finite"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "singleCondition": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/comparisonCondition"
+        },
+        {
+          "$ref": "#/$defs/betweenCondition"
+        },
+        {
+          "$ref": "#/$defs/finiteCondition"
+        }
+      ]
+    },
+    "allGroup": {
+      "type": "object",
+      "required": [
+        "all"
+      ],
+      "properties": {
+        "all": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/singleCondition"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "anyGroup": {
+      "type": "object",
+      "required": [
+        "any"
+      ],
+      "properties": {
+        "any": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/singleCondition"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "conditionExpression": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/singleCondition"
+        },
+        {
+          "$ref": "#/$defs/allGroup"
+        },
+        {
+          "$ref": "#/$defs/anyGroup"
+        }
+      ]
+    }
+  }
+}

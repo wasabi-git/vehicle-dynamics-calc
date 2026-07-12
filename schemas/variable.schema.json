@@ -1,0 +1,290 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "variable.schema.json",
+  "title": "Vehicle Dynamics Variables File",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "data_version",
+    "variables"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "data_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "variables": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "variable_id",
+          "name",
+          "symbol",
+          "category",
+          "description",
+          "dimension",
+          "internal_unit",
+          "default_unit",
+          "allowed_units",
+          "display_role",
+          "importance",
+          "normal_range",
+          "warning_range",
+          "invalid_range",
+          "valid_domain",
+          "can_be_user_input",
+          "unit_misuse_check",
+          "status"
+        ],
+        "properties": {
+          "variable_id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "symbol": {
+            "type": "string",
+            "minLength": 1
+          },
+          "category": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1
+          },
+          "dimension": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "internal_unit": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "default_unit": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "allowed_units": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]*$"
+            }
+          },
+          "display_role": {
+            "enum": [
+              "primary_output",
+              "derived_output",
+              "intermediate",
+              "input_only",
+              "constant",
+              "assumption"
+            ]
+          },
+          "importance": {
+            "enum": [
+              "critical",
+              "high",
+              "medium",
+              "low"
+            ]
+          },
+          "normal_range": {
+            "type": "object",
+            "required": [
+              "min",
+              "max",
+              "unit",
+              "min_inclusive",
+              "max_inclusive"
+            ],
+            "properties": {
+              "min": {
+                "type": "number"
+              },
+              "max": {
+                "type": "number"
+              },
+              "unit": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]*$"
+              },
+              "min_inclusive": {
+                "type": "boolean"
+              },
+              "max_inclusive": {
+                "type": "boolean"
+              }
+            },
+            "additionalProperties": false
+          },
+          "warning_range": {
+            "type": "object",
+            "required": [
+              "min",
+              "max",
+              "unit",
+              "min_inclusive",
+              "max_inclusive"
+            ],
+            "properties": {
+              "min": {
+                "type": "number"
+              },
+              "max": {
+                "type": "number"
+              },
+              "unit": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]*$"
+              },
+              "min_inclusive": {
+                "type": "boolean"
+              },
+              "max_inclusive": {
+                "type": "boolean"
+              }
+            },
+            "additionalProperties": false
+          },
+          "invalid_range": {
+            "type": "object",
+            "required": [
+              "any"
+            ],
+            "properties": {
+              "any": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "$ref": "condition.schema.json#/$defs/singleCondition"
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          "valid_domain": {
+            "$ref": "condition.schema.json#/$defs/conditionExpression"
+          },
+          "can_be_user_input": {
+            "type": "boolean"
+          },
+          "unit_misuse_check": {
+            "type": "boolean"
+          },
+          "status": {
+            "enum": [
+              "confirmed",
+              "needs_review",
+              "deprecated"
+            ]
+          },
+          "sign_convention": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "can_be_assumed": {
+            "type": "boolean"
+          },
+          "default_assumption": {
+            "type": "object",
+            "required": [
+              "value",
+              "unit",
+              "enabled_by_default",
+              "meaning"
+            ],
+            "properties": {
+              "value": {
+                "type": "number"
+              },
+              "unit": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]*$"
+              },
+              "enabled_by_default": {
+                "type": "boolean"
+              },
+              "meaning": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "additionalProperties": false
+          },
+          "is_constant": {
+            "type": "boolean"
+          },
+          "constant_value_si": {
+            "type": "number"
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "can_be_assumed": {
+                  "const": true
+                }
+              },
+              "required": [
+                "can_be_assumed"
+              ]
+            },
+            "then": {
+              "required": [
+                "default_assumption"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "is_constant": {
+                  "const": true
+                }
+              },
+              "required": [
+                "is_constant"
+              ]
+            },
+            "then": {
+              "required": [
+                "constant_value_si"
+              ],
+              "properties": {
+                "can_be_user_input": {
+                  "const": false
+                }
+              }
+            }
+          }
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

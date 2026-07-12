@@ -1,0 +1,123 @@
+{
+  "schema_version": "1.0.0",
+  "data_version": "0.1.0",
+  "generated_at": "2026-07-12T01:52:59.804650+00:00",
+  "overall_status": "pass_with_warnings",
+  "counts": {
+    "variables": 20,
+    "formulas": 8,
+    "model_groups": 3,
+    "models": 8,
+    "recommendations": 1,
+    "sources": 3,
+    "units": 26,
+    "dependency_nodes": 28,
+    "dependency_edges": 34,
+    "maximum_formula_depth": 3
+  },
+  "schema_validation": {
+    "status": "pass",
+    "schema_meta_errors": [],
+    "files": [
+      {
+        "file": "data/catalog.meta.json",
+        "schema": "schemas/catalog.schema.json",
+        "status": "pass",
+        "error_count": 0,
+        "errors": []
+      },
+      {
+        "file": "data/variables.v0.1.json",
+        "schema": "schemas/variable.schema.json",
+        "status": "pass",
+        "error_count": 0,
+        "errors": []
+      },
+      {
+        "file": "data/formulas.v0.1.json",
+        "schema": "schemas/formula.schema.json",
+        "status": "pass",
+        "error_count": 0,
+        "errors": []
+      },
+      {
+        "file": "data/models.v0.1.json",
+        "schema": "schemas/model.schema.json",
+        "status": "pass",
+        "error_count": 0,
+        "errors": []
+      },
+      {
+        "file": "data/recommendations.v0.1.json",
+        "schema": "schemas/recommendation.schema.json",
+        "status": "pass",
+        "error_count": 0,
+        "errors": []
+      },
+      {
+        "file": "data/sources.v0.1.json",
+        "schema": "schemas/source.schema.json",
+        "status": "pass",
+        "error_count": 0,
+        "errors": []
+      },
+      {
+        "file": "data/units.v0.1.json",
+        "schema": "schemas/unit.schema.json",
+        "status": "pass",
+        "error_count": 0,
+        "errors": []
+      },
+      {
+        "file": "data/engine-config.v0.1.json",
+        "schema": "schemas/engine-config.schema.json",
+        "status": "pass",
+        "error_count": 0,
+        "errors": []
+      }
+    ]
+  },
+  "cross_file_validation": {
+    "status": "pass",
+    "error_count": 0,
+    "errors": [],
+    "checks": [
+      "Unique IDs across each registry",
+      "Variable, unit, model, source, formula, and recommendation references",
+      "Unit dimension and canonical-SI consistency",
+      "Default-unit and allowed-unit consistency",
+      "Assumption and constant requirements",
+      "Source-native substitution-unit coverage",
+      "Calculation-expression identifier restrictions",
+      "Formula-constraint input membership",
+      "Recommendation model/formula/output consistency",
+      "Gravity and standard_gravity single-source consistency"
+    ]
+  },
+  "graph_validation": {
+    "status": "pass",
+    "is_dag": true,
+    "maximum_formula_depth": 3,
+    "configured_reverse_depth_limit": 5,
+    "acceleration_models": [
+      "engine_limited_acceleration",
+      "ideal_constant_power_acceleration"
+    ],
+    "notes": [
+      "F007 and F008 remain separate model-qualified results.",
+      "R001 is a recommendation record and not a numerical formula.",
+      "The dependency graph is derived from required_inputs and output; ASCII diagrams are non-authoritative."
+    ]
+  },
+  "warnings": [
+    "F008 low-speed warning/applicability policy remains deferred to Stage 5; the course anchor is 10 mph.",
+    "Engineering reasonableness ranges are initial and require Stage 5 calibration.",
+    "F005 is an empirical mass-factor approximation with no source error bound."
+  ],
+  "microfixes_absorbed": [
+    "catalog.meta.json has an explicit versioned file-index structure.",
+    "formula_constraints uses explicit all only.",
+    "known_limitations and notes remain optional formula fields.",
+    "valid_domain accepts either a single condition object or an explicit all/any group."
+  ]
+}

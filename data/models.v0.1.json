@@ -1,0 +1,82 @@
+{
+  "schema_version": "1.0.0",
+  "data_version": "0.1.0",
+  "model_groups": [
+    {
+      "model_group": "tire_and_wheel_geometry",
+      "display_name": "Tire and Wheel Geometry",
+      "description": "Models for tire-size and wheel-geometry relations.",
+      "status": "confirmed"
+    },
+    {
+      "model_group": "powertrain_kinematics",
+      "display_name": "Powertrain Kinematics",
+      "description": "Kinematic relations between engine speed, wheel speed, gearing, and vehicle speed.",
+      "status": "confirmed"
+    },
+    {
+      "model_group": "acceleration_performance",
+      "display_name": "Acceleration Performance",
+      "description": "Models related to longitudinal vehicle acceleration performance.",
+      "status": "confirmed"
+    }
+  ],
+  "models": [
+    {
+      "model_name": "tire_size_radius_model",
+      "display_name": "Tire size radius model",
+      "model_group": "tire_and_wheel_geometry",
+      "description": "Nominal wheel-and-tire radius calculated from tire section width, aspect ratio, and rim diameter.",
+      "status": "confirmed"
+    },
+    {
+      "model_name": "powertrain_speed_relation",
+      "display_name": "Powertrain speed relation",
+      "model_group": "powertrain_kinematics",
+      "description": "No-slip kinematic relation between engine speed, wheel radius, total gearing, and vehicle speed.",
+      "status": "confirmed"
+    },
+    {
+      "model_name": "engine_power_calculation",
+      "display_name": "Engine power calculation",
+      "model_group": "acceleration_performance",
+      "description": "Engine power calculated from torque and engine speed at a common operating point.",
+      "status": "confirmed"
+    },
+    {
+      "model_name": "engine_tractive_force_at_wheels",
+      "display_name": "Engine tractive force at wheels",
+      "model_group": "acceleration_performance",
+      "description": "Wheel tractive force calculated from engine torque, gearing, drivetrain efficiency, and wheel radius.",
+      "status": "confirmed"
+    },
+    {
+      "model_name": "mass_factor_approximation",
+      "display_name": "Mass factor approximation",
+      "model_group": "acceleration_performance",
+      "description": "Empirical mass-factor approximation based on combined gear ratio.",
+      "status": "confirmed"
+    },
+    {
+      "model_name": "weight_to_mass_relation",
+      "display_name": "Weight-to-mass relation",
+      "model_group": "acceleration_performance",
+      "description": "Fundamental relation converting vehicle weight force to vehicle mass.",
+      "status": "confirmed"
+    },
+    {
+      "model_name": "engine_limited_acceleration",
+      "display_name": "Engine-limited acceleration",
+      "model_group": "acceleration_performance",
+      "description": "Longitudinal acceleration calculated from engine-generated tractive force, road-load terms, mass, and mass factor.",
+      "status": "confirmed"
+    },
+    {
+      "model_name": "ideal_constant_power_acceleration",
+      "display_name": "Ideal constant-power acceleration",
+      "model_group": "acceleration_performance",
+      "description": "Idealized acceleration calculated from constant engine power, vehicle speed, and vehicle mass.",
+      "status": "confirmed"
+    }
+  ]
+}

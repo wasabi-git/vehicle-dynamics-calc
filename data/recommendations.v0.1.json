@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0.0",
+  "data_version": "0.1.0",
+  "recommendations": [
+    {
+      "recommendation_id": "R001_longitudinal_acceleration_recommended_model",
+      "output": "longitudinal_acceleration",
+      "model_group": "acceleration_performance",
+      "recommended_model_name": "engine_limited_acceleration",
+      "applicability_reference": {
+        "formula_id": "F007_engine_limited_acceleration",
+        "require": [
+          "computability",
+          "required_inputs",
+          "applicability_conditions",
+          "formula_constraints"
+        ]
+      },
+      "recommendation_reason": [
+        "The model directly uses wheel tractive force, mass factor, and road-load terms.",
+        "It is the primary model in the selected v0.1 formula chain.",
+        "It exercises assumptions, missing-condition reporting, and recursive derivation.",
+        "The ideal constant-power model is intended as a different-model comparison."
+      ],
+      "fallback_behavior": {
+        "automatic_switch": false,
+        "mode": "require_user_selection",
+        "alternative_models": [
+          "ideal_constant_power_acceleration"
+        ],
+        "message": "The recommended model is unavailable. Select another model explicitly to continue."
+      },
+      "status": "confirmed"
+    }
+  ]
+}

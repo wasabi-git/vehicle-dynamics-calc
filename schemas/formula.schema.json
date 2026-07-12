@@ -1,0 +1,273 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "formula.schema.json",
+  "title": "Vehicle Dynamics Formulas File",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "data_version",
+    "formulas"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "data_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "formulas": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "formula_id",
+          "name",
+          "description",
+          "source_reference",
+          "status",
+          "expression",
+          "calculation_expression",
+          "formula_type",
+          "computability",
+          "expression_unit_mode",
+          "required_inputs",
+          "output",
+          "model_group",
+          "model_name",
+          "path_role",
+          "priority",
+          "model_assumptions",
+          "allowed_assumption_inputs",
+          "applicability_conditions",
+          "formula_constraints"
+        ],
+        "properties": {
+          "formula_id": {
+            "type": "string",
+            "pattern": "^F\\d{3}_[a-z0-9_]+$"
+          },
+          "formula_family_id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source_reference": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": [
+                "source_id",
+                "locator",
+                "note"
+              ],
+              "properties": {
+                "source_id": {
+                  "type": "string",
+                  "pattern": "^S\\d{3}_[a-z0-9_]+$"
+                },
+                "locator": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "note": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "status": {
+            "enum": [
+              "confirmed",
+              "needs_review",
+              "deprecated"
+            ]
+          },
+          "expression": {
+            "type": "string",
+            "minLength": 1
+          },
+          "calculation_expression": {
+            "type": "string",
+            "minLength": 1
+          },
+          "formula_type": {
+            "enum": [
+              "algebraic",
+              "empirical",
+              "lookup",
+              "curve",
+              "definition"
+            ]
+          },
+          "computability": {
+            "enum": [
+              "direct",
+              "iterative",
+              "manual_only",
+              "unsupported"
+            ]
+          },
+          "expression_unit_mode": {
+            "enum": [
+              "si_consistent",
+              "source_native"
+            ]
+          },
+          "substitution_units": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]*$"
+            }
+          },
+          "native_output_unit": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "required_inputs": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]*$"
+            }
+          },
+          "output": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "model_group": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "model_name": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "model_type": {
+            "enum": [
+              "force_balance",
+              "kinematic_relation",
+              "empirical_model",
+              "geometry_model",
+              "idealized_model",
+              "lookup_or_curve",
+              "definition"
+            ]
+          },
+          "path_role": {
+            "enum": [
+              "primary",
+              "alternative",
+              "validation",
+              "reference"
+            ]
+          },
+          "priority": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "model_assumptions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "allowed_assumption_inputs": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]*$"
+            }
+          },
+          "applicability_conditions": {
+            "type": "object",
+            "required": [
+              "machine",
+              "descriptive"
+            ],
+            "properties": {
+              "machine": {
+                "$ref": "condition.schema.json#/$defs/conditionExpression"
+              },
+              "descriptive": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          "formula_constraints": {
+            "type": "object",
+            "required": [
+              "all"
+            ],
+            "properties": {
+              "all": {
+                "type": "array",
+                "items": {
+                  "$ref": "condition.schema.json#/$defs/singleCondition"
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          "known_limitations": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "expression_unit_mode": {
+                  "const": "source_native"
+                }
+              },
+              "required": [
+                "expression_unit_mode"
+              ]
+            },
+            "then": {
+              "required": [
+                "substitution_units",
+                "native_output_unit"
+              ]
+            }
+          }
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

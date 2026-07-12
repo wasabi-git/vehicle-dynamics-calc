@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "engine-config.schema.json",
+  "title": "Vehicle Dynamics Engine Config",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "data_version",
+    "internal_unit_system",
+    "allow_automatic_algebraic_inversion",
+    "dependency_graph_source",
+    "max_reverse_formula_depth",
+    "reverse_depth_counts",
+    "importance_order",
+    "path_roles",
+    "range_semantics",
+    "condition_semantics",
+    "user_input_default_active",
+    "reference_paths_can_be_active"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "data_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "internal_unit_system": {
+      "const": "SI"
+    },
+    "allow_automatic_algebraic_inversion": {
+      "type": "boolean"
+    },
+    "dependency_graph_source": {
+      "const": "derive_from_formulas"
+    },
+    "max_reverse_formula_depth": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "reverse_depth_counts": {
+      "const": "formula_nodes_only"
+    },
+    "importance_order": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "critical",
+          "high",
+          "medium",
+          "low"
+        ]
+      },
+      "uniqueItems": true
+    },
+    "path_roles": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "primary",
+          "alternative",
+          "validation",
+          "reference"
+        ]
+      },
+      "uniqueItems": true
+    },
+    "range_semantics": {
+      "type": "object",
+      "required": [
+        "normal",
+        "warning",
+        "outside_warning_but_not_invalid",
+        "invalid"
+      ],
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "condition_semantics": {
+      "type": "object",
+      "required": [
+        "formula_constraints",
+        "applicability_machine",
+        "invalid_range",
+        "valid_domain",
+        "bare_condition_arrays_allowed"
+      ],
+      "properties": {
+        "formula_constraints": {
+          "const": "explicit_all"
+        },
+        "applicability_machine": {
+          "const": "explicit_all_or_any"
+        },
+        "invalid_range": {
+          "const": "explicit_any"
+        },
+        "valid_domain": {
+          "const": "single_condition_or_explicit_all_or_any"
+        },
+        "bare_condition_arrays_allowed": {
+          "const": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "user_input_default_active": {
+      "type": "boolean"
+    },
+    "reference_paths_can_be_active": {
+      "type": "boolean"
+    }
+  },
+  "additionalProperties": false
+}

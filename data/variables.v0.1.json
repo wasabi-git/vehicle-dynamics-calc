@@ -1,0 +1,1092 @@
+{
+  "schema_version": "1.0.0",
+  "data_version": "0.1.0",
+  "variables": [
+    {
+      "variable_id": "section_width",
+      "name": "Section width",
+      "symbol": "w_s",
+      "category": "tire_wheel",
+      "description": "Nominal tire section width used in the tire-size-based wheel-radius calculation.",
+      "dimension": "length",
+      "internal_unit": "meter",
+      "default_unit": "millimeter",
+      "allowed_units": [
+        "millimeter",
+        "inch",
+        "meter"
+      ],
+      "display_role": "input_only",
+      "importance": "medium",
+      "normal_range": {
+        "min": 125,
+        "max": 355,
+        "unit": "millimeter",
+        "min_inclusive": true,
+        "max_inclusive": true
+      },
+      "warning_range": {
+        "min": 80,
+        "max": 500,
+        "unit": "millimeter",
+        "min_inclusive": true,
+        "max_inclusive": true
+      },
+      "invalid_range": {
+        "any": [
+          {
+            "operator": "lte",
+            "value": 0,
+            "unit": "meter"
+          }
+        ]
+      },
+      "valid_domain": {
+        "operator": "gt",
+        "value": 0,
+        "unit": "meter"
+      },
+      "can_be_user_input": true,
+      "unit_misuse_check": true,
+      "status": "confirmed",
+      "can_be_assumed": false,
+      "is_constant": false
+    },
+    {
+      "variable_id": "aspect_ratio",
+      "name": "Aspect ratio",
+      "symbol": "AR",
+      "category": "tire_wheel",
+      "description": "Tire sidewall height expressed as a fraction of nominal section width.",
+      "dimension": "dimensionless",
+      "internal_unit": "decimal",
+      "default_unit": "percent",
+      "allowed_units": [
+        "percent",
+        "decimal"
+      ],
+      "display_role": "input_only",
+      "importance": "medium",
+      "normal_range": {
+        "min": 25,
+        "max": 85,
+        "unit": "percent",
+        "min_inclusive": true,
+        "max_inclusive": true
+      },
+      "warning_range": {
+        "min": 10,
+        "max": 120,
+        "unit": "percent",
+        "min_inclusive": true,
+        "max_inclusive": true
+      },
+      "invalid_range": {
+        "any": [
+          {
+            "operator": "lte",
+            "value": 0,
+            "unit": "decimal"
+          },
+          {
+            "operator": "gt",
+            "value": 200,
+            "unit": "percent"
+          }
+        ]
+      },
+      "valid_domain": {
+        "operator": "gt",
+        "value": 0,
+        "unit": "decimal"
+      },
+      "can_be_user_input": true,
+      "unit_misuse_check": true,
+      "status": "confirmed",
+      "can_be_assumed": false,
+      "is_constant": false
+    },
+    {
+      "variable_id": "rim_diameter",
+      "name": "Rim diameter",
+      "symbol": "d_rim",
+      "category": "tire_wheel",
+      "description": "Nominal wheel rim diameter used in the tire-size designation.",
+      "dimension": "length",
+      "internal_unit": "meter",
+      "default_unit": "inch",
+      "allowed_units": [
+        "inch",
+        "millimeter",
+        "meter"
+      ],
+      "display_role": "input_only",
+      "importance": "medium",
+      "normal_range": {
+        "min": 10,
+        "max": 30,
+        "unit": "inch",
+        "min_inclusive": true,
+        "max_inclusive": true
+      },
+      "warning_range": {
+        "min": 5,
+        "max": 40,
+        "unit": "inch",
+        "min_inclusive": true,
+        "max_inclusive": true
+      },
+      "invalid_range": {
+        "any": [
+          {
+            "operator": "lte",
+            "value": 0,
+            "unit": "meter"
+          }
+        ]
+      },
+      "valid_domain": {
+        "operator": "gt",
+        "value": 0,
+        "unit": "meter"
+      },
+      "can_be_user_input": true,
+      "unit_misuse_check": true,
+      "status": "confirmed",
+      "can_be_assumed": false,
+      "is_constant": false
+    },
+    {
+      "variable_id": "wheel_radius",
+      "name": "Wheel radius",
+      "symbol": "r_w",
+      "category": "tire_wheel",
+      "description": "Nominal tire-size radius used in v0.1 as an approximation of the effective radius for kinematic and tractive-force calculations.",
+      "dimension": "length",
+      "internal_unit": "meter",
+      "default_unit": "inch",
+      "allowed_units": [
+        "inch",
+        "millimeter",
+        "meter"
+      ],
+      "display_role": "intermediate",
+      "importance": "high",
+      "normal_range": {
+        "min": 9,
+        "max": 25,
+        "unit": "inch",
+        "min_inclusive": true,
+        "max_inclusive": true
+      },
+      "warning_range": {
+        "min": 3,
+        "max": 60,
+        "unit": "inch",
+        "min_inclusive": true,
+        "max_inclusive": true
+      },
+      "invalid_range": {
+        "any": [
+          {
+            "operator": "lte",
+            "value": 0,
+            "unit": "meter"
+          }
+        ]
+      },
+      "valid_domain": {
+        "operator": "gt",
+        "value": 0,
+        "unit": "meter"
+      },
+      "can_be_user_input": true,
+      "unit_misuse_check": true,
+      "status": "confirmed",
+      "can_be_assumed": false,
+      "is_constant": false,
+      "notes": [
+        "The course model does not distinguish nominal, loaded, and effective rolling radius."
+      ]
+    },
+    {
+      "variable_id": "engine_speed",
+      "name": "Engine speed",
+      "symbol": "ω_e",
+      "category": "powertrain",
+      "description": "Engine crankshaft angular speed at the evaluated operating point.",
+      "dimension": "angular_speed",
+      "internal_unit": "radian_per_second",
+      "default_unit": "revolution_per_minute",
+      "allowed_units": [
+        "revolution_per_minute",
+        "radian_per_second"
+      ],
+      "display_role": "input_only",
+      "importance": "high",
+      "normal_range": {
+        "min": 0,
+        "max": 8000,
+        "unit": "revolution_per_minute",
+        "min_inclusive": true,
+        "max_inclusive": true
+      },
+      "warning_range": {
+        "min": 0,
+        "max": 15000,
+        "unit": "revolution_per_minute",
+        "min_inclusive": true,
+        "max_inclusive": true
+      },
+      "invalid_range": {
+        "any": [
+          {
+            "operator": "lt",
+            "value": 0,
+            "unit": "radian_per_second"
+          },
+          {
+            "operator": "gt",
+            "value": 30000,
+            "unit": "revolution_per_minute"
+          }
+        ]
+      },
+      "valid_domain": {
+        "operator": "gte",
+        "value": 0,
+        "unit": "radian_per_second"
+      },
+      "can_be_user_input": true,
+      "unit_misuse_check": true,
+      "status": "confirmed",
+      "can_be_assumed": false,
+      "is_constant": false,
+      "sign_convention": {
+        "nonnegative": "v0.1 does not model reverse engine rotation."
+      }
+    },
+    {
+      "variable_id": "combined_gear_ratio",
+      "name": "Combined gear ratio",
+      "symbol": "N_tf",
+      "category": "powertrain",
+      "description": "Numerical ratio of engine speed to wheel speed, combining the selected transmission ratio and final-drive ratio.",
+      "dimension": "dimensionless",
+      "internal_unit": "decimal",
+      "default_unit": "decimal",
+      "allowed_units": [
+        "decimal"
+      ],
+      "display_role": "input_only",
+      "importance": "high",
+      "normal_range": {
+        "min": 2,
+        "max": 20,
+        "unit": "decimal",
+        "min_inclusive": true,
+        "max_inclusive": true
+      },
+      "warning_range": {
+        "min": 0.1,
+        "max": 50,
+        "unit": "decimal",
+        "min_inclusive": true,
+        "max_inclusive": true
+      },
+      "invalid_range": {
+        "any": [
+          {
+            "operator": "lte",
+            "value": 0,
+            "unit": "decimal"
+          }
+        ]
+      },
+      "valid_domain": {
+        "operator": "gt",
+        "value": 0,
+        "unit": "decimal"
+      },
+      "can_be_user_input": true,
+      "unit_misuse_check": false,
+      "status": "confirmed",
+      "can_be_assumed": false,
+      "is_constant": false,
+      "notes": [
+        "The 2–20 normal range is retained as the initial course-oriented engineering range."
+      ]
+    },
+    {
+      "variable_id": "vehicle_speed",
+      "name": "Vehicle speed",
+      "symbol": "V",
+      "category": "motion_performance",
+      "description": "Longitudinal vehicle speed at the evaluated operating point.",
+      "dimension": "speed",
+      "internal_unit": "meter_per_second",
+      "default_unit": "mile_per_hour",
+      "allowed_units": [
+        "mile_per_hour",
+        "kilometer_per_hour",
+        "meter_per_second"
+      ],
+      "display_role": "derived_output",
+      "importance": "high",
+      "normal_range": {
+        "min": 0,
+        "max": 150,
+        "unit": "mile_per_hour",
+        "min_inclusive": true,
+        "max_inclusive": true
+      },
+      "warning_range": {
+        "min": 0,
+        "max": 250,
+        "unit": "mile_per_hour",
+        "min_inclusive": true,
+        "max_inclusive": true
+      },
+      "invalid_range": {
+        "any": [
+          {
+            "operator": "lt",
+            "value": 0,
+            "unit": "meter_per_second"
+          }
+        ]
+      },
+      "valid_domain": {
+        "operator": "gte",
+        "value": 0,
+        "unit": "meter_per_second"
+      },
+      "can_be_user_input": true,
+      "unit_misuse_check": false,
+      "status": "confirmed",
+      "can_be_assumed": false,
+      "is_constant": false,
+      "sign_convention": {
+        "nonnegative": "v0.1 does not model reverse vehicle speed."
+      }
+    },
+    {
+      "variable_id": "engine_torque",
+      "name": "Engine torque",
+      "symbol": "T_e",
+      "category": "powertrain",
+      "description": "Engine output torque at the same operating point as the associated engine speed.",
+      "dimension": "torque",
+      "internal_unit": "newton_meter",
+      "default_unit": "foot_pound_force",
+      "allowed_units": [
+        "foot_pound_force",
+        "newton_meter"
+      ],
+      "display_role": "input_only",
+      "importance": "high",
+      "normal_range": {
+        "min": 0,
+        "max": 1000,
+        "unit": "foot_pound_force",
+        "min_inclusive": true,
+        "max_inclusive": true
+      },
+      "warning_range": {
+        "min": 0,
+        "max": 3000,
+        "unit": "foot_pound_force",
+        "min_inclusive": true,
+        "max_inclusive": true
+      },
+      "invalid_range": {
+        "any": [
+          {
+            "operator": "lt",
+            "value": 0,
+            "unit": "newton_meter"
+          }
+        ]
+      },
+      "valid_domain": {
+        "operator": "gte",
+        "value": 0,
+        "unit": "newton_meter"
+      },
+      "can_be_user_input": true,
+      "unit_misuse_check": true,
+      "status": "confirmed",
+      "can_be_assumed": false,
+      "is_constant": false,
+      "sign_convention": {
+        "nonnegative": "v0.1 models positive driving torque only."
+      }
+    },
+    {
+      "variable_id": "engine_power",
+      "name": "Engine power",
+      "symbol": "P",
+      "category": "powertrain",
+      "description": "Engine mechanical power at the evaluated torque and speed operating point.",
+      "dimension": "power",
+      "internal_unit": "watt",
+      "default_unit": "horsepower_mechanical",
+      "allowed_units": [
+        "horsepower_mechanical",
+        "kilowatt",
+        "watt"
+      ],
+      "display_role": "derived_output",
+      "importance": "high",
+      "normal_range": {
+        "min": 0,
+        "max": 1000,
+        "unit": "horsepower_mechanical",
+        "min_inclusive": true,
+        "max_inclusive": true
+      },
+      "warning_range": {
+        "min": 0,
+        "max": 3000,
+        "unit": "horsepower_mechanical",
+        "min_inclusive": true,
+        "max_inclusive": true
+      },
+      "invalid_range": {
+        "any": [
+          {
+            "operator": "lt",
+            "value": 0,
+            "unit": "watt"
+          }
+        ]
+      },
+      "valid_domain": {
+        "operator": "gte",
+        "value": 0,
+        "unit": "watt"
+      },
+      "can_be_user_input": true,
+      "unit_misuse_check": true,
+      "status": "confirmed",
+      "can_be_assumed": false,
+      "is_constant": false,
+      "sign_convention": {
+        "nonnegative": "v0.1 models positive driving power only."
+      }
+    },
+    {
+      "variable_id": "drivetrain_efficiency",
+      "name": "Drivetrain efficiency",
+      "symbol": "η_tf",
+      "category": "powertrain",
+      "description": "Combined drivetrain efficiency applied to torque transfer from the engine to the driven wheels.",
+      "dimension": "dimensionless",
+      "internal_unit": "decimal",
+      "default_unit": "percent",
+      "allowed_units": [
+        "percent",
+        "decimal"
+      ],
+      "display_role": "input_only",
+      "importance": "high",
+      "normal_range": {
+        "min": 70,
+        "max": 100,
+        "unit": "percent",
+        "min_inclusive": true,
+        "max_inclusive": true
+      },
+      "warning_range": {
+        "min": 1,
+        "max": 100,
+        "unit": "percent",
+        "min_inclusive": true,
+        "max_inclusive": true
+      },
+      "invalid_range": {
+        "any": [
+          {
+            "operator": "lte",
+            "value": 0,
+            "unit": "decimal"
+          },
+          {
+            "operator": "gt",
+            "value": 100,
+            "unit": "percent"
+          }
+        ]
+      },
+      "valid_domain": {
+        "all": [
+          {
+            "operator": "gt",
+            "value": 0,
+            "unit": "decimal"
+          },
+          {
+            "operator": "lte",
+            "value": 1,
+            "unit": "decimal"
+          }
+        ]
+      },
+      "can_be_user_input": true,
+      "unit_misuse_check": false,
+      "status": "confirmed",
+      "can_be_assumed": false,
+      "is_constant": false
+    },
+    {
+      "variable_id": "tractive_force",
+      "name": "Tractive force",
+      "symbol": "F_x",
+      "category": "powertrain",
+      "description": "Longitudinal wheel-ground force available from the engine and drivetrain before any tire-traction-limit check.",
+      "dimension": "force",
+      "internal_unit": "newton",
+      "default_unit": "pound_force",
+      "allowed_units": [
+        "pound_force",
+        "newton",
+        "kilonewton"
+      ],
+      "display_role": "derived_output",
+      "importance": "high",
+      "normal_range": {
+        "min": 0,
+        "max": 10000,
+        "unit": "pound_force",
+        "min_inclusive": true,
+        "max_inclusive": true
+      },
+      "warning_range": {
+        "min": 0,
+        "max": 100000,
+        "unit": "pound_force",
+        "min_inclusive": true,
+        "max_inclusive": true
+      },
+      "invalid_range": {
+        "any": [
+          {
+            "operator": "lt",
+            "value": 0,
+            "unit": "newton"
+          }
+        ]
+      },
+      "valid_domain": {
+        "operator": "gte",
+        "value": 0,
+        "unit": "newton"
+      },
+      "can_be_user_input": true,
+      "unit_misuse_check": false,
+      "status": "confirmed",
+      "can_be_assumed": false,
+      "is_constant": false,
+      "sign_convention": {
+        "positive": "Drives the vehicle forward."
+      }
+    },
+    {
+      "variable_id": "mass_factor",
+      "name": "Mass factor",
+      "symbol": "M_f",
+      "category": "powertrain",
+      "description": "Empirical multiplier used to approximate the effect of rotating drivetrain inertia on longitudinal acceleration.",
+      "dimension": "dimensionless",
+      "internal_unit": "decimal",
+      "default_unit": "decimal",
+      "allowed_units": [
+        "decimal"
+      ],
+      "display_role": "intermediate",
+      "importance": "medium",
+      "normal_range": {
+        "min": 1,
+        "max": 5,
+        "unit": "decimal",
+        "min_inclusive": true,
+        "max_inclusive": true
+      },
+      "warning_range": {
+        "min": 1,
+        "max": 20,
+        "unit": "decimal",
+        "min_inclusive": true,
+        "max_inclusive": true
+      },
+      "invalid_range": {
+        "any": [
+          {
+            "operator": "lte",
+            "value": 0,
+            "unit": "decimal"
+          }
+        ]
+      },
+      "valid_domain": {
+        "operator": "gt",
+        "value": 0,
+        "unit": "decimal"
+      },
+      "can_be_user_input": true,
+      "unit_misuse_check": false,
+      "status": "confirmed",
+      "can_be_assumed": false,
+      "is_constant": false,
+      "notes": [
+        "Typical empirical approximation; not a vehicle-specific rotating-inertia model."
+      ]
+    },
+    {
+      "variable_id": "vehicle_weight",
+      "name": "Vehicle weight",
+      "symbol": "W",
+      "category": "vehicle_properties",
+      "description": "Gravitational force acting on the vehicle, distinct from vehicle mass.",
+      "dimension": "force",
+      "internal_unit": "newton",
+      "default_unit": "pound_force",
+      "allowed_units": [
+        "pound_force",
+        "newton",
+        "kilonewton"
+      ],
+      "display_role": "input_only",
+      "importance": "high",
+      "normal_range": {
+        "min": 1000,
+        "max": 10000,
+        "unit": "pound_force",
+        "min_inclusive": true,
+        "max_inclusive": true
+      },
+      "warning_range": {
+        "min": 100,
+        "max": 200000,
+        "unit": "pound_force",
+        "min_inclusive": true,
+        "max_inclusive": true
+      },
+      "invalid_range": {
+        "any": [
+          {
+            "operator": "lte",
+            "value": 0,
+            "unit": "newton"
+          }
+        ]
+      },
+      "valid_domain": {
+        "operator": "gt",
+        "value": 0,
+        "unit": "newton"
+      },
+      "can_be_user_input": true,
+      "unit_misuse_check": true,
+      "status": "confirmed",
+      "can_be_assumed": false,
+      "is_constant": false,
+      "sign_convention": {
+        "positive": "Weight magnitude is stored as a positive force."
+      }
+    },
+    {
+      "variable_id": "gravity",
+      "name": "Gravity",
+      "symbol": "g",
+      "category": "constants",
+      "description": "Standard gravitational acceleration used to convert weight to mass.",
+      "dimension": "acceleration",
+      "internal_unit": "meter_per_second_squared",
+      "default_unit": "meter_per_second_squared",
+      "allowed_units": [
+        "meter_per_second_squared",
+        "foot_per_second_squared"
+      ],
+      "display_role": "constant",
+      "importance": "low",
+      "normal_range": {
+        "min": 9.7,
+        "max": 9.9,
+        "unit": "meter_per_second_squared",
+        "min_inclusive": true,
+        "max_inclusive": true
+      },
+      "warning_range": {
+        "min": 1,
+        "max": 30,
+        "unit": "meter_per_second_squared",
+        "min_inclusive": true,
+        "max_inclusive": true
+      },
+      "invalid_range": {
+        "any": [
+          {
+            "operator": "lte",
+            "value": 0,
+            "unit": "meter_per_second_squared"
+          }
+        ]
+      },
+      "valid_domain": {
+        "operator": "gt",
+        "value": 0,
+        "unit": "meter_per_second_squared"
+      },
+      "can_be_user_input": false,
+      "unit_misuse_check": false,
+      "status": "confirmed",
+      "can_be_assumed": false,
+      "is_constant": true,
+      "constant_value_si": 9.80665,
+      "notes": [
+        "The course formula sheet uses the rounded value 9.805 m/s²."
+      ]
+    },
+    {
+      "variable_id": "vehicle_mass",
+      "name": "Vehicle mass",
+      "symbol": "M",
+      "category": "vehicle_properties",
+      "description": "Vehicle inertial mass used in the longitudinal acceleration equations.",
+      "dimension": "mass",
+      "internal_unit": "kilogram",
+      "default_unit": "kilogram",
+      "allowed_units": [
+        "kilogram",
+        "slug"
+      ],
+      "display_role": "intermediate",
+      "importance": "high",
+      "normal_range": {
+        "min": 500,
+        "max": 5000,
+        "unit": "kilogram",
+        "min_inclusive": true,
+        "max_inclusive": true
+      },
+      "warning_range": {
+        "min": 50,
+        "max": 100000,
+        "unit": "kilogram",
+        "min_inclusive": true,
+        "max_inclusive": true
+      },
+      "invalid_range": {
+        "any": [
+          {
+            "operator": "lte",
+            "value": 0,
+            "unit": "kilogram"
+          }
+        ]
+      },
+      "valid_domain": {
+        "operator": "gt",
+        "value": 0,
+        "unit": "kilogram"
+      },
+      "can_be_user_input": true,
+      "unit_misuse_check": true,
+      "status": "confirmed",
+      "can_be_assumed": false,
+      "is_constant": false
+    },
+    {
+      "variable_id": "aerodynamic_drag",
+      "name": "Aerodynamic drag",
+      "symbol": "D_A",
+      "category": "road_loads_external_forces",
+      "description": "Longitudinal aerodynamic resistance force opposing forward vehicle motion.",
+      "dimension": "force",
+      "internal_unit": "newton",
+      "default_unit": "pound_force",
+      "allowed_units": [
+        "pound_force",
+        "newton",
+        "kilonewton"
+      ],
+      "display_role": "assumption",
+      "importance": "medium",
+      "normal_range": {
+        "min": 0,
+        "max": 1000,
+        "unit": "pound_force",
+        "min_inclusive": true,
+        "max_inclusive": true
+      },
+      "warning_range": {
+        "min": 0,
+        "max": 5000,
+        "unit": "pound_force",
+        "min_inclusive": true,
+        "max_inclusive": true
+      },
+      "invalid_range": {
+        "any": [
+          {
+            "operator": "lt",
+            "value": 0,
+            "unit": "newton"
+          }
+        ]
+      },
+      "valid_domain": {
+        "operator": "gte",
+        "value": 0,
+        "unit": "newton"
+      },
+      "can_be_user_input": true,
+      "unit_misuse_check": false,
+      "status": "confirmed",
+      "can_be_assumed": true,
+      "default_assumption": {
+        "value": 0,
+        "unit": "newton",
+        "enabled_by_default": true,
+        "meaning": "Ignore aerodynamic drag"
+      },
+      "is_constant": false,
+      "sign_convention": {
+        "nonnegative": "Stored as a resisting-force magnitude."
+      }
+    },
+    {
+      "variable_id": "rolling_resistance",
+      "name": "Rolling resistance",
+      "symbol": "R_x",
+      "category": "road_loads_external_forces",
+      "description": "Longitudinal rolling-resistance force opposing vehicle motion.",
+      "dimension": "force",
+      "internal_unit": "newton",
+      "default_unit": "pound_force",
+      "allowed_units": [
+        "pound_force",
+        "newton",
+        "kilonewton"
+      ],
+      "display_role": "assumption",
+      "importance": "medium",
+      "normal_range": {
+        "min": 0,
+        "max": 1000,
+        "unit": "pound_force",
+        "min_inclusive": true,
+        "max_inclusive": true
+      },
+      "warning_range": {
+        "min": 0,
+        "max": 5000,
+        "unit": "pound_force",
+        "min_inclusive": true,
+        "max_inclusive": true
+      },
+      "invalid_range": {
+        "any": [
+          {
+            "operator": "lt",
+            "value": 0,
+            "unit": "newton"
+          }
+        ]
+      },
+      "valid_domain": {
+        "operator": "gte",
+        "value": 0,
+        "unit": "newton"
+      },
+      "can_be_user_input": true,
+      "unit_misuse_check": false,
+      "status": "confirmed",
+      "can_be_assumed": true,
+      "default_assumption": {
+        "value": 0,
+        "unit": "newton",
+        "enabled_by_default": true,
+        "meaning": "Ignore rolling resistance"
+      },
+      "is_constant": false,
+      "sign_convention": {
+        "nonnegative": "Stored as a resisting-force magnitude."
+      }
+    },
+    {
+      "variable_id": "road_grade_angle",
+      "name": "Road grade angle",
+      "symbol": "θ",
+      "category": "road_loads_external_forces",
+      "description": "Road inclination angle, positive for an uphill grade.",
+      "dimension": "angle",
+      "internal_unit": "radian",
+      "default_unit": "degree",
+      "allowed_units": [
+        "degree",
+        "radian"
+      ],
+      "display_role": "assumption",
+      "importance": "medium",
+      "normal_range": {
+        "min": -15,
+        "max": 15,
+        "unit": "degree",
+        "min_inclusive": true,
+        "max_inclusive": true
+      },
+      "warning_range": {
+        "min": -45,
+        "max": 45,
+        "unit": "degree",
+        "min_inclusive": true,
+        "max_inclusive": true
+      },
+      "invalid_range": {
+        "any": [
+          {
+            "operator": "lte",
+            "value": -90,
+            "unit": "degree"
+          },
+          {
+            "operator": "gte",
+            "value": 90,
+            "unit": "degree"
+          }
+        ]
+      },
+      "valid_domain": {
+        "operator": "between",
+        "min": -1.5707963267948966,
+        "max": 1.5707963267948966,
+        "unit": "radian",
+        "min_inclusive": false,
+        "max_inclusive": false
+      },
+      "can_be_user_input": true,
+      "unit_misuse_check": true,
+      "status": "confirmed",
+      "can_be_assumed": true,
+      "default_assumption": {
+        "value": 0,
+        "unit": "radian",
+        "enabled_by_default": true,
+        "meaning": "Level road"
+      },
+      "is_constant": false,
+      "sign_convention": {
+        "positive": "Uphill",
+        "negative": "Downhill"
+      }
+    },
+    {
+      "variable_id": "hitch_force",
+      "name": "Hitch force",
+      "symbol": "R_hx",
+      "category": "road_loads_external_forces",
+      "description": "External longitudinal hitch or towing force, positive when resisting forward motion.",
+      "dimension": "force",
+      "internal_unit": "newton",
+      "default_unit": "pound_force",
+      "allowed_units": [
+        "pound_force",
+        "newton",
+        "kilonewton"
+      ],
+      "display_role": "assumption",
+      "importance": "medium",
+      "normal_range": {
+        "min": -2000,
+        "max": 2000,
+        "unit": "pound_force",
+        "min_inclusive": true,
+        "max_inclusive": true
+      },
+      "warning_range": {
+        "min": -20000,
+        "max": 20000,
+        "unit": "pound_force",
+        "min_inclusive": true,
+        "max_inclusive": true
+      },
+      "invalid_range": {
+        "any": [
+          {
+            "operator": "not_finite"
+          }
+        ]
+      },
+      "valid_domain": {
+        "operator": "finite"
+      },
+      "can_be_user_input": true,
+      "unit_misuse_check": false,
+      "status": "confirmed",
+      "can_be_assumed": true,
+      "default_assumption": {
+        "value": 0,
+        "unit": "newton",
+        "enabled_by_default": true,
+        "meaning": "No external hitch force"
+      },
+      "is_constant": false,
+      "sign_convention": {
+        "positive": "Resists forward motion",
+        "negative": "Assists forward motion"
+      }
+    },
+    {
+      "variable_id": "longitudinal_acceleration",
+      "name": "Longitudinal acceleration",
+      "symbol": "a_x",
+      "category": "motion_performance",
+      "description": "Vehicle longitudinal acceleration, positive for acceleration and negative for deceleration.",
+      "dimension": "acceleration",
+      "internal_unit": "meter_per_second_squared",
+      "default_unit": "meter_per_second_squared",
+      "allowed_units": [
+        "meter_per_second_squared",
+        "foot_per_second_squared",
+        "standard_gravity"
+      ],
+      "display_role": "primary_output",
+      "importance": "critical",
+      "normal_range": {
+        "min": -10,
+        "max": 10,
+        "unit": "meter_per_second_squared",
+        "min_inclusive": true,
+        "max_inclusive": true
+      },
+      "warning_range": {
+        "min": -30,
+        "max": 30,
+        "unit": "meter_per_second_squared",
+        "min_inclusive": true,
+        "max_inclusive": true
+      },
+      "invalid_range": {
+        "any": [
+          {
+            "operator": "not_finite"
+          }
+        ]
+      },
+      "valid_domain": {
+        "operator": "finite"
+      },
+      "can_be_user_input": true,
+      "unit_misuse_check": false,
+      "status": "confirmed",
+      "can_be_assumed": false,
+      "is_constant": false,
+      "sign_convention": {
+        "positive": "Acceleration",
+        "negative": "Deceleration"
+      }
+    }
+  ]
+}

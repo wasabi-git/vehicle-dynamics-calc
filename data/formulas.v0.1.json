@@ -1,0 +1,587 @@
+{
+  "schema_version": "1.0.0",
+  "data_version": "0.1.0",
+  "formulas": [
+    {
+      "formula_id": "F001_wheel_radius_from_tire_size",
+      "name": "Wheel radius from tire size",
+      "description": "Calculates nominal unloaded wheel-and-tire radius from section width, aspect ratio, and rim diameter.",
+      "source_reference": [
+        {
+          "source_id": "S001_vehicle_dynamics_formulae",
+          "locator": "Ch 2 - Acceleration Performance",
+          "note": "r_w = (195 × 0.55) / 25.4 + 16 / 2 example and corresponding general tire-size relation."
+        }
+      ],
+      "status": "confirmed",
+      "expression": "r_w = \\frac{w_s AR}{25.4} + \\frac{d_{rim}}{2}",
+      "calculation_expression": "(section_width * aspect_ratio) / 25.4 + rim_diameter / 2",
+      "formula_type": "algebraic",
+      "computability": "direct",
+      "expression_unit_mode": "source_native",
+      "required_inputs": [
+        "section_width",
+        "aspect_ratio",
+        "rim_diameter"
+      ],
+      "output": "wheel_radius",
+      "model_group": "tire_and_wheel_geometry",
+      "model_name": "tire_size_radius_model",
+      "path_role": "primary",
+      "priority": 10,
+      "model_assumptions": [
+        "Tire size gives nominal unloaded radius.",
+        "Tire deflection under load is ignored."
+      ],
+      "allowed_assumption_inputs": [],
+      "applicability_conditions": {
+        "machine": {
+          "all": []
+        },
+        "descriptive": [
+          "The tire is represented by section width, aspect ratio, and rim diameter."
+        ]
+      },
+      "formula_constraints": {
+        "all": [
+          {
+            "operator": "gt",
+            "variable": "section_width",
+            "value": 0,
+            "unit": "meter"
+          },
+          {
+            "operator": "gt",
+            "variable": "aspect_ratio",
+            "value": 0,
+            "unit": "decimal"
+          },
+          {
+            "operator": "gt",
+            "variable": "rim_diameter",
+            "value": 0,
+            "unit": "meter"
+          }
+        ]
+      },
+      "formula_family_id": "tire_size_radius",
+      "model_type": "geometry_model",
+      "substitution_units": {
+        "section_width": "millimeter",
+        "aspect_ratio": "decimal",
+        "rim_diameter": "inch"
+      },
+      "native_output_unit": "inch",
+      "known_limitations": [
+        "The result is a nominal geometry-based radius, not a measured loaded or effective rolling radius."
+      ],
+      "notes": [
+        "A tire-size string such as 195/55R16 is parsed by the input-preprocessing layer before this formula is evaluated."
+      ]
+    },
+    {
+      "formula_id": "F002_vehicle_speed_from_engine_speed",
+      "name": "Vehicle speed from engine speed, wheel radius, and total gear ratio",
+      "description": "Calculates vehicle speed from engine angular speed, wheel radius, and combined engine-to-wheel speed ratio.",
+      "source_reference": [
+        {
+          "source_id": "S001_vehicle_dynamics_formulae",
+          "locator": "Ch 2 - Acceleration Performance",
+          "note": "V = r_w ω_e / N_tf"
+        }
+      ],
+      "status": "confirmed",
+      "expression": "V = \\frac{r_w \\omega_e}{N_{tf}}",
+      "calculation_expression": "wheel_radius * engine_speed / combined_gear_ratio",
+      "formula_type": "algebraic",
+      "computability": "direct",
+      "expression_unit_mode": "si_consistent",
+      "required_inputs": [
+        "wheel_radius",
+        "engine_speed",
+        "combined_gear_ratio"
+      ],
+      "output": "vehicle_speed",
+      "model_group": "powertrain_kinematics",
+      "model_name": "powertrain_speed_relation",
+      "path_role": "primary",
+      "priority": 10,
+      "model_assumptions": [
+        "No clutch slip.",
+        "No torque-converter slip.",
+        "No tire slip.",
+        "Combined gear ratio is the total engine-to-wheel speed ratio."
+      ],
+      "allowed_assumption_inputs": [],
+      "applicability_conditions": {
+        "machine": {
+          "all": []
+        },
+        "descriptive": [
+          "The combined gear ratio corresponds to the selected gear and operating condition."
+        ]
+      },
+      "formula_constraints": {
+        "all": [
+          {
+            "operator": "gt",
+            "variable": "wheel_radius",
+            "value": 0,
+            "unit": "meter"
+          },
+          {
+            "operator": "gte",
+            "variable": "engine_speed",
+            "value": 0,
+            "unit": "radian_per_second"
+          },
+          {
+            "operator": "gt",
+            "variable": "combined_gear_ratio",
+            "value": 0,
+            "unit": "decimal"
+          }
+        ]
+      },
+      "formula_family_id": "powertrain_speed_relation",
+      "model_type": "kinematic_relation",
+      "notes": [
+        "v0.1 accepts combined_gear_ratio directly; transmission and final-drive ratios are not separately derived."
+      ]
+    },
+    {
+      "formula_id": "F003_engine_power_from_torque_rpm",
+      "name": "Engine power from torque and engine speed",
+      "description": "Calculates engine mechanical power from torque and engine speed using the course formula-sheet horsepower relation.",
+      "source_reference": [
+        {
+          "source_id": "S001_vehicle_dynamics_formulae",
+          "locator": "Ch 2 - Acceleration Performance",
+          "note": "HP = T × RPM / 5252"
+        }
+      ],
+      "status": "confirmed",
+      "expression": "HP = \\frac{T_e \\cdot RPM}{5252}",
+      "calculation_expression": "(engine_torque * engine_speed) / 5252",
+      "formula_type": "algebraic",
+      "computability": "direct",
+      "expression_unit_mode": "source_native",
+      "required_inputs": [
+        "engine_torque",
+        "engine_speed"
+      ],
+      "output": "engine_power",
+      "model_group": "acceleration_performance",
+      "model_name": "engine_power_calculation",
+      "path_role": "primary",
+      "priority": 10,
+      "model_assumptions": [
+        "Torque and engine speed refer to the same operating point."
+      ],
+      "allowed_assumption_inputs": [],
+      "applicability_conditions": {
+        "machine": {
+          "all": []
+        },
+        "descriptive": []
+      },
+      "formula_constraints": {
+        "all": [
+          {
+            "operator": "gte",
+            "variable": "engine_torque",
+            "value": 0,
+            "unit": "newton_meter"
+          },
+          {
+            "operator": "gte",
+            "variable": "engine_speed",
+            "value": 0,
+            "unit": "radian_per_second"
+          }
+        ]
+      },
+      "formula_family_id": "engine_power",
+      "model_type": "definition",
+      "substitution_units": {
+        "engine_torque": "foot_pound_force",
+        "engine_speed": "revolution_per_minute"
+      },
+      "native_output_unit": "horsepower_mechanical",
+      "known_limitations": [
+        "The denominator 5252 is the rounded constant used by the course formula sheet."
+      ],
+      "notes": [
+        "Do not substitute SI torque and angular-speed values directly into the source-native expression."
+      ]
+    },
+    {
+      "formula_id": "F004_tractive_force_from_engine_torque",
+      "name": "Tractive force from engine torque",
+      "description": "Calculates engine-and-drivetrain wheel tractive force from engine torque, combined gear ratio, drivetrain efficiency, and wheel radius.",
+      "source_reference": [
+        {
+          "source_id": "S001_vehicle_dynamics_formulae",
+          "locator": "Ch 2 - Acceleration Performance",
+          "note": "F_x = T_e N_tf η_tf / r_w"
+        }
+      ],
+      "status": "confirmed",
+      "expression": "F_x = \\frac{T_e N_{tf} \\eta_{tf}}{r_w}",
+      "calculation_expression": "engine_torque * combined_gear_ratio * drivetrain_efficiency / wheel_radius",
+      "formula_type": "algebraic",
+      "computability": "direct",
+      "expression_unit_mode": "si_consistent",
+      "required_inputs": [
+        "engine_torque",
+        "combined_gear_ratio",
+        "drivetrain_efficiency",
+        "wheel_radius"
+      ],
+      "output": "tractive_force",
+      "model_group": "acceleration_performance",
+      "model_name": "engine_tractive_force_at_wheels",
+      "path_role": "primary",
+      "priority": 10,
+      "model_assumptions": [
+        "Drivetrain efficiency is represented by η_tf.",
+        "wheel_radius is used as the effective radius approximation.",
+        "Tire slip and traction limits are not checked in v0.1."
+      ],
+      "allowed_assumption_inputs": [],
+      "applicability_conditions": {
+        "machine": {
+          "all": []
+        },
+        "descriptive": []
+      },
+      "formula_constraints": {
+        "all": [
+          {
+            "operator": "gte",
+            "variable": "engine_torque",
+            "value": 0,
+            "unit": "newton_meter"
+          },
+          {
+            "operator": "gt",
+            "variable": "combined_gear_ratio",
+            "value": 0,
+            "unit": "decimal"
+          },
+          {
+            "operator": "gt",
+            "variable": "drivetrain_efficiency",
+            "value": 0,
+            "unit": "decimal"
+          },
+          {
+            "operator": "lte",
+            "variable": "drivetrain_efficiency",
+            "value": 1,
+            "unit": "decimal"
+          },
+          {
+            "operator": "gt",
+            "variable": "wheel_radius",
+            "value": 0,
+            "unit": "meter"
+          }
+        ]
+      },
+      "formula_family_id": "tractive_force",
+      "model_type": "definition",
+      "known_limitations": [
+        "The calculated force is drivetrain-available force, not a tire-adhesion-limited maximum."
+      ]
+    },
+    {
+      "formula_id": "F005_mass_factor_from_total_gear_ratio",
+      "name": "Mass factor from total gear ratio",
+      "description": "Calculates the course empirical mass-factor approximation from combined gear ratio.",
+      "source_reference": [
+        {
+          "source_id": "S001_vehicle_dynamics_formulae",
+          "locator": "Ch 2 - Acceleration Performance",
+          "note": "M_f = 1 + 0.04 N_tf + 0.0025 N_tf²"
+        }
+      ],
+      "status": "confirmed",
+      "expression": "M_f = 1 + 0.04N_{tf} + 0.0025N_{tf}^2",
+      "calculation_expression": "1 + 0.04 * combined_gear_ratio + 0.0025 * combined_gear_ratio ^ 2",
+      "formula_type": "empirical",
+      "computability": "direct",
+      "expression_unit_mode": "si_consistent",
+      "required_inputs": [
+        "combined_gear_ratio"
+      ],
+      "output": "mass_factor",
+      "model_group": "acceleration_performance",
+      "model_name": "mass_factor_approximation",
+      "path_role": "primary",
+      "priority": 10,
+      "model_assumptions": [
+        "Rotating inertia is approximated through total gear ratio."
+      ],
+      "allowed_assumption_inputs": [],
+      "applicability_conditions": {
+        "machine": {
+          "all": []
+        },
+        "descriptive": [
+          "The empirical course approximation is acceptable for the current calculation."
+        ]
+      },
+      "formula_constraints": {
+        "all": [
+          {
+            "operator": "gt",
+            "variable": "combined_gear_ratio",
+            "value": 0,
+            "unit": "decimal"
+          }
+        ]
+      },
+      "formula_family_id": "mass_factor",
+      "model_type": "empirical_model",
+      "known_limitations": [
+        "The source does not provide vehicle-class applicability, coefficient provenance, or an error bound."
+      ],
+      "notes": [
+        "Typical empirical approximation; not a vehicle-specific rotating-inertia model."
+      ]
+    },
+    {
+      "formula_id": "F006_vehicle_mass_from_weight",
+      "name": "Vehicle mass from vehicle weight",
+      "description": "Converts vehicle weight force to vehicle mass using the standard gravitational acceleration constant.",
+      "source_reference": [
+        {
+          "source_id": "S002_fundamentals_vehicle_dynamics",
+          "locator": "Fundamental relation W = M g",
+          "note": "M = W / g"
+        }
+      ],
+      "status": "confirmed",
+      "expression": "M = \\frac{W}{g}",
+      "calculation_expression": "vehicle_weight / gravity",
+      "formula_type": "algebraic",
+      "computability": "direct",
+      "expression_unit_mode": "si_consistent",
+      "required_inputs": [
+        "vehicle_weight",
+        "gravity"
+      ],
+      "output": "vehicle_mass",
+      "model_group": "acceleration_performance",
+      "model_name": "weight_to_mass_relation",
+      "path_role": "primary",
+      "priority": 10,
+      "model_assumptions": [
+        "Vehicle weight W is a force.",
+        "Vehicle mass M is obtained from W/g."
+      ],
+      "allowed_assumption_inputs": [],
+      "applicability_conditions": {
+        "machine": {
+          "all": []
+        },
+        "descriptive": []
+      },
+      "formula_constraints": {
+        "all": [
+          {
+            "operator": "gt",
+            "variable": "vehicle_weight",
+            "value": 0,
+            "unit": "newton"
+          },
+          {
+            "operator": "gt",
+            "variable": "gravity",
+            "value": 0,
+            "unit": "meter_per_second_squared"
+          }
+        ]
+      },
+      "formula_family_id": "vehicle_mass_from_weight",
+      "model_type": "definition",
+      "known_limitations": [
+        "The formula is temporarily grouped under Acceleration Performance because that is its only v0.1 consumer."
+      ],
+      "notes": [
+        "This relation has cross-module reuse potential and should be re-evaluated when a second model group consumes it."
+      ]
+    },
+    {
+      "formula_id": "F007_engine_limited_acceleration",
+      "name": "Engine-limited longitudinal acceleration",
+      "description": "Calculates longitudinal acceleration from tractive force, road-load terms, vehicle mass, vehicle weight, and mass factor.",
+      "source_reference": [
+        {
+          "source_id": "S001_vehicle_dynamics_formulae",
+          "locator": "Ch 2 - Acceleration Performance",
+          "note": "M_f M a_x = F_x - D_A - R_x - W sin(theta) - R_hx"
+        }
+      ],
+      "status": "confirmed",
+      "expression": "a_x = \\frac{F_x-D_A-R_x-W\\sin\\theta-R_{hx}}{M_fM}",
+      "calculation_expression": "(tractive_force - aerodynamic_drag - rolling_resistance - vehicle_weight * sin(road_grade_angle) - hitch_force) / (mass_factor * vehicle_mass)",
+      "formula_type": "algebraic",
+      "computability": "direct",
+      "expression_unit_mode": "si_consistent",
+      "required_inputs": [
+        "tractive_force",
+        "aerodynamic_drag",
+        "rolling_resistance",
+        "vehicle_weight",
+        "road_grade_angle",
+        "hitch_force",
+        "mass_factor",
+        "vehicle_mass"
+      ],
+      "output": "longitudinal_acceleration",
+      "model_group": "acceleration_performance",
+      "model_name": "engine_limited_acceleration",
+      "path_role": "primary",
+      "priority": 10,
+      "model_assumptions": [
+        "Mass factor approximates rotating inertia.",
+        "Traction limit is not checked in v0.1.",
+        "Road-load terms may be supplied by user input or allowed assumptions."
+      ],
+      "allowed_assumption_inputs": [
+        "aerodynamic_drag",
+        "rolling_resistance",
+        "road_grade_angle",
+        "hitch_force"
+      ],
+      "applicability_conditions": {
+        "machine": {
+          "all": []
+        },
+        "descriptive": [
+          "The vehicle is evaluated at a specified operating point."
+        ]
+      },
+      "formula_constraints": {
+        "all": [
+          {
+            "operator": "gt",
+            "variable": "vehicle_mass",
+            "value": 0,
+            "unit": "kilogram"
+          },
+          {
+            "operator": "gt",
+            "variable": "mass_factor",
+            "value": 0,
+            "unit": "decimal"
+          }
+        ]
+      },
+      "formula_family_id": "engine_limited_acceleration",
+      "model_type": "force_balance",
+      "known_limitations": [
+        "No tire traction-limit check is included.",
+        "Speed-dependent road loads are not calculated in v0.1."
+      ],
+      "notes": [
+        "Vehicle weight and vehicle mass are separate inputs in this equation.",
+        "Default assumption values are stored only in variable metadata."
+      ]
+    },
+    {
+      "formula_id": "F008_ideal_power_acceleration_si",
+      "name": "Ideal constant-power longitudinal acceleration",
+      "description": "Calculates idealized longitudinal acceleration from engine power, vehicle speed, and vehicle mass using the SI-equivalent form of the course equation.",
+      "source_reference": [
+        {
+          "source_id": "S001_vehicle_dynamics_formulae",
+          "locator": "Ch 2 - Acceleration Performance",
+          "note": "a_x = 550(g/V)(HP/W)"
+        },
+        {
+          "source_id": "S002_fundamentals_vehicle_dynamics",
+          "locator": "Eq. 2.4",
+          "note": "HP is identified as engine horsepower."
+        },
+        {
+          "source_id": "S003_course_subtitles",
+          "locator": "16:52-19:06",
+          "note": "The instructor derives ideal engine acceleration directly from engine horsepower."
+        },
+        {
+          "source_id": "S003_course_subtitles",
+          "locator": "01:07:08-01:08:47",
+          "note": "The instructor plots from 10 mph, identifies the zero-speed singularity as absurd, and states that values above approximately 0.8 g are suspicious at low speed."
+        }
+      ],
+      "status": "confirmed",
+      "expression": "a_x = \\frac{P}{VM}",
+      "calculation_expression": "engine_power / (vehicle_speed * vehicle_mass)",
+      "formula_type": "algebraic",
+      "computability": "direct",
+      "expression_unit_mode": "si_consistent",
+      "required_inputs": [
+        "engine_power",
+        "vehicle_speed",
+        "vehicle_mass"
+      ],
+      "output": "longitudinal_acceleration",
+      "model_group": "acceleration_performance",
+      "model_name": "ideal_constant_power_acceleration",
+      "path_role": "primary",
+      "priority": 10,
+      "model_assumptions": [
+        "Engine power is treated as constant and fully available for ideal vehicle acceleration at the evaluated speed.",
+        "Power loss and tire traction limit are not checked.",
+        "This is an idealized comparison model."
+      ],
+      "allowed_assumption_inputs": [],
+      "applicability_conditions": {
+        "machine": {
+          "all": []
+        },
+        "descriptive": [
+          "Constant-power approximation is acceptable for comparison."
+        ]
+      },
+      "formula_constraints": {
+        "all": [
+          {
+            "operator": "gte",
+            "variable": "engine_power",
+            "value": 0,
+            "unit": "watt"
+          },
+          {
+            "operator": "gt",
+            "variable": "vehicle_speed",
+            "value": 0,
+            "unit": "meter_per_second"
+          },
+          {
+            "operator": "gt",
+            "variable": "vehicle_mass",
+            "value": 0,
+            "unit": "kilogram"
+          }
+        ]
+      },
+      "formula_family_id": "ideal_power_acceleration",
+      "model_type": "idealized_model",
+      "known_limitations": [
+        "The ideal constant-power model is singular as vehicle speed approaches zero.",
+        "The course plot begins at 10 mph.",
+        "Low-speed acceleration above approximately 0.8 standard gravity is identified by the instructor as suspicious.",
+        "The final warning or applicability rule is deferred to the Unit and Engineering Safety stage."
+      ],
+      "notes": [
+        "This formula is the SI-equivalent simplification of a_x = 550 g HP / (V W); the original source expression is retained in source_reference.",
+        "Course and textbook evidence confirm that the model uses engine horsepower directly.",
+        "The result is a different-model comparison and is not the recommended default Active model."
+      ]
+    }
+  ]
+}

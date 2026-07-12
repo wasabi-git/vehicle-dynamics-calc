@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0.0",
+  "data_version": "0.1.0",
+  "internal_unit_system": "SI",
+  "allow_automatic_algebraic_inversion": false,
+  "dependency_graph_source": "derive_from_formulas",
+  "max_reverse_formula_depth": 5,
+  "reverse_depth_counts": "formula_nodes_only",
+  "importance_order": [
+    "critical",
+    "high",
+    "medium",
+    "low"
+  ],
+  "path_roles": [
+    "primary",
+    "alternative",
+    "validation",
+    "reference"
+  ],
+  "range_semantics": {
+    "normal": "no_warning",
+    "warning": "warning_requires_attention",
+    "outside_warning_but_not_invalid": "extreme_warning_user_may_confirm",
+    "invalid": "block_dependent_branch"
+  },
+  "condition_semantics": {
+    "formula_constraints": "explicit_all",
+    "applicability_machine": "explicit_all_or_any",
+    "invalid_range": "explicit_any",
+    "valid_domain": "single_condition_or_explicit_all_or_any",
+    "bare_condition_arrays_allowed": false
+  },
+  "user_input_default_active": true,
+  "reference_paths_can_be_active": false
+}

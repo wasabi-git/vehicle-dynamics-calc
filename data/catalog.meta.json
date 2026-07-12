@@ -1,0 +1,126 @@
+{
+  "schema_version": "1.0.0",
+  "data_version": "0.1.0",
+  "catalog_id": "vehicle_dynamics_formula_system_v0_1",
+  "title": "Vehicle Dynamics Formula System v0.1",
+  "files": [
+    {
+      "role": "catalog",
+      "path": "data/catalog.meta.json",
+      "schema_path": "schemas/catalog.schema.json",
+      "required": true
+    },
+    {
+      "role": "variables",
+      "path": "data/variables.v0.1.json",
+      "schema_path": "schemas/variable.schema.json",
+      "required": true
+    },
+    {
+      "role": "formulas",
+      "path": "data/formulas.v0.1.json",
+      "schema_path": "schemas/formula.schema.json",
+      "required": true
+    },
+    {
+      "role": "models",
+      "path": "data/models.v0.1.json",
+      "schema_path": "schemas/model.schema.json",
+      "required": true
+    },
+    {
+      "role": "recommendations",
+      "path": "data/recommendations.v0.1.json",
+      "schema_path": "schemas/recommendation.schema.json",
+      "required": true
+    },
+    {
+      "role": "sources",
+      "path": "data/sources.v0.1.json",
+      "schema_path": "schemas/source.schema.json",
+      "required": true
+    },
+    {
+      "role": "units",
+      "path": "data/units.v0.1.json",
+      "schema_path": "schemas/unit.schema.json",
+      "required": true
+    },
+    {
+      "role": "engine_config",
+      "path": "data/engine-config.v0.1.json",
+      "schema_path": "schemas/engine-config.schema.json",
+      "required": true
+    },
+    {
+      "role": "schema_catalog",
+      "path": "schemas/catalog.schema.json",
+      "required": true
+    },
+    {
+      "role": "schema_condition",
+      "path": "schemas/condition.schema.json",
+      "required": true
+    },
+    {
+      "role": "schema_variable",
+      "path": "schemas/variable.schema.json",
+      "required": true
+    },
+    {
+      "role": "schema_formula",
+      "path": "schemas/formula.schema.json",
+      "required": true
+    },
+    {
+      "role": "schema_model",
+      "path": "schemas/model.schema.json",
+      "required": true
+    },
+    {
+      "role": "schema_recommendation",
+      "path": "schemas/recommendation.schema.json",
+      "required": true
+    },
+    {
+      "role": "schema_source",
+      "path": "schemas/source.schema.json",
+      "required": true
+    },
+    {
+      "role": "schema_unit",
+      "path": "schemas/unit.schema.json",
+      "required": true
+    },
+    {
+      "role": "schema_engine_config",
+      "path": "schemas/engine-config.schema.json",
+      "required": true
+    },
+    {
+      "role": "variables_documentation",
+      "path": "docs/generated/VARIABLES.generated.md",
+      "required": true
+    },
+    {
+      "role": "formulas_documentation",
+      "path": "docs/generated/FORMULAS.generated.md",
+      "required": true
+    },
+    {
+      "role": "models_documentation",
+      "path": "docs/generated/MODELS.generated.md",
+      "required": true
+    },
+    {
+      "role": "dependencies_documentation",
+      "path": "docs/generated/DEPENDENCIES.generated.md",
+      "required": true
+    },
+    {
+      "role": "validation_report",
+      "path": "validation/validation-report.v0.1.json",
+      "required": true
+    }
+  ]
+}

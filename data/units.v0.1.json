@@ -1,0 +1,317 @@
+{
+  "schema_version": "1.0.0",
+  "data_version": "0.1.0",
+  "units": [
+    {
+      "unit_id": "meter",
+      "display_symbol": "m",
+      "dimension": "length",
+      "canonical_si_unit": "meter",
+      "si_conversion": {
+        "type": "linear",
+        "scale": 1,
+        "offset": 0
+      },
+      "status": "confirmed"
+    },
+    {
+      "unit_id": "millimeter",
+      "display_symbol": "mm",
+      "dimension": "length",
+      "canonical_si_unit": "meter",
+      "si_conversion": {
+        "type": "linear",
+        "scale": 0.001,
+        "offset": 0
+      },
+      "status": "confirmed"
+    },
+    {
+      "unit_id": "inch",
+      "display_symbol": "in",
+      "dimension": "length",
+      "canonical_si_unit": "meter",
+      "si_conversion": {
+        "type": "linear",
+        "scale": 0.0254,
+        "offset": 0
+      },
+      "status": "confirmed"
+    },
+    {
+      "unit_id": "meter_per_second",
+      "display_symbol": "m/s",
+      "dimension": "speed",
+      "canonical_si_unit": "meter_per_second",
+      "si_conversion": {
+        "type": "linear",
+        "scale": 1,
+        "offset": 0
+      },
+      "status": "confirmed"
+    },
+    {
+      "unit_id": "mile_per_hour",
+      "display_symbol": "mph",
+      "dimension": "speed",
+      "canonical_si_unit": "meter_per_second",
+      "si_conversion": {
+        "type": "linear",
+        "scale": 0.44704,
+        "offset": 0
+      },
+      "status": "confirmed"
+    },
+    {
+      "unit_id": "kilometer_per_hour",
+      "display_symbol": "km/h",
+      "dimension": "speed",
+      "canonical_si_unit": "meter_per_second",
+      "si_conversion": {
+        "type": "linear",
+        "scale": 0.2777777777777778,
+        "offset": 0
+      },
+      "status": "confirmed"
+    },
+    {
+      "unit_id": "radian_per_second",
+      "display_symbol": "rad/s",
+      "dimension": "angular_speed",
+      "canonical_si_unit": "radian_per_second",
+      "si_conversion": {
+        "type": "linear",
+        "scale": 1,
+        "offset": 0
+      },
+      "status": "confirmed"
+    },
+    {
+      "unit_id": "revolution_per_minute",
+      "display_symbol": "rpm",
+      "dimension": "angular_speed",
+      "canonical_si_unit": "radian_per_second",
+      "si_conversion": {
+        "type": "linear",
+        "scale": 0.10471975511965977,
+        "offset": 0
+      },
+      "status": "confirmed"
+    },
+    {
+      "unit_id": "newton_meter",
+      "display_symbol": "N·m",
+      "dimension": "torque",
+      "canonical_si_unit": "newton_meter",
+      "si_conversion": {
+        "type": "linear",
+        "scale": 1,
+        "offset": 0
+      },
+      "status": "confirmed"
+    },
+    {
+      "unit_id": "foot_pound_force",
+      "display_symbol": "ft·lbf",
+      "dimension": "torque",
+      "canonical_si_unit": "newton_meter",
+      "si_conversion": {
+        "type": "linear",
+        "scale": 1.3558179483314003,
+        "offset": 0
+      },
+      "status": "confirmed"
+    },
+    {
+      "unit_id": "watt",
+      "display_symbol": "W",
+      "dimension": "power",
+      "canonical_si_unit": "watt",
+      "si_conversion": {
+        "type": "linear",
+        "scale": 1,
+        "offset": 0
+      },
+      "status": "confirmed"
+    },
+    {
+      "unit_id": "kilowatt",
+      "display_symbol": "kW",
+      "dimension": "power",
+      "canonical_si_unit": "watt",
+      "si_conversion": {
+        "type": "linear",
+        "scale": 1000,
+        "offset": 0
+      },
+      "status": "confirmed"
+    },
+    {
+      "unit_id": "horsepower_mechanical",
+      "display_symbol": "hp",
+      "dimension": "power",
+      "canonical_si_unit": "watt",
+      "si_conversion": {
+        "type": "linear",
+        "scale": 745.6998715822702,
+        "offset": 0
+      },
+      "status": "confirmed"
+    },
+    {
+      "unit_id": "newton",
+      "display_symbol": "N",
+      "dimension": "force",
+      "canonical_si_unit": "newton",
+      "si_conversion": {
+        "type": "linear",
+        "scale": 1,
+        "offset": 0
+      },
+      "status": "confirmed"
+    },
+    {
+      "unit_id": "kilonewton",
+      "display_symbol": "kN",
+      "dimension": "force",
+      "canonical_si_unit": "newton",
+      "si_conversion": {
+        "type": "linear",
+        "scale": 1000,
+        "offset": 0
+      },
+      "status": "confirmed"
+    },
+    {
+      "unit_id": "pound_force",
+      "display_symbol": "lbf",
+      "dimension": "force",
+      "canonical_si_unit": "newton",
+      "si_conversion": {
+        "type": "linear",
+        "scale": 4.4482216152605,
+        "offset": 0
+      },
+      "status": "confirmed"
+    },
+    {
+      "unit_id": "kilogram",
+      "display_symbol": "kg",
+      "dimension": "mass",
+      "canonical_si_unit": "kilogram",
+      "si_conversion": {
+        "type": "linear",
+        "scale": 1,
+        "offset": 0
+      },
+      "status": "confirmed"
+    },
+    {
+      "unit_id": "pound_mass",
+      "display_symbol": "lbm",
+      "dimension": "mass",
+      "canonical_si_unit": "kilogram",
+      "si_conversion": {
+        "type": "linear",
+        "scale": 0.45359237,
+        "offset": 0
+      },
+      "status": "confirmed"
+    },
+    {
+      "unit_id": "slug",
+      "display_symbol": "slug",
+      "dimension": "mass",
+      "canonical_si_unit": "kilogram",
+      "si_conversion": {
+        "type": "linear",
+        "scale": 14.59390293720636,
+        "offset": 0
+      },
+      "status": "confirmed"
+    },
+    {
+      "unit_id": "meter_per_second_squared",
+      "display_symbol": "m/s²",
+      "dimension": "acceleration",
+      "canonical_si_unit": "meter_per_second_squared",
+      "si_conversion": {
+        "type": "linear",
+        "scale": 1,
+        "offset": 0
+      },
+      "status": "confirmed"
+    },
+    {
+      "unit_id": "foot_per_second_squared",
+      "display_symbol": "ft/s²",
+      "dimension": "acceleration",
+      "canonical_si_unit": "meter_per_second_squared",
+      "si_conversion": {
+        "type": "linear",
+        "scale": 0.3048,
+        "offset": 0
+      },
+      "status": "confirmed"
+    },
+    {
+      "unit_id": "standard_gravity",
+      "display_symbol": "g",
+      "dimension": "acceleration",
+      "canonical_si_unit": "meter_per_second_squared",
+      "si_conversion": {
+        "type": "constant_reference",
+        "variable_id": "gravity"
+      },
+      "status": "confirmed"
+    },
+    {
+      "unit_id": "radian",
+      "display_symbol": "rad",
+      "dimension": "angle",
+      "canonical_si_unit": "radian",
+      "si_conversion": {
+        "type": "linear",
+        "scale": 1,
+        "offset": 0
+      },
+      "status": "confirmed"
+    },
+    {
+      "unit_id": "degree",
+      "display_symbol": "deg",
+      "dimension": "angle",
+      "canonical_si_unit": "radian",
+      "si_conversion": {
+        "type": "linear",
+        "scale": 0.017453292519943295,
+        "offset": 0
+      },
+      "status": "confirmed"
+    },
+    {
+      "unit_id": "decimal",
+      "display_symbol": "—",
+      "dimension": "dimensionless",
+      "canonical_si_unit": "decimal",
+      "si_conversion": {
+        "type": "linear",
+        "scale": 1,
+        "offset": 0
+      },
+      "status": "confirmed"
+    },
+    {
+      "unit_id": "percent",
+      "display_symbol": "%",
+      "dimension": "dimensionless",
+      "canonical_si_unit": "decimal",
+      "si_conversion": {
+        "type": "linear",
+        "scale": 0.01,
+        "offset": 0
+      },
+      "status": "confirmed"
+    }
+  ]
+}
