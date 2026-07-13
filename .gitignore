@@ -20,3 +20,9 @@ node_modules/
 .Rhistory
 .claude/
 __pycache__/
+
+# Course source materials — copyrighted problem statements, never commit
+validation/raw/
+
+# Private provenance records (transcriptions, attributions, review trails) — never commit
+validation/private/

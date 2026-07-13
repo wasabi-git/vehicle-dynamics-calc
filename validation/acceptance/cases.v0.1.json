@@ -1,0 +1,235 @@
+{
+  "suite": "vd-acceptance",
+  "version": "0.1",
+  "generated": "2026-07-13",
+  "source": "derived from instructor-verified coursework of a graduate vehicle-dynamics course; provenance records kept privately",
+  "tolerance_default": { "type": "relative", "value": 0.01 },
+  "semantics": {
+    "run": "each run is one independent solve; inputs = global pool plus run-specific additions; at most one user value per variable per pool",
+    "judging": "subset match — every listed expected value must hit within tolerance; additional derived values not listed do not fail the case",
+    "units": "ASCII notation; resolve against registered units of data/units.v0.1.json ('-' = dimensionless)"
+  },
+  "cases": [
+    {
+      "id": "A1",
+      "type": "numeric",
+      "global_inputs": [
+        { "variable_id": "section_width", "value": 235, "unit": "mm" },
+        { "variable_id": "aspect_ratio", "value": 45, "unit": "%" },
+        { "variable_id": "rim_diameter", "value": 18, "unit": "in" },
+        { "variable_id": "combined_gear_ratio", "value": 9, "unit": "-" },
+        { "variable_id": "drivetrain_efficiency", "value": 0.92, "unit": "-" },
+        { "variable_id": "vehicle_weight", "value": 3686, "unit": "lb" }
+      ],
+      "runs": [
+        {
+          "id": "a",
+          "inputs": [
+            { "variable_id": "engine_speed", "value": 15800, "unit": "RPM" },
+            { "variable_id": "engine_torque", "value": 34.54, "unit": "ft-lb" }
+          ],
+          "expected": [
+            { "variable_id": "wheel_radius", "value": 13.16, "unit": "in" },
+            { "variable_id": "vehicle_speed", "value": 137.5, "unit": "mph" },
+            { "variable_id": "engine_power", "value": 103.9, "unit": "HP" }
+          ]
+        },
+        {
+          "id": "b",
+          "inputs": [
+            { "variable_id": "engine_torque", "value": 310, "unit": "ft-lb" },
+            { "variable_id": "aerodynamic_drag", "value": 0, "unit": "lb" },
+            { "variable_id": "rolling_resistance", "value": 0, "unit": "lb" },
+            { "variable_id": "road_grade_angle", "value": 0, "unit": "rad" },
+            { "variable_id": "hitch_force", "value": 0, "unit": "lb" }
+          ],
+          "expected": [
+            { "variable_id": "tractive_force", "value": 2339.95, "unit": "lb" },
+            { "variable_id": "mass_factor", "value": 1.5625, "unit": "-" },
+            { "variable_id": "vehicle_mass", "value": 114.472, "unit": "slug" },
+            { "variable_id": "longitudinal_acceleration", "value": 13.08, "unit": "ft/s^2" }
+          ]
+        },
+        {
+          "id": "c1",
+          "inputs": [{ "variable_id": "engine_speed", "value": 4800, "unit": "RPM" }],
+          "expected": [{ "variable_id": "vehicle_speed", "value": 41.77, "unit": "mph" }]
+        },
+        {
+          "id": "c2",
+          "inputs": [{ "variable_id": "engine_speed", "value": 5800, "unit": "RPM" }],
+          "expected": [{ "variable_id": "vehicle_speed", "value": 50.47, "unit": "mph" }]
+        }
+      ]
+    },
+    {
+      "id": "A2",
+      "type": "numeric",
+      "runs": [
+        {
+          "id": "single",
+          "inputs": [
+            { "variable_id": "section_width", "value": 225, "unit": "mm" },
+            { "variable_id": "aspect_ratio", "value": 70, "unit": "%" },
+            { "variable_id": "rim_diameter", "value": 20, "unit": "in" },
+            { "variable_id": "vehicle_weight", "value": 14410, "unit": "lb" }
+          ],
+          "expected": [
+            { "variable_id": "wheel_radius", "value": 16.2, "unit": "in" },
+            { "variable_id": "vehicle_mass", "value": 447.52, "unit": "slug" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "A3",
+      "type": "numeric",
+      "runs": [
+        {
+          "id": "single",
+          "inputs": [
+            { "variable_id": "section_width", "value": 225, "unit": "mm" },
+            { "variable_id": "aspect_ratio", "value": 70, "unit": "%" },
+            { "variable_id": "rim_diameter", "value": 20, "unit": "in" },
+            { "variable_id": "engine_torque", "value": 590.963, "unit": "ft-lb" },
+            { "variable_id": "combined_gear_ratio", "value": 3.5136, "unit": "-" },
+            { "variable_id": "drivetrain_efficiency", "value": 0.9, "unit": "-" },
+            { "variable_id": "vehicle_weight", "value": 14410, "unit": "lb" },
+            { "variable_id": "aerodynamic_drag", "value": 309.51, "unit": "lb" },
+            { "variable_id": "rolling_resistance", "value": 187.33, "unit": "lb" },
+            { "variable_id": "road_grade_angle", "value": 0.049958, "unit": "rad", "note": "5% grade taken as atan(0.05)" },
+            { "variable_id": "hitch_force", "value": 0, "unit": "lb" }
+          ],
+          "expected": [
+            { "variable_id": "wheel_radius", "value": 16.2, "unit": "in" },
+            { "variable_id": "tractive_force", "value": 1384.429, "unit": "lb" },
+            { "variable_id": "mass_factor", "value": 1.17141, "unit": "-" },
+            { "variable_id": "vehicle_mass", "value": 447.516, "unit": "slug" },
+            { "variable_id": "longitudinal_acceleration", "value": 0.319, "unit": "ft/s^2" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "A4",
+      "type": "numeric",
+      "global_inputs": [
+        { "variable_id": "section_width", "value": 225, "unit": "mm" },
+        { "variable_id": "aspect_ratio", "value": 60, "unit": "%" },
+        { "variable_id": "rim_diameter", "value": 17, "unit": "in" },
+        { "variable_id": "engine_torque", "value": 177.1, "unit": "ft-lb" },
+        { "variable_id": "combined_gear_ratio", "value": 2.428, "unit": "-" },
+        { "variable_id": "drivetrain_efficiency", "value": 0.9, "unit": "-" },
+        { "variable_id": "vehicle_weight", "value": 3500, "unit": "lb" },
+        { "variable_id": "aerodynamic_drag", "value": 0, "unit": "lb" },
+        { "variable_id": "rolling_resistance", "value": 0, "unit": "lb" },
+        { "variable_id": "hitch_force", "value": 0, "unit": "lb" }
+      ],
+      "runs": [
+        {
+          "id": "1",
+          "inputs": [{ "variable_id": "road_grade_angle", "value": 0, "unit": "rad" }],
+          "expected": [
+            { "variable_id": "wheel_radius", "value": 13.82, "unit": "in" },
+            { "variable_id": "tractive_force", "value": 336.23, "unit": "lb" },
+            { "variable_id": "mass_factor", "value": 1.11, "unit": "-" },
+            { "variable_id": "vehicle_mass", "value": 108.7, "unit": "slug" },
+            { "variable_id": "longitudinal_acceleration", "value": 2.78, "unit": "ft/s^2" }
+          ]
+        },
+        {
+          "id": "2",
+          "inputs": [
+            { "variable_id": "road_grade_angle", "value": 0.1, "unit": "rad", "note": "10% grade taken as theta = 0.1 rad" }
+          ],
+          "expected": [
+            { "variable_id": "longitudinal_acceleration", "value": -0.109, "unit": "ft/s^2" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "A5",
+      "type": "behavior",
+      "runs": [
+        {
+          "id": "single",
+          "inputs": [
+            { "variable_id": "aerodynamic_drag", "value": 311.3, "unit": "lb" },
+            { "variable_id": "rolling_resistance", "value": 146.36, "unit": "lb" },
+            { "variable_id": "vehicle_weight", "value": 13000, "unit": "lb" },
+            { "variable_id": "road_grade_angle", "value": 0.05, "unit": "rad", "note": "5% grade, small-angle convention" }
+          ],
+          "queries": ["tractive_force", "longitudinal_acceleration"],
+          "expected_behavior": {
+            "outcome": "not_computable_in_pool",
+            "detail": "registered paths exist but inputs are unsatisfied; the a_x = 0 inverse of F007 is not registered",
+            "registered_paths": [
+              { "formula": "F004", "missing": ["engine_torque", "combined_gear_ratio", "drivetrain_efficiency"] },
+              { "formula": "F007", "missing": ["tractive_force", "mass_factor"] },
+              { "formula": "F008", "missing": ["engine_power", "vehicle_speed"] }
+            ],
+            "diagnostics_minimum": [
+              { "formula": "F004", "missing": ["engine_torque"] },
+              { "formula": "F007", "missing": ["tractive_force", "mass_factor"] }
+            ],
+            "notes": [
+              "reverse query must return candidate paths and their missing-input lists",
+              "subset semantics: listing additional missing inputs is not a failure"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "A6",
+      "type": "numeric",
+      "runs": [
+        {
+          "id": "single",
+          "inputs": [
+            { "variable_id": "engine_power", "value": 103.9, "unit": "HP" },
+            { "variable_id": "vehicle_speed", "value": 137.5, "unit": "mph" },
+            { "variable_id": "vehicle_mass", "value": 114.472, "unit": "slug" }
+          ],
+          "expected": [
+            { "variable_id": "longitudinal_acceleration", "value": 2.475, "unit": "ft/s^2" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "A7",
+      "type": "stored_not_judged",
+      "note": "low-speed F008 point; no expected value until the low-speed threshold policy (work branch 5) is enacted",
+      "runs": [
+        {
+          "id": "single",
+          "inputs": [
+            { "variable_id": "engine_power", "value": 103.9, "unit": "HP" },
+            { "variable_id": "vehicle_speed", "value": 5, "unit": "mph" },
+            { "variable_id": "vehicle_mass", "value": 114.472, "unit": "slug" }
+          ],
+          "queries": ["longitudinal_acceleration"],
+          "expected": []
+        }
+      ]
+    },
+    {
+      "id": "A8",
+      "type": "numeric",
+      "runs": [
+        {
+          "id": "single",
+          "inputs": [
+            { "variable_id": "engine_torque", "value": 310, "unit": "ft-lb" },
+            { "variable_id": "engine_speed", "value": 4800, "unit": "RPM" }
+          ],
+          "expected": [
+            { "variable_id": "engine_power", "value": 283.3, "unit": "HP" }
+          ]
+        }
+      ]
+    }
+  ]
+}
