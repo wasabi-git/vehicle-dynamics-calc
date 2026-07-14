@@ -167,7 +167,7 @@ The dependency graph is generated from each formula's `required_inputs` and `out
 
 ### Runtime provenance
 
-Static variable and formula metadata do not store runtime values. Future runtime result objects must preserve the actual source, dependencies, formula path, assumptions, model, active state, stale state, and warnings for each result instance.
+Static variable and formula metadata do not store runtime values. Runtime result objects preserve the actual source, dependencies, formula path, assumptions, model, active state, stale state, and warnings for each result instance (see [`engine/ENGINE.md`](engine/ENGINE.md)).
 
 ## Validation status
 

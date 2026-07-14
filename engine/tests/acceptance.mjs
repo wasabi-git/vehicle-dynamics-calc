@@ -11,9 +11,15 @@
  *                        queries, and diagnostics_minimum missing-input
  *                        subsets (listing more missing inputs is not a
  *                        failure);
- *   stored_not_judged (A7) — inputs are run and the queried value is stored
- *                        and reported without judgment, pending the
- *                        low-speed threshold policy (work branch 5).
+ *   stored_not_judged (A7) — "stored, not judged" means the result MUST be
+ *                        produced and stored, while its magnitude is not
+ *                        judged (low-speed threshold policy pending, work
+ *                        branch 5). The storage contract is enforced: a
+ *                        derived, finite, auditable result must exist for
+ *                        every query — for A7 specifically an F008-derived
+ *                        longitudinal_acceleration with active=false (R001:
+ *                        no auto-activation). A missing result fails the
+ *                        gate.
  *
  * Standalone:  node engine/tests/acceptance.mjs
  */
@@ -128,20 +134,48 @@ function judgeBehaviorRun(engine, run, label, items) {
   });
 }
 
-function recordStoredRun(engine, run, label, stored) {
+/**
+ * Enforce the stored-not-judged storage contract for one run. Exported for
+ * the gate's negative regression tests. Judged checks (no magnitude
+ * judgment anywhere):
+ *   - at least one derived result exists per query (missing -> FAIL);
+ *   - every stored result is finite and auditable (frozen result_id,
+ *     resolvable via getByResultId);
+ *   - A7 specifically: the stored result is F008-derived
+ *     longitudinal_acceleration and is not Active (per R001, the comparison
+ *     model never auto-activates).
+ */
+export function judgeStoredRun(engine, run, label, items) {
   for (const target of run.queries || []) {
-    const instances = engine.getResults(target).filter((r) => r.source === "derived");
-    if (instances.length === 0) {
-      stored.push(`${label}  ${target}: no derived value stored`);
+    const derived = engine.getResults(target).filter((r) => r.source === "derived");
+    const item = { label, target, pass: false, detail: null };
+    if (derived.length === 0) {
+      item.detail = "storage contract violated: no derived result was produced and stored";
+      items.push(item);
       continue;
     }
-    for (const instance of instances) {
-      stored.push(
-        `${label}  ${target} = ${instance.value_si.toFixed(5)} ${instance.internal_unit} ` +
-        `(${instance.formula_id}, active=${instance.active}) - stored, not judged ` +
-        `(low-speed threshold policy pending, work branch 5)`
-      );
+    const problems = [];
+    for (const instance of derived) {
+      if (!Number.isFinite(instance.value_si)) problems.push(`${instance.formula_id}: value not finite`);
+      if (typeof instance.result_id !== "string") problems.push(`${instance.formula_id}: no auditable result_id`);
+      else if (engine.getByResultId(instance.result_id) !== instance) problems.push(`${instance.formula_id}: not resolvable by result_id`);
     }
+    if (label.startsWith("A7")) {
+      const f008 = derived.find((r) => r.formula_id === "F008_ideal_power_acceleration_si");
+      if (!f008) {
+        problems.push("A7 contract: no F008-derived instance stored");
+      } else {
+        if (f008.variable_id !== "longitudinal_acceleration") problems.push("A7 contract: stored target is not longitudinal_acceleration");
+        if (f008.active !== false) problems.push("A7 contract: F008 result must not be Active without explicit selection (R001)");
+      }
+    }
+    item.pass = problems.length === 0;
+    item.detail = item.pass
+      ? derived
+          .map((r) => `${target} = ${r.value_si.toFixed(5)} ${r.internal_unit} (${r.formula_id}, active=${r.active}, ${r.result_id})`)
+          .join("; ") + " - stored and verified, magnitude not judged (low-speed threshold policy pending, work branch 5)"
+      : problems.join("; ");
+    items.push(item);
   }
 }
 
@@ -162,7 +196,7 @@ export async function runAcceptance() {
 
   const numericItems = [];
   const behaviorItems = [];
-  const stored = [];
+  const storedItems = [];
 
   for (const c of suite.cases) {
     for (const run of c.runs) {
@@ -173,17 +207,18 @@ export async function runAcceptance() {
         const item = { label, pass: false, note: `run setup failed: ${setupFailure}` };
         if (c.type === "numeric") numericItems.push({ ...item, variable_id: "-", unit: "-", expected: NaN, got: null, deviation: null });
         else if (c.type === "behavior") behaviorItems.push({ ...item, name: "setup", detail: setupFailure });
-        else stored.push(`${label}  setup failed: ${setupFailure}`);
+        else storedItems.push({ label, target: "-", pass: false, detail: `setup failed: ${setupFailure}` });
         continue;
       }
       if (c.type === "numeric") judgeNumericRun(engine, data, run, label, tolerance, numericItems);
       else if (c.type === "behavior") judgeBehaviorRun(engine, run, label, behaviorItems);
-      else if (c.type === "stored_not_judged") recordStoredRun(engine, run, label, stored);
+      else if (c.type === "stored_not_judged") judgeStoredRun(engine, run, label, storedItems);
     }
   }
 
   const numericFailed = numericItems.filter((i) => !i.pass).length;
   const behaviorFailed = behaviorItems.filter((i) => !i.pass).length;
+  const storedFailed = storedItems.filter((i) => !i.pass).length;
 
   const lines = [];
   const width = Math.max(
@@ -212,15 +247,19 @@ export async function runAcceptance() {
   }
   lines.push(`behavior: ${behaviorItems.length} judged, FAIL = ${behaviorFailed}`);
   lines.push("");
-  lines.push("--- stored, not judged (A7) ---");
-  for (const line of stored) lines.push(line);
+  lines.push("--- stored, not judged (A7): storage contract enforced, magnitude not judged ---");
+  for (const i of storedItems) {
+    lines.push(`${i.label}  storage contract: ${i.pass ? "PASS" : "FAIL"}`);
+    lines.push(`      ${i.detail}`);
+  }
+  lines.push(`stored: ${storedItems.length} contract-checked, FAIL = ${storedFailed}`);
 
   return {
     numeric: { items: numericItems, failed: numericFailed },
     behavior: { items: behaviorItems, failed: behaviorFailed },
-    stored,
+    stored: { items: storedItems, failed: storedFailed },
     lines,
-    failed: numericFailed + behaviorFailed,
+    failed: numericFailed + behaviorFailed + storedFailed,
   };
 }
 

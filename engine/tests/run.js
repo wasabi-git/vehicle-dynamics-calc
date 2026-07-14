@@ -18,9 +18,11 @@ import * as resultTests from "./test_result.mjs";
 import * as deriveTests from "./test_derive.mjs";
 import * as staleTests from "./test_stale.mjs";
 import * as reverseTests from "./test_reverse.mjs";
+import * as gateTests from "./test_gate.mjs";
 import { runAcceptance } from "./acceptance.mjs";
+import { parseCrossCheckOutput, reconcile } from "./reconcile.mjs";
 
-const MODULES = [loaderTests, unitTests, resultTests, deriveTests, staleTests, reverseTests];
+const MODULES = [loaderTests, unitTests, resultTests, deriveTests, staleTests, reverseTests, gateTests];
 
 for (const mod of MODULES) {
   await mod.run();
@@ -50,12 +52,9 @@ function runPython(scriptArgs) {
 }
 
 // ---- reconciliation: engine numeric scan <-> cross_check.py (24 <-> 23) ----
-// cross_check prints short names / ASCII variants; map back to case tokens.
-const CC_NAME_MAP = { long_accel: "longitudinal_acceleration" };
-const CC_UNIT_MAP = { "ft/s2": "ft/s^2" };
-const CC_LINE = /^(\S+)\s+(\S+)\s+\[([^\]]+)\]\s+got=\s*(-?[\d.]+)\s+exp=\s*(-?[\d.]+)\s+dev=\s*([\d.]+)%\s+(PASS|FAIL)\s*$/;
-
-console.log("\nreconciliation with cross_check.py (item by item)");
+// Strictly enforced by reconcile.mjs: exactly 23 parsed and matched, exactly
+// one cases-only extra (A3 wheel_radius [in]), tags AND got values compared.
+console.log("\nreconciliation with cross_check.py (item by item, strictly enforced)");
 let reconciliationFailed = false;
 const cc = runPython([join(REPO_ROOT, "validation", "tools", "cross_check.py")]);
 if (cc === null) {
@@ -66,62 +65,11 @@ if (cc === null) {
     console.log(`  FAIL: cross_check.py exited ${cc.status}`);
     reconciliationFailed = true;
   }
-  const ccItems = [];
-  for (const line of (cc.stdout || "").split(/\r?\n/)) {
-    const match = CC_LINE.exec(line.trim());
-    if (match) {
-      ccItems.push({
-        label: match[1],
-        variable_id: CC_NAME_MAP[match[2]] ?? match[2],
-        unit: CC_UNIT_MAP[match[3]] ?? match[3],
-        got: Number(match[4]),
-        expected: Number(match[5]),
-        tag: match[7],
-      });
-    }
-  }
-  const engineItems = [...acceptance.numeric.items];
-  const matchedEngineItems = new Set();
-  for (const ccItem of ccItems) {
-    const engineItem = engineItems.find(
-      (i) =>
-        !matchedEngineItems.has(i) &&
-        i.label === ccItem.label &&
-        i.variable_id === ccItem.variable_id &&
-        i.unit === ccItem.unit &&
-        // cross_check prints exp with 4 decimals; match at print precision.
-        Math.abs(i.expected - ccItem.expected) <= 1e-4 * Math.max(1, Math.abs(ccItem.expected))
-    );
-    if (!engineItem) {
-      console.log(`  FAIL  ${ccItem.label} ${ccItem.variable_id} [${ccItem.unit}]: no engine counterpart`);
-      reconciliationFailed = true;
-      continue;
-    }
-    matchedEngineItems.add(engineItem);
-    const engineTag = engineItem.pass ? "PASS" : "FAIL";
-    const agree = engineTag === ccItem.tag;
-    if (!agree) reconciliationFailed = true;
-    const head = `${ccItem.label}  ${ccItem.variable_id} [${ccItem.unit}]`.padEnd(44);
-    console.log(
-      `  ${agree ? "ok  " : "FAIL"}  ${head} engine ${engineTag} (got ${engineItem.got.toFixed(5)})` +
-      ` <-> cross_check ${ccItem.tag} (got ${ccItem.got.toFixed(5)})  exp ${ccItem.expected}`
-    );
-  }
-  const casesOnly = engineItems.filter((i) => !matchedEngineItems.has(i));
-  for (const item of casesOnly) {
-    console.log(
-      `  note  ${item.label}  ${item.variable_id} [${item.unit}]  cases-only duplicate judgment ` +
-      `(engine ${item.pass ? "PASS" : "FAIL"}; not re-checked by cross_check.py)`
-    );
-    if (!item.pass) reconciliationFailed = true;
-  }
-  console.log(
-    `  reconciled ${ccItems.length} cross_check items against ${engineItems.length} engine judgments; ` +
-    `cases-only extras: ${casesOnly.length}`
-  );
-  if (ccItems.length === 0) {
-    console.log("  FAIL: no parsable cross_check output");
+  const result = reconcile(acceptance.numeric.items, parseCrossCheckOutput(cc.stdout));
+  for (const line of result.lines) console.log(`  ${line}`);
+  if (result.failed) {
     reconciliationFailed = true;
+    for (const failure of result.failures) console.log(`  ENFORCEMENT FAIL: ${failure}`);
   }
 }
 

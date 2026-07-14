@@ -117,3 +117,23 @@ A3 wheel_radius [in]  —  cases-only duplicate judgment（引擎 PASS；cross_c
 - A3 longitudinal_acceleration 引擎偏差 0.243%（脚本 0.240%）：来源同上（atan 精度 vs 题库截断输入），容差铁律未动。
 - A5 缺输入清单按子集语义判定：引擎对 F004 额外列出 wheel_radius 等真实缺失项，不构成失败。
 - 本章为第 4 支交付时的实测存档；后续里程碑如再追加实测，续写于本章之后，不改动既有内容。
+
+## 终验修正补充（第 4 支 M6 修正提交追加，2026-07-14；上一章内容未改动）
+
+终验评审指出两个验收跑器漏洞（对账未逐项强制、A7 无结果不失败），本补充记录修正后的闸门语义与实测：
+
+### 对账强制化（engine/tests/reconcile.mjs）
+
+一键闸门现强制断言，任一违反即整体失败：cross_check 解析项数必须恰为 23；匹配成功恰为 23；cases-only 恰为 1 项且必须是 A3 wheel_radius [in]（且引擎判定为 PASS）；每对匹配项 PASS/FAIL 标签一致；每对 got 数值一致（绝对容差 1e-5，按脚本 5 位小数打印精度定标）。唯一记录在案的 got 容差例外：A3 longitudinal_acceleration [ft/s^2]（≤5e-5）——脚本以全精度 atan(0.05) 求坡度角、题库输入为截断的 0.049958 rad，实测差约 1e-5。
+
+### A7 存储契约强制化（engine/tests/acceptance.mjs）
+
+「只存不判」的判定语义修正为：结果必须成功产生并保存，仅数值大小不判。契约校验：每个查询目标至少存在一个 Derived 结果（缺失即闸门失败）；结果有限且可审计（不可变 result_id、可经 getByResultId 回查）；A7 专项——保存目标为 longitudinal_acceleration、来源为 F008、active=false（R001 无显式选择不得激活）。存储契约失败计入闸门失败总数。
+
+### 负向回归（engine/tests/test_gate.mjs，11 项）
+
+已证明以下情形闸门必定失败：cross_check 少于 23 项；got 被篡改而标签仍 PASS；标签不一致；cases-only 不是 A3 wheel_radius [in] 或多于 1 项；非例外项超默认 got 容差；A7 未产生结果；A7 结果被激活。另验证例外容差仅吸收 A3 long_accel 的已记录精度差、解析器正确映射脚本短名与 ASCII 单位、闸门失败总数包含存储契约项。
+
+### 修正后实测（2026-07-14）
+
+机制测试 **94/94**（原 83 + 门禁加固 11）；数值 24/24；A5 行为 2/2；A7 存储契约 1/1 PASS（20.74878 m/s²，F008，active=false，r_000009 可审计）；对账强制行输出 `enforced: 23/23 parsed, 23/23 matched, cases-only 1/1`；validator 回归 PASS；末行 `one-shot gate: ALL GREEN`。README「Runtime provenance」一节同步改为现在时。
