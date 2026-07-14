@@ -285,9 +285,12 @@ export function createSolver(data, unitSystem, pool) {
           }
         } else {
           formulaStatus.set(formulaId, { state: "blocked", reasons: outcome.reasons, resultKey: null });
-          if (existing) {
+          const onlyWaitingOnStale = outcome.reasons.every((r) => r.code === "input_stale");
+          if (existing && !onlyWaitingOnStale) {
             // Inputs regressed (removed/blocked): the stored instance no
-            // longer has a valid derivation and leaves the pool.
+            // longer has a valid derivation and leaves the pool. A result
+            // blocked purely by stale inputs is retained (marked stale) and
+            // re-derives in a later pass once its inputs are fresh.
             pool.removeDerived(key);
             changed = true;
           }
@@ -396,24 +399,30 @@ export function createSolver(data, unitSystem, pool) {
   /**
    * Record an explicit user model selection for an output variable
    * (modelName null clears the selection). Re-runs Active selection.
+   * Trigger surface (M4): when the Active derived instance changes, the
+   * consumers of the previously Active instance are outdated — propagation
+   * seeds from that exact instance, never from the variable name.
    */
   function selectModel(output, modelName) {
-    if (modelName === null) {
-      modelSelections.delete(output);
-      applyActiveSelection();
-      return { ok: true, diagnostic: null };
+    if (modelName !== null) {
+      const producing = [...formulas.values()].some(
+        (f) => f.output === output && f.model_name === modelName
+      );
+      if (!producing) {
+        return {
+          ok: false,
+          diagnostic: { severity: "error", code: "model_not_registered_for_output", file: null, path: null, message: `No registered formula produces ${output} with model ${modelName}.` },
+        };
+      }
     }
-    const producing = [...formulas.values()].some(
-      (f) => f.output === output && f.model_name === modelName
-    );
-    if (!producing) {
-      return {
-        ok: false,
-        diagnostic: { severity: "error", code: "model_not_registered_for_output", file: null, path: null, message: `No registered formula produces ${output} with model ${modelName}.` },
-      };
-    }
-    modelSelections.set(output, modelName);
+    const previousActive = pool.bySource(output, "derived").find((r) => r.active) ?? null;
+    if (modelName === null) modelSelections.delete(output);
+    else modelSelections.set(output, modelName);
     applyActiveSelection();
+    const nowActive = pool.bySource(output, "derived").find((r) => r.active) ?? null;
+    if (previousActive && previousActive !== nowActive) {
+      pool.propagateStaleFrom([previousActive.result_id]);
+    }
     return { ok: true, diagnostic: null };
   }
 

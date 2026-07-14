@@ -11,9 +11,10 @@ import * as loaderTests from "./test_loader.mjs";
 import * as unitTests from "./test_units.mjs";
 import * as resultTests from "./test_result.mjs";
 import * as deriveTests from "./test_derive.mjs";
+import * as staleTests from "./test_stale.mjs";
 import { runAcceptance } from "./acceptance.mjs";
 
-const MODULES = [loaderTests, unitTests, resultTests, deriveTests];
+const MODULES = [loaderTests, unitTests, resultTests, deriveTests, staleTests];
 
 for (const mod of MODULES) {
   await mod.run();
@@ -25,15 +26,28 @@ const acceptance = await runAcceptance();
 for (const line of acceptance.lines) console.log(`  ${line}`);
 
 // Python-side regression: the validator must fail structurally, not crash,
-// on malformed catalogs. Skipped (loudly) only when no python is available.
+// on malformed catalogs. Interpreter fallback chain per review note:
+// python -> python3 -> py -3; if none is available the suite FAILS rather
+// than silently skipping the validator regression.
 console.log("\nvalidate_catalog.py regression (python)");
 let pythonRegressionFailed = false;
-const py = spawnSync("python", [join(REPO_ROOT, "tools", "test_validate_catalog.py")], {
-  cwd: REPO_ROOT,
-  encoding: "utf8",
-});
-if (py.error && py.error.code === "ENOENT") {
-  console.log("  SKIPPED: python not found on PATH — run tools/test_validate_catalog.py separately");
+const script = join(REPO_ROOT, "tools", "test_validate_catalog.py");
+const candidates = [
+  ["python", [script]],
+  ["python3", [script]],
+  ["py", ["-3", script]],
+];
+let py = null;
+for (const [command, args] of candidates) {
+  const attempt = spawnSync(command, args, { cwd: REPO_ROOT, encoding: "utf8" });
+  if (!(attempt.error && attempt.error.code === "ENOENT")) {
+    py = attempt;
+    break;
+  }
+}
+if (py === null) {
+  console.log("  FAIL: no python interpreter found (tried python, python3, py -3)");
+  pythonRegressionFailed = true;
 } else {
   process.stdout.write((py.stdout || "").split("\n").map((l) => (l ? `  ${l}` : l)).join("\n"));
   if (py.stderr) process.stderr.write(py.stderr);

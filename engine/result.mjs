@@ -121,18 +121,56 @@ export function createPool(data, unitSystem) {
   }
 
   /** Insert a result: mints an immutable result_id, bumps the slot revision,
-   *  and retires any instance previously occupying the slot. */
+   *  and retires any instance previously occupying the slot. result_id and
+   *  revision are frozen — active/stale stay mutable runtime state. */
   function put(result) {
     const map = bucket(result.variable_id);
     const previous = map.get(result.key);
     if (previous) retire(previous);
     resultSequence += 1;
-    result.result_id = `r_${String(resultSequence).padStart(6, "0")}`;
+    Object.defineProperty(result, "result_id", {
+      value: `r_${String(resultSequence).padStart(6, "0")}`,
+      writable: false,
+      enumerable: true,
+      configurable: false,
+    });
     const revision = (slotRevisions.get(result.key) ?? 0) + 1;
     slotRevisions.set(result.key, revision);
-    result.revision = revision;
+    Object.defineProperty(result, "revision", {
+      value: revision,
+      writable: false,
+      enumerable: true,
+      configurable: false,
+    });
     map.set(result.key, result);
     return result;
+  }
+
+  /**
+   * M4 stale propagation. Edges are strictly instance-level:
+   * a changed/removed/displaced result_id seeds the walk; every live derived
+   * result whose dependencies include a seed id goes stale, and its own
+   * result_id propagates further downstream. Never keyed by variable_id —
+   * results that consumed a different instance of the same variable are
+   * untouched. Retired ids are valid seeds (the consumers still reference
+   * them until re-derived). Returns the result_ids marked stale.
+   */
+  function propagateStaleFrom(seedResultIds) {
+    const queue = seedResultIds.filter((id) => typeof id === "string");
+    const staled = [];
+    while (queue.length > 0) {
+      const id = queue.shift();
+      for (const map of store.values()) {
+        for (const result of map.values()) {
+          if (result.source === "derived" && !result.stale && result.dependencies.includes(id)) {
+            result.stale = true;
+            staled.push(result.result_id);
+            queue.push(result.result_id);
+          }
+        }
+      }
+    }
+    return staled;
   }
 
   /** Resolve a result_id against live instances, then the retired history. */
@@ -245,6 +283,19 @@ export function createPool(data, unitSystem) {
     if (!si.ok) return { ok: false, result: null, diagnostic: si.diagnostic };
 
     const range = computeRangeStatus(variable, si.value, unitSystem);
+
+    // Trigger surface (M4): a new/changed user input outdates the consumers
+    // of the replaced input instance and of any instance that loses Active
+    // to it (displaced assumption or derived value).
+    const staleSeeds = [];
+    const previousInput = userInput(variableId);
+    if (previousInput) staleSeeds.push(previousInput.result_id);
+    for (const other of instances(variableId)) {
+      if (other !== previousInput && other.source !== "constant" && other.active) {
+        staleSeeds.push(other.result_id);
+      }
+    }
+
     const result = makeResult({
       variable_id: variableId,
       value_si: si.value,
@@ -265,17 +316,20 @@ export function createPool(data, unitSystem) {
     for (const other of instances(variableId)) {
       if (other.key !== result.key && other.source !== "constant") other.active = false;
     }
+    propagateStaleFrom(staleSeeds);
     return { ok: true, result, diagnostic: null };
   }
 
   /** Remove the user-input value of a variable (if present).
-   *  A previously displaced assumption stays suppressed and inactive. */
+   *  A previously displaced assumption stays suppressed and inactive; the
+   *  removed instance seeds stale propagation to its actual consumers. */
   function removeUserInput(variableId) {
     const existing = userInput(variableId);
     if (!existing) return false;
     retire(existing);
     bucket(variableId).delete(existing.key);
     refreshAssumptionActivity(variableId); // suppressed assumptions stay inactive
+    propagateStaleFrom([existing.result_id]);
     return true;
   }
 
@@ -295,6 +349,10 @@ export function createPool(data, unitSystem) {
       if (existing) {
         retire(existing);
         bucket(variableId).delete(existing.key);
+        // Trigger surface (M4): consumers of the removed assumption instance
+        // are outdated. Enabling later only offers new availability — nothing
+        // referenced the fresh instance yet, so no seeds on that side.
+        propagateStaleFrom([existing.result_id]);
       }
       return { ok: true, result: null, diagnostic: null };
     }
@@ -361,6 +419,7 @@ export function createPool(data, unitSystem) {
     assumptionInstance,
     active,
     getByResultId,
+    propagateStaleFrom,
     setUserInput,
     removeUserInput,
     setAssumptionEnabled,
