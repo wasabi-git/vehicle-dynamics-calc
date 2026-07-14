@@ -8,6 +8,7 @@
  *   engine.restoreAssumption(variableId)     // explicit restore after displacement
  *   engine.solve()
  *   engine.selectModel(outputVariableId, modelName | null)
+ *   engine.queryTarget(variableId)          // reverse query, no inversion
  *   engine.getResults(variableId?) / engine.getActive(variableId)
  *   engine.getByResultId(resultId)           // live or retired instance
  *   engine.getFormulaStatus(formulaId)
@@ -21,6 +22,7 @@ import { loadCatalog } from "./loader.mjs";
 import { createUnitSystem } from "./units.mjs";
 import { createPool } from "./result.mjs";
 import { createSolver } from "./derive.mjs";
+import { createReverseQuery } from "./reverse.mjs";
 
 export { loadCatalog } from "./loader.mjs";
 
@@ -28,6 +30,7 @@ export function createEngineFromData(data) {
   const unitSystem = createUnitSystem(data);
   const pool = createPool(data, unitSystem);
   const solver = createSolver(data, unitSystem, pool);
+  const reverse = createReverseQuery(data, pool, solver);
 
   return {
     data,
@@ -41,6 +44,7 @@ export function createEngineFromData(data) {
 
     solve: () => solver.solve(),
     selectModel: (output, modelName) => solver.selectModel(output, modelName),
+    queryTarget: (variableId) => reverse.queryTarget(variableId),
 
     getResults: (variableId) => (variableId === undefined ? pool.allInstances() : pool.instances(variableId)),
     getActive: (variableId) => pool.active(variableId),

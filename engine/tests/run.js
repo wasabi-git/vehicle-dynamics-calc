@@ -12,9 +12,10 @@ import * as unitTests from "./test_units.mjs";
 import * as resultTests from "./test_result.mjs";
 import * as deriveTests from "./test_derive.mjs";
 import * as staleTests from "./test_stale.mjs";
+import * as reverseTests from "./test_reverse.mjs";
 import { runAcceptance } from "./acceptance.mjs";
 
-const MODULES = [loaderTests, unitTests, resultTests, deriveTests, staleTests];
+const MODULES = [loaderTests, unitTests, resultTests, deriveTests, staleTests, reverseTests];
 
 for (const mod of MODULES) {
   await mod.run();
