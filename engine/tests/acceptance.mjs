@@ -1,14 +1,19 @@
 /**
- * acceptance.mjs — minimal acceptance runner (M3).
+ * acceptance.mjs — one-shot acceptance runner (M3 minimal scan, extended in
+ * M6 to the full suite semantics).
  *
- * Consumes validation/acceptance/cases.v0.1.json directly and judges every
- * forward numeric expected value:
- *   - each run is one independent solve (global inputs + run additions);
- *   - relative tolerance from tolerance_default (1%);
- *   - subset semantics: extra derived values never fail a case; an expected
- *     value passes when any pool instance of that variable hits tolerance.
- * Behavior case A5 (reverse-query assertions) and stored-not-judged case A7
- * are outside the numeric scan and are reported as not judged here.
+ * Consumes validation/acceptance/cases.v0.1.json directly:
+ *   numeric cases      — every expected value judged; each run is one
+ *                        independent solve (global inputs + run additions);
+ *                        relative tolerance from tolerance_default (1%);
+ *                        subset semantics (extra derived values never fail);
+ *   behavior case (A5) — two judged assertions: reachability outcomes of the
+ *                        queries, and diagnostics_minimum missing-input
+ *                        subsets (listing more missing inputs is not a
+ *                        failure);
+ *   stored_not_judged (A7) — inputs are run and the queried value is stored
+ *                        and reported without judgment, pending the
+ *                        low-speed threshold policy (work branch 5).
  *
  * Standalone:  node engine/tests/acceptance.mjs
  */
@@ -25,9 +30,124 @@ function runLabel(caseId, run) {
   return run.id === "single" ? caseId : `${caseId}-${run.id}`;
 }
 
+function applyInputs(engine, data, c, run) {
+  for (const input of [...(c.global_inputs || []), ...(run.inputs || [])]) {
+    const unitId = resolveUnitNotation(input.unit, data.units);
+    if (unitId === null) return `${input.variable_id}: unit token ${input.unit} unresolved`;
+    const r = engine.setUserInput(input.variable_id, input.value, unitId);
+    if (!r.ok) return `${input.variable_id}: ${r.diagnostic.message}`;
+  }
+  const solved = engine.solve();
+  if (!solved.ok) return solved.diagnostics.map((d) => d.message).join("; ");
+  return null;
+}
+
+function judgeNumericRun(engine, data, run, label, tolerance, items) {
+  for (const expected of run.expected || []) {
+    const item = {
+      label,
+      variable_id: expected.variable_id,
+      unit: expected.unit,
+      expected: expected.value,
+      got: null,
+      deviation: null,
+      pass: false,
+      note: null,
+    };
+    const unitId = resolveUnitNotation(expected.unit, data.units);
+    let best = null;
+    for (const instance of engine.getResults(expected.variable_id)) {
+      const display = engine.displayValue(instance, unitId);
+      if (!display.ok) continue;
+      const deviation = Math.abs(display.value - expected.value) / Math.abs(expected.value);
+      if (best === null || deviation < best.deviation) {
+        best = { got: display.value, deviation, source: instance.source, formula_id: instance.formula_id };
+      }
+    }
+    if (best === null) {
+      item.note = "no pool instance for this variable";
+    } else {
+      item.got = best.got;
+      item.deviation = best.deviation;
+      item.pass = best.deviation <= tolerance;
+      item.note = best.formula_id ?? best.source;
+    }
+    items.push(item);
+  }
+}
+
+function judgeBehaviorRun(engine, run, label, items) {
+  const expected = run.expected_behavior;
+  const queryResults = new Map();
+
+  // Judged item 1: reachability outcomes of every query.
+  const outcomeDetails = [];
+  let outcomesPass = true;
+  for (const target of run.queries || []) {
+    const q = engine.queryTarget(target);
+    queryResults.set(target, q);
+    const okOutcome = q.outcome === expected.outcome;
+    if (!okOutcome) outcomesPass = false;
+    outcomeDetails.push(`${target} -> ${q.outcome}${okOutcome ? "" : ` (expected ${expected.outcome})`}`);
+  }
+  items.push({
+    label,
+    name: "reachability outcomes",
+    pass: outcomesPass,
+    detail: outcomeDetails.join("; "),
+  });
+
+  // Judged item 2: diagnostics_minimum missing-input subsets.
+  const minDetails = [];
+  let minimumPass = true;
+  for (const entry of expected.diagnostics_minimum || []) {
+    let found = null;
+    for (const q of queryResults.values()) {
+      for (const c of q.candidate_paths) {
+        if (c.formula_id.startsWith(entry.formula)) found = c;
+      }
+    }
+    if (!found) {
+      minimumPass = false;
+      minDetails.push(`${entry.formula}: candidate path not returned`);
+      continue;
+    }
+    const missing = found.missing_inputs.map((m) => m.variable_id);
+    const absent = entry.missing.filter((v) => !missing.includes(v));
+    if (absent.length > 0) minimumPass = false;
+    minDetails.push(
+      `${entry.formula} missing >= [${entry.missing.join(", ")}]: ` +
+      (absent.length === 0 ? `ok (reported: ${missing.join(", ")})` : `NOT LISTED: ${absent.join(", ")}`)
+    );
+  }
+  items.push({
+    label,
+    name: "diagnostics_minimum subsets",
+    pass: minimumPass,
+    detail: minDetails.join(" | "),
+  });
+}
+
+function recordStoredRun(engine, run, label, stored) {
+  for (const target of run.queries || []) {
+    const instances = engine.getResults(target).filter((r) => r.source === "derived");
+    if (instances.length === 0) {
+      stored.push(`${label}  ${target}: no derived value stored`);
+      continue;
+    }
+    for (const instance of instances) {
+      stored.push(
+        `${label}  ${target} = ${instance.value_si.toFixed(5)} ${instance.internal_unit} ` +
+        `(${instance.formula_id}, active=${instance.active}) - stored, not judged ` +
+        `(low-speed threshold policy pending, work branch 5)`
+      );
+    }
+  }
+}
+
 /**
- * Execute the numeric acceptance scan.
- * Returns { items, passed, failed, notJudged, lines }.
+ * Execute the full acceptance scan.
+ * Returns { numeric, behavior, stored, lines, failed }.
  */
 export async function runAcceptance() {
   const loaded = await loadCatalog(repoReader());
@@ -40,84 +160,41 @@ export async function runAcceptance() {
   );
   const tolerance = suite.tolerance_default.value;
 
-  const items = [];
-  const notJudged = [];
+  const numericItems = [];
+  const behaviorItems = [];
+  const stored = [];
 
   for (const c of suite.cases) {
-    if (c.type !== "numeric") {
-      notJudged.push(`${c.id} (${c.type})`);
-      continue;
-    }
     for (const run of c.runs) {
       const label = runLabel(c.id, run);
       const engine = createEngineFromData(data);
-
-      let inputFailure = null;
-      for (const input of [...(c.global_inputs || []), ...(run.inputs || [])]) {
-        const unitId = resolveUnitNotation(input.unit, data.units);
-        const r = unitId === null
-          ? { ok: false, diagnostic: { message: `unit token ${input.unit} unresolved` } }
-          : engine.setUserInput(input.variable_id, input.value, unitId);
-        if (!r.ok) {
-          inputFailure = `${input.variable_id}: ${r.diagnostic.message}`;
-          break;
-        }
+      const setupFailure = applyInputs(engine, data, c, run);
+      if (setupFailure !== null) {
+        const item = { label, pass: false, note: `run setup failed: ${setupFailure}` };
+        if (c.type === "numeric") numericItems.push({ ...item, variable_id: "-", unit: "-", expected: NaN, got: null, deviation: null });
+        else if (c.type === "behavior") behaviorItems.push({ ...item, name: "setup", detail: setupFailure });
+        else stored.push(`${label}  setup failed: ${setupFailure}`);
+        continue;
       }
-      if (inputFailure === null) {
-        const solved = engine.solve();
-        if (!solved.ok) inputFailure = solved.diagnostics.map((d) => d.message).join("; ");
-      }
-
-      for (const expected of run.expected || []) {
-        const item = {
-          label,
-          variable_id: expected.variable_id,
-          unit: expected.unit,
-          expected: expected.value,
-          got: null,
-          deviation: null,
-          pass: false,
-          note: null,
-        };
-        if (inputFailure !== null) {
-          item.note = `run setup failed: ${inputFailure}`;
-          items.push(item);
-          continue;
-        }
-        const unitId = resolveUnitNotation(expected.unit, data.units);
-        const instances = engine.getResults(expected.variable_id);
-        let best = null;
-        for (const instance of instances) {
-          const display = engine.displayValue(instance, unitId);
-          if (!display.ok) continue;
-          const deviation = Math.abs(display.value - expected.value) / Math.abs(expected.value);
-          if (best === null || deviation < best.deviation) {
-            best = { got: display.value, deviation, source: instance.source, formula_id: instance.formula_id };
-          }
-        }
-        if (best === null) {
-          item.note = "no pool instance for this variable";
-        } else {
-          item.got = best.got;
-          item.deviation = best.deviation;
-          item.pass = best.deviation <= tolerance;
-          item.note = best.formula_id ?? best.source;
-        }
-        items.push(item);
-      }
+      if (c.type === "numeric") judgeNumericRun(engine, data, run, label, tolerance, numericItems);
+      else if (c.type === "behavior") judgeBehaviorRun(engine, run, label, behaviorItems);
+      else if (c.type === "stored_not_judged") recordStoredRun(engine, run, label, stored);
     }
   }
 
-  const passed = items.filter((i) => i.pass).length;
-  const failed = items.length - passed;
+  const numericFailed = numericItems.filter((i) => !i.pass).length;
+  const behaviorFailed = behaviorItems.filter((i) => !i.pass).length;
 
-  const width = Math.max(...items.map((i) => (i.label + "  " + i.variable_id + " [" + i.unit + "]").length));
   const lines = [];
+  const width = Math.max(
+    ...numericItems.map((i) => (i.label + "  " + i.variable_id + " [" + i.unit + "]").length)
+  );
+  lines.push("--- numeric judgments ---");
   lines.push("=".repeat(width + 46));
-  for (const i of items) {
+  for (const i of numericItems) {
     const head = (i.label + "  " + i.variable_id + " [" + i.unit + "]").padEnd(width);
     if (i.got === null) {
-      lines.push(`${head}  ${("FAIL: " + i.note)}`);
+      lines.push(`${head}  FAIL: ${i.note}`);
     } else {
       const tag = i.pass ? "PASS" : "FAIL";
       lines.push(
@@ -126,10 +203,25 @@ export async function runAcceptance() {
     }
   }
   lines.push("=".repeat(width + 46));
-  lines.push(`not judged by the numeric scan: ${notJudged.join(", ")}`);
-  lines.push(`total ${items.length} numeric judgments, FAIL = ${failed}`);
+  lines.push(`numeric: ${numericItems.length} judged, FAIL = ${numericFailed}`);
+  lines.push("");
+  lines.push("--- behavior assertions (A5) ---");
+  for (const i of behaviorItems) {
+    lines.push(`${i.label}  ${i.name}: ${i.pass ? "PASS" : "FAIL"}`);
+    lines.push(`      ${i.detail}`);
+  }
+  lines.push(`behavior: ${behaviorItems.length} judged, FAIL = ${behaviorFailed}`);
+  lines.push("");
+  lines.push("--- stored, not judged (A7) ---");
+  for (const line of stored) lines.push(line);
 
-  return { items, passed, failed, notJudged, lines };
+  return {
+    numeric: { items: numericItems, failed: numericFailed },
+    behavior: { items: behaviorItems, failed: behaviorFailed },
+    stored,
+    lines,
+    failed: numericFailed + behaviorFailed,
+  };
 }
 
 const isMain = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);

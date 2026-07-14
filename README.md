@@ -2,7 +2,7 @@
 
 A metadata-driven vehicle-dynamics calculation system designed to derive every result supported by the currently available inputs, while preserving units, assumptions, model identity, source traceability, and derivation paths.
 
-> **Development status:** the project architecture and the v0.1 formula-data package are complete. The recursive inference engine and user interface have not yet been implemented on the current branch.
+> **Development status:** the project architecture, the v0.1 formula-data package, and the v0.1 core derivation engine (`engine/`, zero-dependency ES modules for Node and the browser) are complete. The user interface has not yet been implemented on the current branch.
 
 ## Project objective
 
@@ -111,10 +111,20 @@ docs/
 └─ Part_3_Formula_and_Variable_System.md
 
 validation/
-└─ validation-report.v0.1.json
+├─ validation-report.v0.1.json
+├─ acceptance/          (anonymized acceptance suite: cases.v0.1.json, TESTS.md)
+└─ tools/cross_check.py (reviewer-maintained independent cross-check)
 
 tools/
-└─ validate_catalog.py
+├─ validate_catalog.py
+└─ test_validate_catalog.py
+
+engine/
+├─ loader.mjs / units.mjs / conditions.mjs / result.mjs
+├─ expr.mjs / derive.mjs / reverse.mjs / index.mjs
+├─ ENGINE.md            (API and semantics, one page)
+├─ smoke.html           (browser ES Module smoke test)
+└─ tests/               (node engine/tests/run.js — one-shot gate)
 ```
 
 Generated Markdown is documentation only. It must not be edited and then used to overwrite the JSON catalogs.
@@ -229,8 +239,8 @@ The Phase 2 formula notes preserve cleaned formulas and future-module reference 
 1. Environment preparation                 Complete
 2. Product-rule confirmation               Complete
 3. Formula and variable system             Complete
-4. Core inference engine                   Next
-5. Units and engineering safety            Planned
+4. Core inference engine                   Complete
+5. Units and engineering safety            Next
 6. Interface and interaction               Planned
 7. Formula-module expansion                Planned
 8. System testing and validation           Planned
@@ -238,6 +248,18 @@ The Phase 2 formula notes preserve cleaned formulas and future-module reference 
 10. Promotion and portfolio packaging      Planned
 ```
 
+## Engine (v0.1)
+
+The core derivation engine lives in `engine/` — pure ES modules, zero dependencies, no build step. See [`engine/ENGINE.md`](engine/ENGINE.md) for the API and semantics.
+
+```bash
+node engine/tests/run.js        # one-shot gate: unit/mechanism tests,
+                                # acceptance scan, cross_check reconciliation,
+                                # python validator regression
+python -m http.server           # then open /engine/smoke.html for the
+                                # browser ES Module smoke test
+```
+
 ## Current repository behavior
 
-The previous prototype UI has been retired. The current main branch contains the validated data architecture and documentation foundation; it does not yet provide an executable browser calculator.
+The previous prototype UI has been retired. The current main branch contains the validated data architecture, the documentation foundation, and the v0.1 core derivation engine with its acceptance runner and browser smoke page; it does not yet provide an end-user browser calculator interface.

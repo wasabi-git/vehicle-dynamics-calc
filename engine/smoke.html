@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>VD engine browser smoke test</title>
+  <style>body{font-family:monospace;margin:2rem}pre{white-space:pre-wrap}</style>
+</head>
+<body>
+  <h1>VD engine — browser ES Module smoke test</h1>
+  <p>Serve the repository root statically (e.g. <code>python -m http.server</code>)
+     and open <code>/engine/smoke.html</code>. The page imports the engine as a
+     native ES module, loads the catalog through a fetch-based reader, solves a
+     basic scenario, and runs one reverse query.</p>
+  <pre id="log">loading…</pre>
+  <script type="module">
+    import { createEngine } from "./index.mjs";
+
+    const el = document.getElementById("log");
+    const log = [];
+    const print = (line) => { log.push(line); el.textContent = log.join("\n"); };
+
+    const ROOT = new URL("../", document.baseURI);
+    const readText = async (relPath) => {
+      const response = await fetch(new URL(relPath, ROOT));
+      if (!response.ok) throw new Error(`HTTP ${response.status} for ${relPath}`);
+      return response.text();
+    };
+
+    try {
+      const { ok, engine, diagnostics } = await createEngine(readText);
+      print(`catalog load via fetch reader: ok=${ok}, diagnostics=${diagnostics.length}`);
+      if (!ok) throw new Error("catalog failed to load");
+
+      engine.setUserInput("engine_torque", 310, "foot_pound_force");
+      engine.setUserInput("engine_speed", 4800, "revolution_per_minute");
+      const solved = engine.solve();
+      print(`solve: ok=${solved.ok}`);
+
+      const hp = engine
+        .getResults("engine_power")
+        .find((r) => r.formula_id === "F003_engine_power_from_torque_rpm");
+      const display = engine.displayValue(hp, "horsepower_mechanical");
+      print(`engine_power = ${display.value.toFixed(5)} hp (expected ~283.32064, source-native F003)`);
+      const powerOk = Math.abs(display.value - 283.32064) < 1e-3;
+
+      const query = engine.queryTarget("longitudinal_acceleration");
+      print(`reverse query longitudinal_acceleration: ${query.outcome}, ${query.candidate_paths.length} candidate paths`);
+      const queryOk = query.outcome === "not_computable_in_pool" && query.candidate_paths.length === 2;
+
+      print(powerOk && queryOk ? "SMOKE PASS" : "SMOKE FAIL");
+    } catch (error) {
+      print(`SMOKE FAIL: ${error.message}`);
+    }
+  </script>
+</body>
+</html>
