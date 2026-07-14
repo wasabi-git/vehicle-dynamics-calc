@@ -73,31 +73,43 @@ class CatalogData:
 
     @property
     def variables(self) -> list[dict[str, Any]]:
-        return self.variables_file["variables"]
+        return object_rows(self.variables_file, "variables")
 
     @property
     def formulas(self) -> list[dict[str, Any]]:
-        return self.formulas_file["formulas"]
+        return object_rows(self.formulas_file, "formulas")
 
     @property
     def model_groups(self) -> list[dict[str, Any]]:
-        return self.models_file["model_groups"]
+        return object_rows(self.models_file, "model_groups")
 
     @property
     def models(self) -> list[dict[str, Any]]:
-        return self.models_file["models"]
+        return object_rows(self.models_file, "models")
 
     @property
     def recommendations(self) -> list[dict[str, Any]]:
-        return self.recommendations_file["recommendations"]
+        return object_rows(self.recommendations_file, "recommendations")
 
     @property
     def sources(self) -> list[dict[str, Any]]:
-        return self.sources_file["sources"]
+        return object_rows(self.sources_file, "sources")
 
     @property
     def units(self) -> list[dict[str, Any]]:
-        return self.units_file["units"]
+        return object_rows(self.units_file, "units")
+
+
+def object_rows(document: Mapping[str, Any], key: str) -> list[dict[str, Any]]:
+    """Return the object entries under ``document[key]`` without crashing.
+
+    Non-list containers and non-object rows are skipped here; the JSON Schema
+    validation section reports them as errors.
+    """
+    value = document.get(key)
+    if not isinstance(value, list):
+        return []
+    return [row for row in value if isinstance(row, dict)]
 
 
 def parse_args() -> argparse.Namespace:
@@ -492,6 +504,9 @@ def validate_cross_file(data: CatalogData, output_path: Path) -> dict[str, Any]:
 
         for range_name in ("normal_range", "warning_range"):
             range_value = variable.get(range_name, {})
+            if not isinstance(range_value, dict):
+                errors.append(f"Variable {variable_id} {range_name} must be an object")
+                continue
             unit_id = str(range_value.get("unit", ""))
             unit = unit_index.get(unit_id)
             if unit is None:
@@ -545,6 +560,9 @@ def validate_cross_file(data: CatalogData, output_path: Path) -> dict[str, Any]:
             errors.append(f"Variable {variable_id} can_be_assumed but has no default_assumption")
         if "default_assumption" in variable:
             assumption = variable["default_assumption"]
+            if not isinstance(assumption, dict):
+                errors.append(f"Variable {variable_id} default_assumption must be an object")
+                continue
             unit_id = str(assumption.get("unit", ""))
             unit = unit_index.get(unit_id)
             if not can_assume:
@@ -582,7 +600,14 @@ def validate_cross_file(data: CatalogData, output_path: Path) -> dict[str, Any]:
         elif model.get("model_group") != model_group:
             errors.append(f"Formula {formula_id} model_name is registered under another group")
 
-        for reference in formula.get("source_reference", []):
+        source_references = formula.get("source_reference", [])
+        if not isinstance(source_references, list):
+            errors.append(f"Formula {formula_id} source_reference must be an array")
+            source_references = []
+        for reference in source_references:
+            if not isinstance(reference, dict):
+                errors.append(f"Formula {formula_id} has a non-object source reference")
+                continue
             source_id = str(reference.get("source_id", ""))
             if source_id not in source_index:
                 errors.append(f"Formula {formula_id} references unknown source {source_id}")
@@ -609,9 +634,18 @@ def validate_cross_file(data: CatalogData, output_path: Path) -> dict[str, Any]:
                 + ", ".join(unknown_expression_names)
             )
 
-        for condition in iter_conditions(
-            formula.get("applicability_conditions", {}).get("machine", {})
-        ):
+        applicability = formula.get("applicability_conditions", {})
+        if not isinstance(applicability, dict):
+            errors.append(f"Formula {formula_id} applicability_conditions must be an object")
+            applicability = {}
+        machine_conditions = applicability.get("machine", {})
+        if not isinstance(machine_conditions, dict):
+            errors.append(
+                f"Formula {formula_id} applicability machine conditions must be an explicit "
+                "all/any object (bare condition arrays are not permitted)"
+            )
+            machine_conditions = {}
+        for condition in iter_conditions(machine_conditions):
             condition_variable = condition.get("variable")
             if condition_variable is not None and str(condition_variable) not in required_set:
                 errors.append(
@@ -625,7 +659,15 @@ def validate_cross_file(data: CatalogData, output_path: Path) -> dict[str, Any]:
                     errors.append(f"Formula {formula_id} applicability condition unit mismatch")
 
         constraints = formula.get("formula_constraints", {})
-        if set(constraints.keys()) != {"all"}:
+        if not isinstance(constraints, dict):
+            # A bare condition array (or any non-object) used to crash the
+            # validator with an AttributeError; report it as a finding instead.
+            errors.append(
+                f"Formula {formula_id} formula_constraints must be an object with explicit all "
+                "(bare condition arrays are not permitted)"
+            )
+            constraints = {}
+        elif set(constraints.keys()) != {"all"}:
             errors.append(f"Formula {formula_id} formula_constraints must use explicit all only")
         for condition in iter_conditions(constraints):
             condition_variable = condition.get("variable")
@@ -675,7 +717,13 @@ def validate_cross_file(data: CatalogData, output_path: Path) -> dict[str, Any]:
         output = str(recommendation.get("output", ""))
         model_group = str(recommendation.get("model_group", ""))
         model_name = str(recommendation.get("recommended_model_name", ""))
-        formula_id = str(recommendation.get("applicability_reference", {}).get("formula_id", ""))
+        applicability_reference = recommendation.get("applicability_reference", {})
+        if not isinstance(applicability_reference, dict):
+            errors.append(
+                f"Recommendation {recommendation_id} applicability_reference must be an object"
+            )
+            applicability_reference = {}
+        formula_id = str(applicability_reference.get("formula_id", ""))
 
         if output not in variable_index:
             errors.append(f"Recommendation {recommendation_id} references unknown output {output}")
@@ -696,7 +744,16 @@ def validate_cross_file(data: CatalogData, output_path: Path) -> dict[str, Any]:
                 errors.append(f"Recommendation {recommendation_id} formula/model mismatch")
             if formula.get("model_group") != model_group:
                 errors.append(f"Recommendation {recommendation_id} formula/group mismatch")
-        alternatives = recommendation.get("fallback_behavior", {}).get("alternative_models", [])
+        fallback_behavior = recommendation.get("fallback_behavior", {})
+        if not isinstance(fallback_behavior, dict):
+            errors.append(f"Recommendation {recommendation_id} fallback_behavior must be an object")
+            fallback_behavior = {}
+        alternatives = fallback_behavior.get("alternative_models", [])
+        if not isinstance(alternatives, list):
+            errors.append(
+                f"Recommendation {recommendation_id} alternative_models must be an array"
+            )
+            alternatives = []
         for alternative in alternatives:
             if alternative not in model_index:
                 errors.append(
@@ -769,8 +826,8 @@ def validate_graph(data: CatalogData) -> dict[str, Any]:
     indegree: dict[str, int] = defaultdict(int)
     predecessors: dict[str, set[str]] = defaultdict(set)
 
-    variable_nodes = {f"var:{v['variable_id']}" for v in data.variables}
-    formula_nodes = {f"formula:{f['formula_id']}" for f in data.formulas}
+    variable_nodes = {f"var:{v['variable_id']}" for v in data.variables if isinstance(v.get("variable_id"), str)}
+    formula_nodes = {f"formula:{f['formula_id']}" for f in data.formulas if isinstance(f.get("formula_id"), str)}
     nodes = variable_nodes | formula_nodes
 
     def add_edge(source: str, target: str) -> None:
@@ -781,10 +838,19 @@ def validate_graph(data: CatalogData) -> dict[str, Any]:
             indegree.setdefault(source, indegree.get(source, 0))
 
     for formula in data.formulas:
-        formula_node = f"formula:{formula['formula_id']}"
-        for variable_id in formula.get("required_inputs", []):
+        formula_id = formula.get("formula_id")
+        output = formula.get("output")
+        if not isinstance(formula_id, str) or not isinstance(output, str):
+            errors.append("Formula record without usable formula_id/output excluded from graph")
+            continue
+        formula_node = f"formula:{formula_id}"
+        required_inputs = formula.get("required_inputs", [])
+        if not isinstance(required_inputs, list):
+            errors.append(f"Formula {formula_id} required_inputs must be an array")
+            required_inputs = []
+        for variable_id in required_inputs:
             add_edge(f"var:{variable_id}", formula_node)
-        add_edge(formula_node, f"var:{formula['output']}")
+        add_edge(formula_node, f"var:{output}")
 
     queue = deque(sorted(node for node in nodes if indegree.get(node, 0) == 0))
     topo_order: list[str] = []
