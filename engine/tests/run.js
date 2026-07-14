@@ -6,8 +6,9 @@
 import { summary } from "./harness.mjs";
 import * as loaderTests from "./test_loader.mjs";
 import * as unitTests from "./test_units.mjs";
+import * as resultTests from "./test_result.mjs";
 
-const MODULES = [loaderTests, unitTests];
+const MODULES = [loaderTests, unitTests, resultTests];
 
 for (const mod of MODULES) {
   await mod.run();
