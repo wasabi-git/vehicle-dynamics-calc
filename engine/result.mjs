@@ -1,5 +1,7 @@
 /**
- * result.mjs — runtime Result objects and the known-quantity pool (M2).
+ * result.mjs — runtime Result objects and the known-quantity pool (M2;
+ * instance identity and assumption-suppression semantics per the
+ * checkpoint-one review).
  *
  * Four sources coexist and never overwrite each other:
  *   user_input / derived / assumption / constant
@@ -7,6 +9,17 @@
  * Every Result carries the full field set; fields that do not apply are null
  * and collection fields are empty arrays — never empty strings, never
  * omitted. display_value / display_unit do not enter the core pool.
+ *
+ * Instance identity:
+ *   key       — logical slot (variable::source[::formula]), stable across
+ *               revisions; the pool indexes by it.
+ *   result_id — immutable per physical instance; a new value or source
+ *               revision in a slot mints a new result_id. dependencies of
+ *               derived results reference result_ids, so a stale result keeps
+ *               naming the exact input revisions it was computed from.
+ *   revision  — 1-based counter per slot, monotonically increasing.
+ * Replaced or removed instances are retired to a history index and stay
+ * resolvable by result_id for provenance audits.
  */
 
 import { computeRangeStatus } from "./conditions.mjs";
@@ -16,6 +29,8 @@ export const RESULT_SOURCES = Object.freeze(["user_input", "derived", "assumptio
 /** The complete, fixed Result field set (tested in M2). */
 export const RESULT_FIELDS = Object.freeze([
   "key",
+  "result_id",
+  "revision",
   "variable_id",
   "value_si",
   "internal_unit",
@@ -47,6 +62,8 @@ export function makeResult(fields) {
   const formulaId = fields.formula_id ?? null;
   return {
     key: instanceKey(fields.variable_id, fields.source, formulaId),
+    result_id: fields.result_id ?? null, // assigned by the pool on insertion
+    revision: fields.revision ?? null,   // assigned by the pool on insertion
     variable_id: fields.variable_id,
     value_si: fields.value_si,
     internal_unit: fields.internal_unit,
@@ -83,17 +100,49 @@ export function createPool(data, unitSystem) {
 
   /** variableId -> Map(instanceKey -> Result) */
   const store = new Map();
-  /** variableId -> boolean for assumable variables */
+  /** variableId -> boolean: does the user allow this default assumption at all */
   const assumptionEnabled = new Map();
+  /** variableId -> boolean: was the assumption displaced by a real source and
+   *  not yet explicitly restored (Part 2: no automatic restoration) */
+  const assumptionSuppressed = new Map();
+  /** retired instances by result_id, for provenance audits */
+  const retired = new Map();
+  /** slot key -> last issued revision (survives instance removal) */
+  const slotRevisions = new Map();
+  let resultSequence = 0;
+
+  function retire(result) {
+    if (result.result_id !== null) retired.set(result.result_id, result);
+  }
 
   function bucket(variableId) {
     if (!store.has(variableId)) store.set(variableId, new Map());
     return store.get(variableId);
   }
 
+  /** Insert a result: mints an immutable result_id, bumps the slot revision,
+   *  and retires any instance previously occupying the slot. */
   function put(result) {
-    bucket(result.variable_id).set(result.key, result);
+    const map = bucket(result.variable_id);
+    const previous = map.get(result.key);
+    if (previous) retire(previous);
+    resultSequence += 1;
+    result.result_id = `r_${String(resultSequence).padStart(6, "0")}`;
+    const revision = (slotRevisions.get(result.key) ?? 0) + 1;
+    slotRevisions.set(result.key, revision);
+    result.revision = revision;
+    map.set(result.key, result);
     return result;
+  }
+
+  /** Resolve a result_id against live instances, then the retired history. */
+  function getByResultId(resultId) {
+    for (const map of store.values()) {
+      for (const result of map.values()) {
+        if (result.result_id === resultId) return result;
+      }
+    }
+    return retired.get(resultId) ?? null;
   }
 
   function instances(variableId) {
@@ -123,10 +172,18 @@ export function createPool(data, unitSystem) {
     return instances(variableId).find((r) => r.active) ?? null;
   }
 
+  /**
+   * An assumption is Active only when the user allows it (enabled), it was
+   * never displaced by a real source — or was explicitly restored after
+   * displacement (not suppressed) — and no user input occupies the variable.
+   */
   function refreshAssumptionActivity(variableId) {
     const assumption = assumptionInstance(variableId);
     if (assumption) {
-      assumption.active = assumptionEnabled.get(variableId) === true && userInput(variableId) === null;
+      assumption.active =
+        assumptionEnabled.get(variableId) === true &&
+        assumptionSuppressed.get(variableId) !== true &&
+        userInput(variableId) === null;
     }
   }
 
@@ -146,6 +203,7 @@ export function createPool(data, unitSystem) {
     }
     if (variable.can_be_assumed === true) {
       assumptionEnabled.set(variableId, variable.default_assumption.enabled_by_default === true);
+      assumptionSuppressed.set(variableId, false);
       if (assumptionEnabled.get(variableId)) instantiateAssumption(variableId);
     }
   }
@@ -161,11 +219,12 @@ export function createPool(data, unitSystem) {
         value_si: si.value,
         internal_unit: variable.internal_unit,
         source: "assumption",
-        active: userInput(variableId) === null,
+        active: false,
         range_status: range.status,
         warnings: range.warnings,
       })
     );
+    refreshAssumptionActivity(variableId);
     return { ok: true, result, diagnostic: null };
   }
 
@@ -195,27 +254,35 @@ export function createPool(data, unitSystem) {
       range_status: range.status,
       warnings: range.warnings,
     });
-    put(result); // same key -> replaces the previous user input only
+    put(result); // same key -> retires and replaces the previous user input only
 
     // A user input takes Active away from assumption and derived instances of
-    // the same variable; those instances are retained for comparison.
+    // the same variable; those instances are retained for comparison. A
+    // displaced assumption becomes suppressed: deleting the user input later
+    // must NOT restore it automatically (Part 2) — only an explicit
+    // restoreAssumption / re-enable does.
+    if (variable.can_be_assumed === true) assumptionSuppressed.set(variableId, true);
     for (const other of instances(variableId)) {
       if (other.key !== result.key && other.source !== "constant") other.active = false;
     }
     return { ok: true, result, diagnostic: null };
   }
 
-  /** Remove the user-input value of a variable (if present). */
+  /** Remove the user-input value of a variable (if present).
+   *  A previously displaced assumption stays suppressed and inactive. */
   function removeUserInput(variableId) {
     const existing = userInput(variableId);
     if (!existing) return false;
+    retire(existing);
     bucket(variableId).delete(existing.key);
-    refreshAssumptionActivity(variableId);
+    refreshAssumptionActivity(variableId); // suppressed assumptions stay inactive
     return true;
   }
 
   // ---- assumptions ----------------------------------------------------------
-  /** Enable or disable a variable's registered default assumption. */
+  /** Enable or disable a variable's registered default assumption.
+   *  Both directions are explicit user actions on the assumption itself, so
+   *  enabling also clears any suppression left by an earlier displacement. */
   function setAssumptionEnabled(variableId, enabled) {
     const variable = variables.get(variableId);
     if (!variable) return failure("unknown_variable", `Unknown variable: ${JSON.stringify(variableId)}.`);
@@ -225,9 +292,13 @@ export function createPool(data, unitSystem) {
     assumptionEnabled.set(variableId, enabled === true);
     const existing = assumptionInstance(variableId);
     if (!enabled) {
-      if (existing) bucket(variableId).delete(existing.key);
+      if (existing) {
+        retire(existing);
+        bucket(variableId).delete(existing.key);
+      }
       return { ok: true, result: null, diagnostic: null };
     }
+    assumptionSuppressed.set(variableId, false);
     if (existing) {
       refreshAssumptionActivity(variableId);
       return { ok: true, result: existing, diagnostic: null };
@@ -235,8 +306,33 @@ export function createPool(data, unitSystem) {
     return instantiateAssumption(variableId);
   }
 
+  /**
+   * Explicitly restore an assumption that was suppressed when a real source
+   * displaced it. Only this (or a full re-enable) makes it Active again;
+   * removal of the displacing user input never does.
+   */
+  function restoreAssumption(variableId) {
+    const variable = variables.get(variableId);
+    if (!variable) return failure("unknown_variable", `Unknown variable: ${JSON.stringify(variableId)}.`);
+    if (variable.can_be_assumed !== true) {
+      return failure("assumption_not_permitted", `Variable ${variableId} has no registered assumption.`);
+    }
+    if (assumptionEnabled.get(variableId) !== true) {
+      return failure("assumption_disabled", `Assumption for ${variableId} is disabled; enable it instead of restoring.`);
+    }
+    assumptionSuppressed.set(variableId, false);
+    const existing = assumptionInstance(variableId);
+    if (!existing) return instantiateAssumption(variableId);
+    refreshAssumptionActivity(variableId);
+    return { ok: true, result: existing, diagnostic: null };
+  }
+
   function isAssumptionEnabled(variableId) {
     return assumptionEnabled.get(variableId) === true;
+  }
+
+  function isAssumptionSuppressed(variableId) {
+    return assumptionSuppressed.get(variableId) === true;
   }
 
   // ---- derived (used by the derivation core) ---------------------------------
@@ -249,6 +345,7 @@ export function createPool(data, unitSystem) {
   function removeDerived(key) {
     for (const map of store.values()) {
       if (map.has(key) && map.get(key).source === "derived") {
+        retire(map.get(key));
         map.delete(key);
         return true;
       }
@@ -263,10 +360,13 @@ export function createPool(data, unitSystem) {
     userInput,
     assumptionInstance,
     active,
+    getByResultId,
     setUserInput,
     removeUserInput,
     setAssumptionEnabled,
+    restoreAssumption,
     isAssumptionEnabled,
+    isAssumptionSuppressed,
     refreshAssumptionActivity,
     putDerived,
     removeDerived,

@@ -121,17 +121,75 @@ export async function run() {
     assertClose(inputs[0].value_si, 310 * 1.3558179483314003, 1e-12, "replacement value stored");
   });
 
-  await test("user input on an assumable variable retains the assumption for comparison", () => {
+  await test("displaced assumption stays suppressed after input removal; only explicit restore reactivates", () => {
     const pool = createPool(data, us);
     const input = pool.setUserInput("aerodynamic_drag", 100, "pound_force");
     assert(input.ok, "user input accepted");
     const assumption = pool.assumptionInstance("aerodynamic_drag");
-    assert(assumption, "assumption instance retained");
+    assert(assumption, "assumption instance retained for comparison");
     assertEqual(assumption.active, false, "assumption is no longer Active");
+    assertEqual(pool.isAssumptionSuppressed("aerodynamic_drag"), true, "displacement recorded as suppression");
     assertEqual(pool.active("aerodynamic_drag").source, "user_input", "user input is Active");
 
     pool.removeUserInput("aerodynamic_drag");
-    assertEqual(pool.assumptionInstance("aerodynamic_drag").active, true, "assumption reactivates after removal");
+    assertEqual(pool.active("aerodynamic_drag"), null, "no Active source after removal");
+    assertEqual(
+      pool.assumptionInstance("aerodynamic_drag").active,
+      false,
+      "Part 2: a displaced assumption is never restored automatically"
+    );
+    assertEqual(pool.isAssumptionSuppressed("aerodynamic_drag"), true, "suppression survives the removal");
+
+    const restored = pool.restoreAssumption("aerodynamic_drag");
+    assert(restored.ok, "explicit restore succeeds");
+    assertEqual(pool.assumptionInstance("aerodynamic_drag").active, true, "assumption Active again only after explicit restore");
+    assertEqual(pool.isAssumptionSuppressed("aerodynamic_drag"), false, "suppression cleared");
+  });
+
+  await test("re-enabling a disabled assumption clears suppression (explicit user action)", () => {
+    const pool = createPool(data, us);
+    pool.setUserInput("rolling_resistance", 50, "pound_force");
+    pool.removeUserInput("rolling_resistance");
+    assertEqual(pool.isAssumptionSuppressed("rolling_resistance"), true, "suppressed by displacement");
+    pool.setAssumptionEnabled("rolling_resistance", false);
+    assertEqual(pool.assumptionInstance("rolling_resistance"), null, "disabled instance leaves the pool");
+    pool.setAssumptionEnabled("rolling_resistance", true);
+    assertEqual(pool.isAssumptionSuppressed("rolling_resistance"), false, "re-enable clears suppression");
+    assertEqual(pool.assumptionInstance("rolling_resistance").active, true, "assumption Active after explicit re-enable");
+  });
+
+  await test("restoreAssumption rejects disabled or non-assumable variables", () => {
+    const pool = createPool(data, us);
+    pool.setAssumptionEnabled("hitch_force", false);
+    const disabled = pool.restoreAssumption("hitch_force");
+    assertEqual(disabled.ok, false, "disabled assumption cannot be restored");
+    assertEqual(disabled.diagnostic.code, "assumption_disabled", "diagnostic code");
+    const notAssumable = pool.restoreAssumption("vehicle_mass");
+    assertEqual(notAssumable.ok, false, "non-assumable variable rejected");
+    assertEqual(notAssumable.diagnostic.code, "assumption_not_permitted", "diagnostic code");
+  });
+
+  await test("result_id is immutable per instance; slot revisions increment", () => {
+    const pool = createPool(data, us);
+    const r1 = pool.setUserInput("engine_torque", 100, "foot_pound_force").result;
+    const firstId = r1.result_id;
+    assert(typeof firstId === "string" && firstId.length > 0, "result_id assigned on insertion");
+    assertEqual(r1.revision, 1, "first revision of the slot");
+
+    const r2 = pool.setUserInput("engine_torque", 310, "foot_pound_force").result;
+    assert(r2.result_id !== firstId, "replacement mints a new result_id");
+    assertEqual(r2.revision, 2, "revision increments in the same slot");
+    assertEqual(r2.key, r1.key, "logical slot key is unchanged");
+
+    const old = pool.getByResultId(firstId);
+    assert(old !== null, "retired instance stays resolvable by result_id");
+    assertClose(old.value_si, 100 * 1.3558179483314003, 1e-12, "retired instance keeps its own value");
+
+    pool.removeUserInput("engine_torque");
+    const r3 = pool.setUserInput("engine_torque", 200, "foot_pound_force").result;
+    assertEqual(r3.revision, 3, "slot revision counter survives removal");
+    const ids = new Set([firstId, r2.result_id, r3.result_id]);
+    assertEqual(ids.size, 3, "every physical revision has a distinct result_id");
   });
 
   await test("assumption toggle removes and restores the instance", () => {

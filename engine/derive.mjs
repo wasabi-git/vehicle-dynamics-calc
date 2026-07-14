@@ -196,12 +196,15 @@ export function createSolver(data, unitSystem, pool) {
     }
 
     // Provenance: actual instances used, transitive assumptions, formula path.
+    // dependencies reference immutable result_ids, so this result keeps
+    // naming the exact input revisions it was computed from even after a
+    // slot is overwritten by a newer revision.
     const dependencies = [];
     const assumptionsUsed = new Set();
     const formulaPath = [];
     for (const variableId of formula.required_inputs) {
       const instance = inputs.get(variableId);
-      dependencies.push(instance.key);
+      dependencies.push(instance.result_id);
       if (instance.source === "assumption") assumptionsUsed.add(variableId);
       for (const upstream of instance.assumptions_used) assumptionsUsed.add(upstream);
       for (const formulaId of instance.formula_path) {

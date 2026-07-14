@@ -128,8 +128,10 @@ export async function run() {
       assert(a7.formula_path.includes(upstream), `path includes ${upstream}`);
     }
     assert(!a7.formula_path.includes(F002) || a7.formula_path.indexOf(F002) < 0, "F002 not on the F007 path");
-    assert(a7.dependencies.includes(`tractive_force::derived::${F004}`), "dependency keys point at actual instances");
-    assert(a7.dependencies.includes("aerodynamic_drag::assumption"), "assumption dependency recorded");
+    const f004Instance = engine.getResults("tractive_force").find((r) => r.formula_id === F004);
+    assert(a7.dependencies.includes(f004Instance.result_id), "dependency ids point at actual instances");
+    const aeroAssumption = engine.getResults("aerodynamic_drag").find((r) => r.source === "assumption");
+    assert(a7.dependencies.includes(aeroAssumption.result_id), "assumption dependency recorded");
   });
 
   await test("source_native routing uses the course-native form, not naive SI substitution", () => {
@@ -159,7 +161,7 @@ export async function run() {
     const vs = engine.getResults("vehicle_speed").find((r) => r.formula_id === F002);
     const expected = (13 * 0.0254) * (4800 * 2 * Math.PI / 60) / 9;
     assertClose(vs.value_si, expected, 1e-12, "F002 consumed the user wheel_radius");
-    assert(vs.dependencies.includes("wheel_radius::user_input"), "dependency records the user instance");
+    assert(vs.dependencies.includes(user.result_id), "dependency records the exact user-input revision");
   });
 
   // ---- blocking semantics ----------------------------------------------------
@@ -312,6 +314,69 @@ export async function run() {
     const rec = engine.getRecommendationStates()[0];
     assertEqual(rec.mode, "user_input_active", "recommendation records state only");
     assertEqual(rec.recommended_available, true, "availability still tracked");
+  });
+
+  // ---- checkpoint-one corrections ---------------------------------------------
+  await test("no automatic resumption through a displaced assumption (Part 2)", () => {
+    const engine = createEngineFromData(data);
+    fillFullScenario(engine);
+    engine.solve();
+    const initial = engine.getResults(AX).find((r) => r.formula_id === F007);
+    assert(initial, "F007 computed with default assumptions");
+    assert(initial.assumptions_used.includes("road_grade_angle"), "grade assumption participates initially");
+
+    engine.setUserInput("road_grade_angle", 0.1, "radian");
+    engine.solve();
+    const withGrade = engine.getResults(AX).find((r) => r.formula_id === F007);
+    assert(withGrade, "F007 recomputed with the user grade");
+    assert(!withGrade.assumptions_used.includes("road_grade_angle"), "user value replaced the assumption");
+
+    engine.removeUserInput("road_grade_angle");
+    engine.solve();
+    assert(
+      !engine.getResults(AX).some((r) => r.formula_id === F007),
+      "dependent formula must not auto-resume through the suppressed assumption"
+    );
+    const status = engine.getFormulaStatus(F007);
+    assertEqual(status.state, "blocked", "F007 blocked after removal");
+    assertEqual(status.reasons[0].code, "missing_input", "blocked as missing, not silently assumed");
+    assertEqual(status.reasons[0].variable_id, "road_grade_angle", "the removed variable is the gap");
+    const assumption = engine.getResults("road_grade_angle").find((r) => r.source === "assumption");
+    assertEqual(assumption.active, false, "assumption stays inactive (suppressed)");
+
+    const restored = engine.restoreAssumption("road_grade_angle");
+    assert(restored.ok, "explicit restore accepted");
+    engine.solve();
+    const back = engine.getResults(AX).find((r) => r.formula_id === F007);
+    assert(back, "recalculation restores the path only after the explicit restore");
+    assert(back.assumptions_used.includes("road_grade_angle"), "assumption participates again");
+  });
+
+  await test("provenance survives input revision: retired chain keeps its exact input ids", () => {
+    const engine = createEngineFromData(data);
+    fillFullScenario(engine);
+    engine.solve();
+    const f004v1 = engine.getResults("tractive_force").find((r) => r.formula_id === F004);
+    const f007v1 = engine.getResults(AX).find((r) => r.formula_id === F007);
+    const oldF004Id = f004v1.result_id;
+    const oldF007Id = f007v1.result_id;
+    assert(f007v1.dependencies.includes(oldF004Id), "v1 references the v1 tractive-force instance");
+
+    engine.setUserInput("engine_torque", 400, "foot_pound_force");
+    engine.solve();
+    const f004v2 = engine.getResults("tractive_force").find((r) => r.formula_id === F004);
+    const f007v2 = engine.getResults(AX).find((r) => r.formula_id === F007);
+    assert(f004v2.result_id !== oldF004Id, "recomputation mints a new tractive-force instance");
+    assert(f007v2.result_id !== oldF007Id, "downstream recomputation mints a new instance");
+    assert(f007v2.dependencies.includes(f004v2.result_id), "new result references the new input revision");
+    assert(!f007v2.dependencies.includes(oldF004Id), "new result does not reference the old revision");
+
+    const retiredF007 = engine.getByResultId(oldF007Id);
+    assert(retiredF007 !== null, "retired result stays resolvable for audit");
+    assert(retiredF007.dependencies.includes(oldF004Id), "retired result still names the exact old input revision");
+    const retiredF004 = engine.getByResultId(oldF004Id);
+    assert(retiredF004 !== null, "retired dependency resolvable too");
+    assertClose(retiredF004.value_si / 4.4482216152605, 2339.94509, 1e-5, "retired dependency keeps its old value");
   });
 
   await test("reference-path results can never become Active", async () => {

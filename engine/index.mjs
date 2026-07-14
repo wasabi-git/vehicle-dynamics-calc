@@ -5,9 +5,11 @@
  *   engine.setUserInput(variableId, value, unitId)
  *   engine.removeUserInput(variableId)
  *   engine.setAssumptionEnabled(variableId, enabled)
+ *   engine.restoreAssumption(variableId)     // explicit restore after displacement
  *   engine.solve()
  *   engine.selectModel(outputVariableId, modelName | null)
  *   engine.getResults(variableId?) / engine.getActive(variableId)
+ *   engine.getByResultId(resultId)           // live or retired instance
  *   engine.getFormulaStatus(formulaId)
  *   engine.getRecommendationStates()
  *   engine.displayValue(result, unitId)      // layer-2 conversion, on demand
@@ -35,12 +37,14 @@ export function createEngineFromData(data) {
     setUserInput: (variableId, value, unitId) => pool.setUserInput(variableId, value, unitId),
     removeUserInput: (variableId) => pool.removeUserInput(variableId),
     setAssumptionEnabled: (variableId, enabled) => pool.setAssumptionEnabled(variableId, enabled),
+    restoreAssumption: (variableId) => pool.restoreAssumption(variableId),
 
     solve: () => solver.solve(),
     selectModel: (output, modelName) => solver.selectModel(output, modelName),
 
     getResults: (variableId) => (variableId === undefined ? pool.allInstances() : pool.instances(variableId)),
     getActive: (variableId) => pool.active(variableId),
+    getByResultId: (resultId) => pool.getByResultId(resultId),
     getFormulaStatus: (formulaId) => solver.getFormulaStatus(formulaId),
     getRecommendationStates: () => solver.getRecommendationStates(),
 
