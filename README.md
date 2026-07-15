@@ -241,11 +241,13 @@ The Phase 2 formula notes preserve cleaned formulas and future-module reference 
 4. Core inference engine                   Complete
 5. Units and engineering safety            Complete
 6. Interface and interaction               Next
-7. Formula-module expansion                Planned
+7. Formula-module expansion                Deferred to v0.2
 8. System testing and validation           Planned
 9. Release and documentation               Planned
 10. Promotion and portfolio packaging      Planned
 ```
+
+v0.1 redline: 2026-08-03. If the redline is missed, v0.1 development stops unconditionally and the current project state is archived as-is.
 
 Part 6 carries two deferred obligations registered in Part 5 (user-confirmed flow; upstream-abnormality rendering).
 
