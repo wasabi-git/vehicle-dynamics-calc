@@ -6065,7 +6065,7 @@ a_x = P / (V M)
 
 #### 2. 课程与教材核实结果
 
-课堂字幕中，老师从 `P = F_x V` 推导 ideal engine acceleration，并直接使用 engine horsepower 绘制恒功率加速度曲线；推导过程中没有引入传动效率，也没有区分发动机功率和轮端功率。教材 Eq. 2.4 同样明确标注 `HP = Engine horsepower`。
+课堂字幕中，从 `P = F_x V` 推导 ideal engine acceleration，并直接使用 engine horsepower 绘制恒功率加速度曲线；推导过程中没有引入传动效率，也没有区分发动机功率和轮端功率。教材 Eq. 2.4 同样明确标注 `HP = Engine horsepower`。
 
 因此，F008 使用 `engine_power` 不是项目自行创造的假定，而是课程和教材模型的原意。
 
@@ -6088,8 +6088,8 @@ model_type: idealized_model
 课堂字幕定位：
 
 ```text
-约 16:38–19:06：理想发动机加速度推导
-约 1:07:40–1:07:52：constant power at 328 horsepower 曲线
+理想发动机加速度推导（字幕定位入私档）
+constant power at 328 horsepower 曲线（字幕定位入私档）
 ```
 
 #### 4. 状态
@@ -6121,7 +6121,7 @@ vehicle_speed > 0
 
 #### 3. 课程锚点
 
-老师绘制理想加速度曲线时将下限设置为：
+课堂绘制理想加速度曲线时将下限设置为：
 
 ```text
 10 mph ≈ 4.4704 m/s
@@ -6129,7 +6129,7 @@ vehicle_speed > 0
 
 课堂说明包括：
 
-1. `1/V` 使零速结果趋于无穷，老师明确称其为 absurd；
+1. `1/V` 使零速结果趋于无穷，课堂讲解明确称其为 absurd；
 2. 真实车辆零速起步依赖离合器或液力变矩器打滑，理想恒功率模型不覆盖该阶段；
 3. 低速实际加速度受轮胎摩擦限制；
 4. 课堂提示低速下超过约 `0.8 standard_gravity` 的结果值得怀疑。
@@ -6137,8 +6137,8 @@ vehicle_speed > 0
 字幕定位：
 
 ```text
-约 1:07:08–1:08:03：绘图从 10 mph 开始并说明零速奇异性
-约 1:08:37–1:08:47：轮胎摩擦限制和约 0.8 g 警戒值
+绘图从 10 mph 开始并说明零速奇异性（字幕定位入私档）
+轮胎摩擦限制和约 0.8 g 警戒值（字幕定位入私档）
 ```
 
 #### 4. 当前处理结论
@@ -8576,13 +8576,13 @@ F008 的 `source_reference` 应同时包含：
   },
   {
     "source_id": "S003_course_subtitles",
-    "locator": "16:38-19:06",
-    "note": "The instructor derives ideal engine acceleration directly from engine horsepower."
+    "locator": "(reference kept privately)",
+    "note": "(engine-power derivation reference kept privately)"
   },
   {
     "source_id": "S003_course_subtitles",
-    "locator": "1:07:08-1:08:47",
-    "note": "The instructor plots from 10 mph, identifies the zero-speed singularity as absurd, and states that values above approximately 0.8 g are suspicious at low speed."
+    "locator": "(reference kept privately)",
+    "note": "(low-speed model behavior reference kept privately)"
   }
 ]
 ```
@@ -8660,21 +8660,18 @@ R001：
       "source_id": "S001_vehicle_dynamics_formulae",
       "title": "Vehicle Dynamics Formulae",
       "type": "formula_sheet",
-      "file_name": "Vehicle Dynamics Formulae.pdf",
       "status": "confirmed"
     },
     {
       "source_id": "S002_fundamentals_vehicle_dynamics",
       "title": "Fundamentals of Vehicle Dynamics, Revised Edition",
       "type": "textbook",
-      "file_name": "Fundamentals of Vehicle Dynamics, Revised Edition.pdf",
       "status": "confirmed"
     },
     {
       "source_id": "S003_course_subtitles",
       "title": "Vehicle Dynamics Course Subtitles",
       "type": "course_transcript",
-      "file_name": "字幕.txt",
       "status": "confirmed"
     }
   ]

@@ -508,13 +508,13 @@
         },
         {
           "source_id": "S003_course_subtitles",
-          "locator": "16:52-19:06",
-          "note": "The instructor derives ideal engine acceleration directly from engine horsepower."
+          "locator": "(reference kept privately)",
+          "note": "(engine-power derivation reference kept privately)"
         },
         {
           "source_id": "S003_course_subtitles",
-          "locator": "01:07:08-01:08:47",
-          "note": "The instructor plots from 10 mph, identifies the zero-speed singularity as absurd, and states that values above approximately 0.8 g are suspicious at low speed."
+          "locator": "(reference kept privately)",
+          "note": "(low-speed model behavior reference kept privately)"
         }
       ],
       "status": "confirmed",

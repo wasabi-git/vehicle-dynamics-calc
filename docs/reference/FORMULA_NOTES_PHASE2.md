@@ -10,7 +10,7 @@
 ---
 
 > Version: 3.0 | Phase 2 final
-> **原始公式来源**：Vehicle_Dynamics_Formulae.pdf（老师原版）+ 课堂字幕（争议处以字幕为准）
+> **原始公式来源**：课程公式表 PDF 原版+ 课堂字幕（争议处以字幕为准）
 > **b/c 定义（字幕确认）**：b = 前轴到质心；c = 质心到后轴
 > 旧版符号冲突、变量 ID 与公式 ID 曾记录于 `VARIABLES.md` 和 `FORMULAS.md`；这两份旧文件已被当前结构取代。现行定义以 `data/*.json` 为准。
 

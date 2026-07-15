@@ -1,7 +1,7 @@
 # Vehicle Dynamics Formula — Discrepancy Log
 
 > Version: 3.0 | Phase 2 final
-> 来源：Vehicle_Dynamics_Formulae.txt V1（行 1–303）vs V2（行 304–611），已用 PDF 原版和课堂字幕核实
+> 来源：公式表 TXT V1（行 1–303）vs V2（行 304–611），已用 PDF 原版和课堂字幕核实
 
 **Claude Code Phase 3 规则**：
 - `✅ RESOLVED`：可按标注的权威来源实现
@@ -72,10 +72,10 @@ $$\theta_p = \frac{1}{L}\frac{W}{g}a_x\left(\frac{1}{K_r}\frac{h}{L} + \frac{1}{
 
 ## D008 — b/c 符号定义错误 · ✅ RESOLVED（字幕确认，变量表已修正）
 
-课堂字幕明确（约 28 分 36 秒）：
+课堂字幕明确：
 > *"this distance between the front axle and the center of mass is called parameter **B**. And the one between the center of mass and the rear axle is called **C**."*
 
-老师在推导完轴荷后再次强调（约 37 分 53 秒）：
+课堂讲解在推导完轴荷后再次强调：
 > *"**B is the distance between the front axle and the center of mass**... When you do W_FS, C is gonna come into play. When you do W_RS, B is gonna come into play, **the front distance**."*
 
 正确定义：
@@ -146,7 +146,7 @@ $$K_{llt} = \frac{W_f}{C_{\alpha f}}\frac{2b\Delta F_{zf}^2}{C_{\alpha f}} - \fr
 
 ## D014 — Ch 3 · 制动助力公式 $K_{boost}$ 量纲 · ✅ RESOLVED（字幕课堂例子确认）
 
-老师课堂例子：100 lb 踏板力 → 1200 psi 主缸压力，因此每 1 lb 对应 12 psi。
+课堂例证：100 lb 踏板力 → 1200 psi 主缸压力，因此每 1 lb 对应 12 psi。
 
 **已确认定义（采用定义 B）**：
 
@@ -164,7 +164,7 @@ $$p_{mc}[\text{psi}] = K_{boost\_100}[\text{psi}] \times \frac{F_{pedal}[\text{l
 
 ## D015 — Ch 3 · 制动力公式"单轮 vs 整轴" · ✅ RESOLVED（字幕课堂明确）
 
-老师课堂明确：$F_{b,disk} = 2T_{disk}/r_w$ 中"2"代表**同轴左右两个车轮**，结果是**整轴制动力**。
+课堂讲解明确：$F_{b,disk} = 2T_{disk}/r_w$ 中"2"代表**同轴左右两个车轮**，结果是**整轴制动力**。
 
 - $T_{disk}$ = 单个车轮制动盘产生的扭矩（$N_{pad}$ 已处理单制动器内多摩擦片）
 - $F_{b,disk} = 2T_{disk}/r_w$ = 该车轴（左+右）合计盘式制动力

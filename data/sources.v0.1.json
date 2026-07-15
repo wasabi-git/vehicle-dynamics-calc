@@ -6,21 +6,18 @@
       "source_id": "S001_vehicle_dynamics_formulae",
       "title": "Vehicle Dynamics Formulae",
       "type": "formula_sheet",
-      "file_name": "Vehicle Dynamics Formulae.pdf",
       "status": "confirmed"
     },
     {
       "source_id": "S002_fundamentals_vehicle_dynamics",
       "title": "Fundamentals of Vehicle Dynamics, Revised Edition",
       "type": "textbook",
-      "file_name": "Fundamentals of Vehicle Dynamics, Revised Edition.pdf",
       "status": "confirmed"
     },
     {
       "source_id": "S003_course_subtitles",
       "title": "Vehicle Dynamics Course Subtitles",
       "type": "course_transcript",
-      "file_name": "字幕.txt",
       "status": "confirmed"
     }
   ]
