@@ -622,6 +622,36 @@ export async function loadCatalog(readText) {
       checkConditionUnits(machine, null, units, diags, paths.formulas, `${fPath}.applicability_conditions.machine`, variables, requiredSet);
     }
 
+    // risk_warnings: optional warn-when-satisfied entries. Each entry carries a
+    // single condition that must name a required-input variable; comparison and
+    // between operators need a registered, dimension-consistent unit, while
+    // finite/not_finite carry no unit. Mirrored by tools/validate_catalog.py.
+    if (formula.risk_warnings !== undefined) {
+      if (!Array.isArray(formula.risk_warnings)) {
+        diags.error("risk_warnings_not_array", paths.formulas, `${fPath}.risk_warnings`, `Formula ${formulaId} risk_warnings must be an array.`);
+      } else {
+        formula.risk_warnings.forEach((entry, index) => {
+          const ePath = `${fPath}.risk_warnings[${index}]`;
+          if (!isPlainObject(entry)) {
+            diags.error("risk_warning_not_object", paths.formulas, ePath, `Formula ${formulaId} risk_warnings entry must be an object.`);
+            return;
+          }
+          if (checkConditionObject(entry.condition, diags, paths.formulas, `${ePath}.condition`)) {
+            if (!isNonEmptyString(entry.condition.variable)) {
+              diags.error("condition_variable_missing", paths.formulas, `${ePath}.condition.variable`, `Formula ${formulaId} risk warning condition must name a required-input variable.`);
+            }
+            checkConditionUnits({ kind: "single", conditions: [entry.condition] }, null, units, diags, paths.formulas, `${ePath}.condition`, variables, requiredSet);
+          }
+          if (!isNonEmptyString(entry.code) || !/^[a-z][a-z0-9_]*$/.test(entry.code)) {
+            diags.error("risk_warning_code_invalid", paths.formulas, `${ePath}.code`, `Formula ${formulaId} risk warning code must match ^[a-z][a-z0-9_]*$.`);
+          }
+          if (!isNonEmptyString(entry.message)) {
+            diags.error("risk_warning_message_invalid", paths.formulas, `${ePath}.message`, `Formula ${formulaId} risk warning message must be a non-empty string.`);
+          }
+        });
+      }
+    }
+
     // expression_unit_mode routing metadata.
     if (formula.expression_unit_mode === "source_native") {
       const su = formula.substitution_units;

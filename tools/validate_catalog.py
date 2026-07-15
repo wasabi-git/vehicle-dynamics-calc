@@ -681,6 +681,62 @@ def validate_cross_file(data: CatalogData, output_path: Path) -> dict[str, Any]:
                 if variable is not None and unit is not None and unit.get("dimension") != variable.get("dimension"):
                     errors.append(f"Formula {formula_id} constraint unit mismatch for {condition_variable}")
 
+        # risk_warnings: mirror of the loader's cross checks. The structural
+        # layer (required keys, code pattern, message length, operator enums)
+        # is covered by formula.schema.json; here we enforce the cross-file
+        # rules — plain-object entries, condition.variable membership in
+        # required_inputs, and operator-classified unit rules (comparison and
+        # between need a registered, dimension-consistent unit; finite and
+        # not_finite carry no unit and are not unit-checked).
+        risk_warnings = formula.get("risk_warnings")
+        if risk_warnings is not None:
+            if not isinstance(risk_warnings, list):
+                errors.append(f"Formula {formula_id} risk_warnings must be an array")
+            else:
+                for entry_index, entry in enumerate(risk_warnings):
+                    if not isinstance(entry, dict):
+                        errors.append(
+                            f"Formula {formula_id} risk_warnings[{entry_index}] must be an object"
+                        )
+                        continue
+                    condition = entry.get("condition")
+                    if not isinstance(condition, dict):
+                        errors.append(
+                            f"Formula {formula_id} risk_warnings[{entry_index}] condition must be an object"
+                        )
+                        continue
+                    operator = condition.get("operator")
+                    condition_variable = condition.get("variable")
+                    if not isinstance(condition_variable, str) or not condition_variable:
+                        errors.append(
+                            f"Formula {formula_id} risk warning condition must name a required-input variable"
+                        )
+                    elif condition_variable not in required_set:
+                        errors.append(
+                            f"Formula {formula_id} risk warning condition references non-input {condition_variable}"
+                        )
+                    if operator in {"gt", "gte", "lt", "lte", "eq", "neq", "between"}:
+                        unit_id = condition.get("unit")
+                        unit = unit_index.get(str(unit_id)) if unit_id is not None else None
+                        if unit is None:
+                            errors.append(
+                                f"Formula {formula_id} risk warning condition uses unknown unit {unit_id}"
+                            )
+                        else:
+                            variable = (
+                                variable_index.get(condition_variable)
+                                if isinstance(condition_variable, str)
+                                else None
+                            )
+                            if variable is not None and unit.get("dimension") != variable.get("dimension"):
+                                errors.append(
+                                    f"Formula {formula_id} risk warning condition unit dimension mismatch for {condition_variable}"
+                                )
+                    elif operator not in {"finite", "not_finite"}:
+                        errors.append(
+                            f"Formula {formula_id} risk warning condition has unknown operator {operator}"
+                        )
+
         unit_mode = formula.get("expression_unit_mode")
         substitution_units = formula.get("substitution_units")
         native_output_unit = formula.get("native_output_unit")

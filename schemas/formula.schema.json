@@ -230,6 +230,40 @@
             },
             "additionalProperties": false
           },
+          "risk_warnings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "condition",
+                "code",
+                "message"
+              ],
+              "properties": {
+                "condition": {
+                  "allOf": [
+                    {
+                      "$ref": "condition.schema.json#/$defs/singleCondition"
+                    },
+                    {
+                      "required": [
+                        "variable"
+                      ]
+                    }
+                  ]
+                },
+                "code": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_]*$"
+                },
+                "message": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "additionalProperties": false
+            }
+          },
           "known_limitations": {
             "type": "array",
             "items": {

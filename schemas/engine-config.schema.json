@@ -102,6 +102,9 @@
         "valid_domain": {
           "const": "single_condition_or_explicit_all_or_any"
         },
+        "risk_warnings": {
+          "const": "single_condition_warn_when_satisfied"
+        },
         "bare_condition_arrays_allowed": {
           "const": false
         }

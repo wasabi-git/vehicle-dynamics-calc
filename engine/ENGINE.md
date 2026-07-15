@@ -46,6 +46,16 @@ Every Result carries the full fixed field set (`key`, `result_id`, `revision`, `
 - **Stale propagation (instance-level)**: edges are `result_id`-based only — a changed/removed/displaced instance seeds the walk; consumers of a *different* instance of the same variable are untouched. Triggers: input add/remove/change, assumption toggle, user input displacing derived/assumed values, Active-source/model-selection change. `solve()` re-derives on demand; retired ids stay auditable.
 - **Reverse query**: registered outputs only; per-candidate model identity and missing-input lists; recursion offers scheme A (direct input) and scheme B (further formulas) at every user-inputtable stop; depth limit from `max_reverse_formula_depth` (5) counting formula nodes only; cycles flagged, never re-entered.
 
+## Risk warnings (`risk_warnings`)
+
+Formulas may carry an optional `risk_warnings` array. Each entry is `{condition, code, message}` where `condition` is a **single** condition (per `condition.schema.json#/$defs/singleCondition`) that must name a variable from the formula's `required_inputs`; the registered semantics key is `condition_semantics.risk_warnings = "single_condition_warn_when_satisfied"` in the engine config.
+
+- **Warn-when-satisfied**: the condition describes a *risk zone*. After a formula derives successfully, each entry is evaluated against the resolved inputs; a satisfied condition appends `{code, message}` to the derived result's `warnings`. An unsatisfied condition adds nothing. Risk warnings never block a derivation by themselves.
+- **Deterministic mount order**: output range warnings come first, then risk warnings in catalog data order.
+- **Evaluation failure blocks**: a risk condition that cannot be evaluated (e.g. unresolvable unit) blocks the formula with structured reasons — the same shape as applicability/constraint evaluation failures. This path is unreachable behind the loader/validator pre-checks; reaching it means the catalog is inconsistent, and the engine prefers blocking over deriving with an unevaluated risk zone.
+- **Equivalence semantics**: `warnings` participate in the solver's `sameResult` comparison, so a fixed-point re-derivation that only differs in warnings is treated as a changed result (defensive; order is deterministic).
+- **Validation**: loader and `tools/validate_catalog.py` both enforce — array of plain objects; `condition.variable` present and within `required_inputs`; comparison/between conditions need a registered, dimension-consistent `unit`; finite/not_finite conditions carry no unit; `code` matches `^[a-z][a-z0-9_]*$`; `message` non-empty. Violations are structured diagnostics, never throws.
+
 ## Boundaries
 
 The engine adapts to `data/` and `schemas/` — never the reverse (gate G2). No new formulas, variables, units, or models; no algebraic inversion. The F008 low-speed threshold policy, plausibility-range calibration, and unit-misuse copy belong to work branch 5.

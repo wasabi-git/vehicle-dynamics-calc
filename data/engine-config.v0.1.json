@@ -29,6 +29,7 @@
     "applicability_machine": "explicit_all_or_any",
     "invalid_range": "explicit_any",
     "valid_domain": "single_condition_or_explicit_all_or_any",
+    "risk_warnings": "single_condition_warn_when_satisfied",
     "bare_condition_arrays_allowed": false
   },
   "user_input_default_active": true,

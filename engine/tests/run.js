@@ -19,10 +19,11 @@ import * as deriveTests from "./test_derive.mjs";
 import * as staleTests from "./test_stale.mjs";
 import * as reverseTests from "./test_reverse.mjs";
 import * as gateTests from "./test_gate.mjs";
+import * as riskWarningTests from "./test_risk_warnings.mjs";
 import { runAcceptance } from "./acceptance.mjs";
 import { parseCrossCheckOutput, reconcile } from "./reconcile.mjs";
 
-const MODULES = [loaderTests, unitTests, resultTests, deriveTests, staleTests, reverseTests, gateTests];
+const MODULES = [loaderTests, unitTests, resultTests, deriveTests, staleTests, reverseTests, gateTests, riskWarningTests];
 
 for (const mod of MODULES) {
   await mod.run();

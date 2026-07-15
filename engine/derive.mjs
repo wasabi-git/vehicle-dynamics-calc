@@ -216,6 +216,21 @@ export function createSolver(data, unitSystem, pool) {
     const outputVariable = variables.get(formula.output);
     const range = computeRangeStatus(outputVariable, valueSi, unitSystem);
 
+    // risk_warnings: warn-when-satisfied entries evaluated after a successful
+    // derivation. Deterministic order: output range warnings first, then risk
+    // warnings in catalog data order. A condition that cannot be evaluated is
+    // unreachable behind the loader/validator checks — reaching it means the
+    // catalog is inconsistent, so the formula blocks rather than derive with
+    // an unevaluated risk zone (same shape as applicability/constraints).
+    const warnings = [...range.warnings];
+    for (const entry of formula.risk_warnings ?? []) {
+      const evaluation = evaluateConditionExpression(entry.condition, valueOf, unitSystem);
+      if (!evaluation.ok) {
+        return { state: "blocked", reasons: evaluation.diagnostics.map((d) => reason(d.code, d.message)) };
+      }
+      if (evaluation.satisfied) warnings.push({ code: entry.code, message: entry.message });
+    }
+
     const result = makeResult({
       variable_id: formula.output,
       value_si: valueSi,
@@ -229,7 +244,7 @@ export function createSolver(data, unitSystem, pool) {
       active: false, // activation is decided per variable after the scan
       stale: false,
       range_status: range.status,
-      warnings: range.warnings,
+      warnings,
     });
     return { state: "computed", result };
   }
@@ -240,7 +255,13 @@ export function createSolver(data, unitSystem, pool) {
       a.range_status === b.range_status &&
       JSON.stringify(a.dependencies) === JSON.stringify(b.dependencies) &&
       JSON.stringify(a.assumptions_used) === JSON.stringify(b.assumptions_used) &&
-      JSON.stringify(a.formula_path) === JSON.stringify(b.formula_path)
+      JSON.stringify(a.formula_path) === JSON.stringify(b.formula_path) &&
+      // Defensive hardening: under the current invariants equal value_si,
+      // range_status, and dependencies already imply equal warnings (order is
+      // deterministic — range warnings first, risk warnings in data order),
+      // so this comparison is redundant today; it guards future warning
+      // sources that might vary independently of the fields above.
+      JSON.stringify(a.warnings) === JSON.stringify(b.warnings)
     );
   }
 
