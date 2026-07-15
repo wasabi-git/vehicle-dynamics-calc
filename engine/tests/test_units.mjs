@@ -109,15 +109,25 @@ export async function run() {
 
   // ---- layer 2: allowed_units enforcement ----
   await test("variable layer rejects registered but not-allowed units", () => {
-    // pound_mass is registered with the mass dimension, but vehicle_mass
-    // only allows kilogram and slug.
+    // Stage 5 calibration: pound_mass joined vehicle_mass.allowed_units, so
+    // the former rejection sample flips to success on both sides.
     const r = us.variableInputToSI("vehicle_mass", 3200, "pound_mass");
-    assertEqual(r.ok, false, "pound_mass must be rejected for vehicle_mass");
-    assertEqual(r.diagnostic.code, "unit_not_allowed_for_variable", "diagnostic code");
+    assert(r.ok, "pound_mass is allowed for vehicle_mass input");
+    assertClose(r.value, 3200 * 0.45359237, 1e-12, "3200 lbm in kg");
 
     const out = us.variableOutputFromSI("vehicle_mass", 1500, "pound_mass");
-    assertEqual(out.ok, false, "output side must also reject");
-    assertEqual(out.diagnostic.code, "unit_not_allowed_for_variable", "diagnostic code");
+    assert(out.ok, "output side accepts pound_mass");
+    assertClose(out.value, 1500 / 0.45359237, 1e-12, "1500 kg in lbm");
+
+    // percent is registered with the dimensionless dimension, but
+    // combined_gear_ratio only allows decimal.
+    const rejectedIn = us.variableInputToSI("combined_gear_ratio", 45, "percent");
+    assertEqual(rejectedIn.ok, false, "percent must be rejected for combined_gear_ratio");
+    assertEqual(rejectedIn.diagnostic.code, "unit_not_allowed_for_variable", "diagnostic code");
+
+    const rejectedOut = us.variableOutputFromSI("combined_gear_ratio", 9, "percent");
+    assertEqual(rejectedOut.ok, false, "output side must also reject");
+    assertEqual(rejectedOut.diagnostic.code, "unit_not_allowed_for_variable", "diagnostic code");
   });
 
   await test("variable layer rejects wrong-dimension and unknown units", () => {
@@ -136,9 +146,12 @@ export async function run() {
 
   // ---- layer 3: substitution conversions are not allowed_units-restricted ----
   await test("substitution layer accepts registered same-dimension units outside allowed_units", () => {
-    const r = us.substitutionFromSI("vehicle_mass", 1451.5, "pound_mass");
+    // Stage 5 calibration made pound_mass an allowed vehicle_mass unit, so the
+    // sample moves to combined_gear_ratio x percent to keep exercising the
+    // "registered but outside allowed_units" semantics of this layer.
+    const r = us.substitutionFromSI("combined_gear_ratio", 0.5, "percent");
     assert(r.ok, "substitution conversion must ignore allowed_units");
-    assertClose(r.value, 1451.5 / 0.45359237, 1e-12, "kg -> lbm magnitude");
+    assertClose(r.value, 50, 1e-12, "0.5 decimal as percent");
   });
 
   await test("substitution layer still enforces registration and dimension", () => {

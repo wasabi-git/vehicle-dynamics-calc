@@ -839,14 +839,12 @@ def validate_cross_file(data: CatalogData, output_path: Path) -> dict[str, Any]:
         elif not math.isclose(float(value), 9.80665, rel_tol=0.0, abs_tol=1e-12):
             errors.append("gravity.constant_value_si must be 9.80665 for v0.1")
 
-    # Project-stage warnings intentionally remain non-blocking.
-    warnings.append(
-        "Engineering reasonableness ranges are initial and require Stage 5 calibration."
-    )
+    # Permanent accepted v0.1 limitation (C005) — intentionally non-blocking.
     f005 = formula_index.get("F005_mass_factor_from_total_gear_ratio", {})
     if f005.get("formula_type") == "empirical":
         warnings.append(
-            "F005 is an empirical mass-factor approximation with no source error bound."
+            "F005 is an empirical mass-factor approximation with no source error bound "
+            "(accepted v0.1 limitation)."
         )
 
     return {

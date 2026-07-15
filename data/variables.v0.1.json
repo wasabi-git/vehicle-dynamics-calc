@@ -174,7 +174,7 @@
       "importance": "high",
       "normal_range": {
         "min": 9,
-        "max": 25,
+        "max": 22,
         "unit": "inch",
         "min_inclusive": true,
         "max_inclusive": true
@@ -281,7 +281,7 @@
       "display_role": "input_only",
       "importance": "high",
       "normal_range": {
-        "min": 2,
+        "min": 1.4,
         "max": 20,
         "unit": "decimal",
         "min_inclusive": true,
@@ -314,7 +314,7 @@
       "can_be_assumed": false,
       "is_constant": false,
       "notes": [
-        "The 2–20 normal range is retained as the initial course-oriented engineering range."
+        "The 1.4–20 normal range is the Stage 5 calibrated v0.1 engineering screening range."
       ]
     },
     {
@@ -387,7 +387,7 @@
       "importance": "high",
       "normal_range": {
         "min": 0,
-        "max": 1000,
+        "max": 1250,
         "unit": "foot_pound_force",
         "min_inclusive": true,
         "max_inclusive": true
@@ -607,14 +607,14 @@
       "importance": "medium",
       "normal_range": {
         "min": 1,
-        "max": 5,
+        "max": 3,
         "unit": "decimal",
         "min_inclusive": true,
         "max_inclusive": true
       },
       "warning_range": {
         "min": 1,
-        "max": 20,
+        "max": 10,
         "unit": "decimal",
         "min_inclusive": true,
         "max_inclusive": true
@@ -622,8 +622,8 @@
       "invalid_range": {
         "any": [
           {
-            "operator": "lte",
-            "value": 0,
+            "operator": "lt",
+            "value": 1,
             "unit": "decimal"
           }
         ]
@@ -660,7 +660,7 @@
       "importance": "high",
       "normal_range": {
         "min": 1000,
-        "max": 10000,
+        "max": 11000,
         "unit": "pound_force",
         "min_inclusive": true,
         "max_inclusive": true
@@ -759,12 +759,13 @@
       "default_unit": "kilogram",
       "allowed_units": [
         "kilogram",
-        "slug"
+        "slug",
+        "pound_mass"
       ],
       "display_role": "intermediate",
       "importance": "high",
       "normal_range": {
-        "min": 500,
+        "min": 450,
         "max": 5000,
         "unit": "kilogram",
         "min_inclusive": true,
@@ -931,15 +932,15 @@
       "display_role": "assumption",
       "importance": "medium",
       "normal_range": {
-        "min": -15,
-        "max": 15,
+        "min": -7,
+        "max": 7,
         "unit": "degree",
         "min_inclusive": true,
         "max_inclusive": true
       },
       "warning_range": {
-        "min": -45,
-        "max": 45,
+        "min": -20,
+        "max": 20,
         "unit": "degree",
         "min_inclusive": true,
         "max_inclusive": true

@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0.0",
   "data_version": "0.1.0",
-  "generated_at": "2026-07-15T03:13:30.672443+00:00",
+  "generated_at": "2026-07-15T03:16:51.549229+00:00",
   "validator": {
     "path": "tools/validate_catalog.py",
     "version": "1.0.0",
@@ -118,8 +118,7 @@
     ]
   },
   "warnings": [
-    "Engineering reasonableness ranges are initial and require Stage 5 calibration.",
-    "F005 is an empirical mass-factor approximation with no source error bound."
+    "F005 is an empirical mass-factor approximation with no source error bound (accepted v0.1 limitation)."
   ],
   "microfixes_absorbed": [
     "catalog.meta.json has an explicit versioned file-index structure.",

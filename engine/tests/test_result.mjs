@@ -230,7 +230,15 @@ export async function run() {
     assertEqual(unknown.ok, false, "unknown variable rejected");
     assertEqual(unknown.diagnostic.code, "unknown_variable", "diagnostic code");
 
-    const notAllowed = pool.setUserInput("vehicle_mass", 3200, "pound_mass");
+    // Stage 5 calibration: pound_mass is now allowed for vehicle_mass, so the
+    // former rejection sample flips to success; the layer-2 admission negative
+    // moves to combined_gear_ratio x percent.
+    const accepted = pool.setUserInput("vehicle_mass", 3200, "pound_mass");
+    assert(accepted.ok, "pound_mass user input accepted for vehicle_mass");
+    assertClose(accepted.result.value_si, 3200 * 0.45359237, 1e-12, "stored SI magnitude");
+    assertEqual(accepted.result.range_status, "normal", "1451.5 kg sits in the calibrated normal range");
+
+    const notAllowed = pool.setUserInput("combined_gear_ratio", 45, "percent");
     assertEqual(notAllowed.ok, false, "layer-2 unit admission enforced");
     assertEqual(notAllowed.diagnostic.code, "unit_not_allowed_for_variable", "diagnostic code");
   });
