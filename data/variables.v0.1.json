@@ -168,7 +168,8 @@
       "allowed_units": [
         "inch",
         "millimeter",
-        "meter"
+        "meter",
+        "foot"
       ],
       "display_role": "intermediate",
       "importance": "high",

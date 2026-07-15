@@ -56,7 +56,7 @@ The v0.1 catalog contains:
 - **3 model groups**
 - **8 physical models**
 - **1 cross-model recommendation record**
-- **26 registered units**
+- **27 registered units**
 
 The dependency graph is a directed acyclic graph with a current maximum formula depth of 3.
 
@@ -194,7 +194,7 @@ Model groups:            3
 Models:                  8
 Recommendations:         1
 Sources:                 3
-Units:                   26
+Units:                   27
 Dependency nodes:       28
 Dependency edges:       34
 Maximum formula depth:   3

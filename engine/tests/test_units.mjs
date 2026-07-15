@@ -80,6 +80,16 @@ export async function run() {
     assertClose(percent.value, 0.45, 1e-15, "45% as decimal");
   });
 
+  await test("foot converts directly through the base converter (D3 unit)", () => {
+    const m = us.convert(1, "foot", "meter");
+    assert(m.ok, "foot -> meter must convert");
+    assertClose(m.value, 0.3048, 1e-15, "1 ft in meters");
+
+    const inches = us.convert(1, "foot", "inch");
+    assert(inches.ok, "foot -> inch must convert");
+    assertClose(inches.value, 12, 1e-12, "1 ft = 12 in (0.3048 / 0.0254 exactly)");
+  });
+
   await test("cross-dimension conversion returns a structured diagnostic", () => {
     const r = us.convert(1, "meter", "kilogram");
     assertEqual(r.ok, false, "meter -> kilogram must fail");

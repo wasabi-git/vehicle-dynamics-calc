@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0.0",
   "data_version": "0.1.0",
-  "generated_at": "2026-07-15T03:16:51.549229+00:00",
+  "generated_at": "2026-07-15T03:18:31.584428+00:00",
   "validator": {
     "path": "tools/validate_catalog.py",
     "version": "1.0.0",
@@ -16,7 +16,7 @@
     "models": 8,
     "recommendations": 1,
     "sources": 3,
-    "units": 26,
+    "units": 27,
     "dependency_nodes": 28,
     "dependency_edges": 34,
     "maximum_formula_depth": 3

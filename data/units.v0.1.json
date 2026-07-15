@@ -39,6 +39,18 @@
       "status": "confirmed"
     },
     {
+      "unit_id": "foot",
+      "display_symbol": "ft",
+      "dimension": "length",
+      "canonical_si_unit": "meter",
+      "si_conversion": {
+        "type": "linear",
+        "scale": 0.3048,
+        "offset": 0
+      },
+      "status": "confirmed"
+    },
+    {
       "unit_id": "meter_per_second",
       "display_symbol": "m/s",
       "dimension": "speed",

@@ -22,7 +22,7 @@ export async function run() {
     assertEqual(result.data.models.size, 8, "model count");
     assertEqual(result.data.recommendations.size, 1, "recommendation count");
     assertEqual(result.data.sources.size, 3, "source count");
-    assertEqual(result.data.units.size, 26, "unit count");
+    assertEqual(result.data.units.size, 27, "unit count");
     assertEqual(result.data.engineConfig.allow_automatic_algebraic_inversion, false, "inversion stays disabled");
   });
 
