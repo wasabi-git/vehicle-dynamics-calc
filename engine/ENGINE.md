@@ -58,4 +58,4 @@ Formulas may carry an optional `risk_warnings` array. Each entry is `{condition,
 
 ## Boundaries
 
-The engine adapts to `data/` and `schemas/` — never the reverse (gate G2). No new formulas, variables, units, or models; no algebraic inversion. The F008 low-speed threshold policy, plausibility-range calibration, and unit-misuse copy belong to work branch 5.
+The engine adapts to `data/` and `schemas/` — never the reverse (gate G2). No new formulas, variables, units, or models; no algebraic inversion. The F008 low-speed policy is enacted (Stage 5): below 10 mph, F008 results carry the low_speed_ideal_model risk warning; V = 0 remains constraint-blocked. Plausibility-range calibration and unit-misuse copy belong to work branch 5.

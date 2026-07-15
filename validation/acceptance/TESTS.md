@@ -137,3 +137,12 @@ A3 wheel_radius [in]  —  cases-only duplicate judgment（引擎 PASS；cross_c
 ### 修正后实测（2026-07-14）
 
 机制测试 **94/94**（原 83 + 门禁加固 11）；数值 24/24；A5 行为 2/2；A7 存储契约 1/1 PASS（20.74878 m/s²，F008，active=false，r_000009 可审计）；对账强制行输出 `enforced: 23/23 parsed, 23/23 matched, cases-only 1/1`；validator 回归 PASS；末行 `one-shot gate: ALL GREEN`。README「Runtime provenance」一节同步改为现在时。
+
+## F008 低速政策启用与 A7 契约取代(第 5 支 C2 追加,2026-07-14;上文各章未改动)
+
+**自第 5 支 F008 政策启用提交起,旧验收语义总则第 5 条由本节取代:A7 继续不判断数值大小,但必须存储有限、可审计、inactive 的 F008 结果,且该 F008 实例自身必须包含 `low_speed_ideal_model`。**
+
+- 政策内容(方案 A):V = 0 由 F008 既有 formula_constraints 阻断(`constraint_unsatisfied`);0 < V < 10 mph 允许计算并在派生结果上挂载结构化风险警示 `low_speed_ideal_model`(warn-when-satisfied,`lt` 严格,10 mph 恰值不触发);V ≥ 10 mph 正常无该警示。
+- 数据落点:F008 新增 `risk_warnings` 条目(条件 `vehicle_speed < 10 mile_per_hour`);A7 的 `runs[0]` 新增 `required_warning_codes: ["low_speed_ideal_model"]`,类型保持 `stored_not_judged`,**不新增任何数值期望**。
+- 契约五条(engine/tests/acceptance.mjs 强制,任一违反即闸门失败):F008 派生结果存在;数值有限;result_id 可回查;active=false;该 F008 实例自身的 warnings 包含全部 required_warning_codes(禁止跨派生实例合并 warnings、禁止取第一个实例)。
+- cross_check.py 冻结未改,对 A7 新字段无感;reconcile 恒等式(23/23、cases-only 仅 A3 wheel_radius [in])原样成立,对账强制行 `enforced: 23/23` 即为见证。

@@ -569,13 +569,25 @@
           }
         ]
       },
+      "risk_warnings": [
+        {
+          "condition": {
+            "variable": "vehicle_speed",
+            "operator": "lt",
+            "value": 10,
+            "unit": "mile_per_hour"
+          },
+          "code": "low_speed_ideal_model",
+          "message": "Ideal constant-power model is high-risk below 10 mph: the zero-speed singularity can predict acceleration beyond physical tire limits."
+        }
+      ],
       "formula_family_id": "ideal_power_acceleration",
       "model_type": "idealized_model",
       "known_limitations": [
         "The ideal constant-power model is singular as vehicle speed approaches zero.",
         "The course plot begins at 10 mph.",
         "Low-speed acceleration above approximately 0.8 standard gravity is identified by the instructor as suspicious.",
-        "The final warning or applicability rule is deferred to the Unit and Engineering Safety stage."
+        "The Stage 5 low-speed policy is enacted: V = 0 is blocked by the formula constraint, and derivations below 10 mph carry the low_speed_ideal_model risk warning."
       ],
       "notes": [
         "This formula is the SI-equivalent simplification of a_x = 550 g HP / (V W); the original source expression is retained in source_reference.",

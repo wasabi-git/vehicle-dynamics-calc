@@ -13,12 +13,14 @@
  *                        failure);
  *   stored_not_judged (A7) — "stored, not judged" means the result MUST be
  *                        produced and stored, while its magnitude is not
- *                        judged (low-speed threshold policy pending, work
- *                        branch 5). The storage contract is enforced: a
- *                        derived, finite, auditable result must exist for
- *                        every query — for A7 specifically an F008-derived
- *                        longitudinal_acceleration with active=false (R001:
- *                        no auto-activation). A missing result fails the
+ *                        judged. The Stage 5 low-speed policy is enacted, so
+ *                        the storage contract is five clauses: a derived
+ *                        result exists per query; it is finite; auditable via
+ *                        its frozen result_id; for A7 specifically the F008
+ *                        instance has active=false (R001: no
+ *                        auto-activation); and that F008 instance itself
+ *                        carries every code in run.required_warning_codes
+ *                        (low_speed_ideal_model). Any violation fails the
  *                        gate.
  *
  * Standalone:  node engine/tests/acceptance.mjs
@@ -142,8 +144,10 @@ function judgeBehaviorRun(engine, run, label, items) {
  *   - every stored result is finite and auditable (frozen result_id,
  *     resolvable via getByResultId);
  *   - A7 specifically: the stored result is F008-derived
- *     longitudinal_acceleration and is not Active (per R001, the comparison
- *     model never auto-activates).
+ *     longitudinal_acceleration, is not Active (per R001, the comparison
+ *     model never auto-activates), and the F008 instance itself carries
+ *     every code in run.required_warning_codes — warnings are never merged
+ *     across derived instances and never read off "the first instance".
  */
 export function judgeStoredRun(engine, run, label, items) {
   for (const target of run.queries || []) {
@@ -167,13 +171,19 @@ export function judgeStoredRun(engine, run, label, items) {
       } else {
         if (f008.variable_id !== "longitudinal_acceleration") problems.push("A7 contract: stored target is not longitudinal_acceleration");
         if (f008.active !== false) problems.push("A7 contract: F008 result must not be Active without explicit selection (R001)");
+        const codes = new Set(f008.warnings.map((w) => w.code));
+        for (const required of run.required_warning_codes || []) {
+          if (!codes.has(required)) {
+            problems.push(`A7 contract: the F008 instance itself lacks required warning code ${required}`);
+          }
+        }
       }
     }
     item.pass = problems.length === 0;
     item.detail = item.pass
       ? derived
           .map((r) => `${target} = ${r.value_si.toFixed(5)} ${r.internal_unit} (${r.formula_id}, active=${r.active}, ${r.result_id})`)
-          .join("; ") + " - stored and verified, magnitude not judged (low-speed threshold policy pending, work branch 5)"
+          .join("; ") + " - stored and verified, magnitude not judged (low-speed policy enacted, Stage 5)"
       : problems.join("; ");
     items.push(item);
   }

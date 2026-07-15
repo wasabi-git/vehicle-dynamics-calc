@@ -840,13 +840,6 @@ def validate_cross_file(data: CatalogData, output_path: Path) -> dict[str, Any]:
             errors.append("gravity.constant_value_si must be 9.80665 for v0.1")
 
     # Project-stage warnings intentionally remain non-blocking.
-    f008 = formula_index.get("F008_ideal_power_acceleration_si", {})
-    limitations_f008 = " ".join(f008.get("known_limitations", []))
-    if "10 mph" in limitations_f008 and "deferred" in limitations_f008.lower():
-        warnings.append(
-            "F008 low-speed warning/applicability policy remains deferred to Stage 5; "
-            "the course anchor is 10 mph."
-        )
     warnings.append(
         "Engineering reasonableness ranges are initial and require Stage 5 calibration."
     )

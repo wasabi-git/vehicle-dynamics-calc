@@ -212,7 +212,7 @@ python tools/validate_catalog.py
 
 ## Known v0.1 limitations
 
-- The ideal constant-power formula is singular as vehicle speed approaches zero. The course uses **10 mph** as a plotting lower bound; the final warning/applicability policy remains assigned to the engineering-safety stage.
+- The ideal constant-power formula is singular as vehicle speed approaches zero. The course uses **10 mph** as a plotting lower bound; the enacted low-speed policy (Stage 5) keeps V = 0 constraint-blocked and attaches the `low_speed_ideal_model` risk warning to derivations below 10 mph.
 - Engineering reasonableness ranges are initial values and still require test-case calibration.
 - The mass-factor equation is an empirical approximation without a documented source error bound.
 - Tire traction limits are not evaluated.

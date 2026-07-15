@@ -156,11 +156,13 @@ Calculates idealized longitudinal acceleration from engine power, vehicle speed,
 - Model: `acceleration_performance` / `ideal_constant_power_acceleration`
 - Unit mode: `si_consistent`
 - Path role: `primary`; priority `10`
+- Risk warnings:
+  - `low_speed_ideal_model` — when `vehicle_speed` < 10 `mile_per_hour`: "Ideal constant-power model is high-risk below 10 mph: the zero-speed singularity can predict acceleration beyond physical tire limits."
 - Known limitations:
   - The ideal constant-power model is singular as vehicle speed approaches zero.
   - The course plot begins at 10 mph.
   - Low-speed acceleration above approximately 0.8 standard gravity is identified by the instructor as suspicious.
-  - The final warning or applicability rule is deferred to the Unit and Engineering Safety stage.
+  - The Stage 5 low-speed policy is enacted: V = 0 is blocked by the formula constraint, and derivations below 10 mph carry the low_speed_ideal_model risk warning.
 - Notes:
   - This formula is the SI-equivalent simplification of a_x = 550 g HP / (V W); the original source expression is retained in source_reference.
   - Course and textbook evidence confirm that the model uses engine horsepower directly.

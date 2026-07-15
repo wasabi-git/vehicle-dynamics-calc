@@ -201,7 +201,7 @@
     {
       "id": "A7",
       "type": "stored_not_judged",
-      "note": "low-speed F008 point; no expected value until the low-speed threshold policy (work branch 5) is enacted",
+      "note": "low-speed F008 point; the Stage 5 low-speed policy is enacted — the stored F008 instance must itself carry low_speed_ideal_model; magnitude remains not judged and no numeric expected value is added",
       "runs": [
         {
           "id": "single",
@@ -211,6 +211,7 @@
             { "variable_id": "vehicle_mass", "value": 114.472, "unit": "slug" }
           ],
           "queries": ["longitudinal_acceleration"],
+          "required_warning_codes": ["low_speed_ideal_model"],
           "expected": []
         }
       ]

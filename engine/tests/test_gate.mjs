@@ -127,7 +127,7 @@ export async function run() {
   // ---- A7 storage contract ---------------------------------------------------
   const { ok, data } = await loadCatalog(repoReader());
   assert(ok, "catalog must load for A7 contract tests");
-  const a7Run = { queries: [AX] };
+  const a7Run = { queries: [AX], required_warning_codes: ["low_speed_ideal_model"] };
 
   await test("A7 storage contract passes when F008 stores an inactive, auditable result", () => {
     const engine = createEngineFromData(data);
@@ -156,6 +156,19 @@ export async function run() {
     judgeStoredRun(engine, a7Run, "A7", items);
     assertEqual(items[0].pass, false, "Active F008 violates the A7 contract");
     assert(items[0].detail.includes("must not be Active"), "names the violation");
+  });
+
+  await test("A7 contract fails when the F008 instance itself lacks low_speed_ideal_model", () => {
+    const engine = createEngineFromData(data);
+    fillA7(engine);
+    const f008 = engine.getResults(AX).find((r) => r.formula_id === F008);
+    const index = f008.warnings.findIndex((w) => w.code === "low_speed_ideal_model");
+    assert(index !== -1, "precondition: the 5 mph derivation carries the code");
+    f008.warnings.splice(index, 1); // simulate a result stored without the required code
+    const items = [];
+    judgeStoredRun(engine, a7Run, "A7", items);
+    assertEqual(items[0].pass, false, "missing required warning code must fail the contract");
+    assert(items[0].detail.includes("low_speed_ideal_model"), "names the missing code");
   });
 
   await test("acceptance failed count includes stored-contract failures", async () => {

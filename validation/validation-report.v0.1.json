@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0.0",
   "data_version": "0.1.0",
-  "generated_at": "2026-07-15T03:07:06.570445+00:00",
+  "generated_at": "2026-07-15T03:13:30.672443+00:00",
   "validator": {
     "path": "tools/validate_catalog.py",
     "version": "1.0.0",
@@ -118,7 +118,6 @@
     ]
   },
   "warnings": [
-    "F008 low-speed warning/applicability policy remains deferred to Stage 5; the course anchor is 10 mph.",
     "Engineering reasonableness ranges are initial and require Stage 5 calibration.",
     "F005 is an empirical mass-factor approximation with no source error bound."
   ],
