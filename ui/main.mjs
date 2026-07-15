@@ -9,6 +9,8 @@
 
 import { createEngine } from "../engine/index.mjs";
 import { buildCatalogAdapter } from "./adapter/catalog_adapter.mjs";
+import { createStore } from "./state/store.mjs";
+import { initInputsView } from "./render/inputs_view.mjs";
 
 const ROOT = new URL("./", document.baseURI);
 const textCache = new Map();
@@ -54,8 +56,15 @@ async function boot() {
       `Loader diagnostics: ${diagnostics.length}. Fetches: ${textCache.size} files, each read once.`
     );
 
-    app = { engine, adapter, diagnostics };
-    // Later commits attach state, rendering, and interaction here.
+    const store = createStore();
+    const createScratchEngine = async () => {
+      const scratch = await createEngine(cachingReadText); // cache hit, zero network
+      if (!scratch.ok) throw new Error("scratch engine failed to load");
+      return scratch.engine;
+    };
+    app = { engine, adapter, store, createScratchEngine, diagnostics };
+    initInputsView(app);
+    // Later commits attach the results, warnings, and target regions here.
   } catch (error) {
     setBootStatus(`Startup failed: ${error.message}`);
   }
