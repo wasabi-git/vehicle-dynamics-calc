@@ -22,7 +22,7 @@
  * resolvable by result_id for provenance audits.
  */
 
-import { computeRangeStatus } from "./conditions.mjs";
+import { computeRangeStatus, computeUnitMisuseSuggestions } from "./conditions.mjs";
 
 export const RESULT_SOURCES = Object.freeze(["user_input", "derived", "assumption", "constant"]);
 
@@ -283,6 +283,11 @@ export function createPool(data, unitSystem) {
     if (!si.ok) return { ok: false, result: null, diagnostic: si.diagnostic };
 
     const range = computeRangeStatus(variable, si.value, unitSystem);
+    // Unit-misuse detection (Stage 5): user inputs only, mounted after the
+    // range warnings. Assumption and derived instances never enter this path.
+    const warnings = [...range.warnings];
+    const misuse = computeUnitMisuseSuggestions(variable, value, unitId, unitSystem);
+    if (misuse) warnings.push(misuse);
 
     // Trigger surface (M4): a new/changed user input outdates the consumers
     // of the replaced input instance and of any instance that loses Active
@@ -303,7 +308,7 @@ export function createPool(data, unitSystem) {
       source: "user_input",
       active: userInputDefaultActive,
       range_status: range.status,
-      warnings: range.warnings,
+      warnings,
     });
     put(result); // same key -> retires and replaces the previous user input only
 

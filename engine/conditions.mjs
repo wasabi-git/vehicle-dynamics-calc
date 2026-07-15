@@ -143,3 +143,55 @@ export function computeRangeStatus(variable, valueSi, unitSystem) {
   });
   return { status: "extreme_warning", warnings };
 }
+
+/**
+ * Unit-misuse detection, Stage 5 minimal implementation (Part 2 §五 check
+ * order). Applies to user inputs only — the caller (setUserInput) gates on
+ * source; assumption instances and derived results are never checked.
+ *
+ * Triggers only when ALL hold: the variable opts in via unit_misuse_check;
+ * the entered value converts legally; and the converted value lands in
+ * "extreme_warning" (invalid and plain warning never trigger). Candidates
+ * re-interpret the SAME number in each other allowed unit; only candidates
+ * whose re-interpretation lands in the normal range become suggestions. The
+ * engine never switches units on its own — adopting a suggestion is the UI
+ * re-calling setUserInput with the suggested unit, and "keep my input" is no
+ * engine operation at all (Part 2 unit-misuse rule 6). Copy uses raw
+ * unit_id/variable_id tokens; polished copy is deferred to v0.2.
+ *
+ * Note: `suggestions` stays an array. Under the current catalog an
+ * extreme_warning trigger yields at most one normal-range candidate, so a
+ * positive multi-suggestion case cannot be constructed; multi-candidate
+ * behavior is covered by the negative tests.
+ *
+ * Returns a structured warning entry `{code, message, context}` or null.
+ */
+export function computeUnitMisuseSuggestions(variable, value, unitId, unitSystem) {
+  if (variable.unit_misuse_check !== true) return null;
+  const entered = unitSystem.toSI(value, unitId);
+  if (!entered.ok) return null;
+  if (computeRangeStatus(variable, entered.value, unitSystem).status !== "extreme_warning") return null;
+
+  const suggestions = [];
+  for (const candidate of variable.allowed_units) {
+    if (candidate === unitId) continue;
+    const reinterpreted = unitSystem.toSI(value, candidate);
+    if (!reinterpreted.ok) continue;
+    if (computeRangeStatus(variable, reinterpreted.value, unitSystem).status === "normal") {
+      suggestions.push({ unit_id: candidate, value_si: reinterpreted.value, would_be_status: "normal" });
+    }
+  }
+  if (suggestions.length === 0) return null;
+
+  const candidateIds = suggestions.map((s) => s.unit_id).join(", ");
+  return {
+    code: "unit_misuse_suspected",
+    message: `Value ${value} ${unitId} lies outside the plausible range for ${variable.variable_id}; the same number would be in the normal range as: ${candidateIds}.`,
+    context: {
+      variable_id: variable.variable_id,
+      entered_value: value,
+      entered_unit: unitId,
+      suggestions,
+    },
+  };
+}

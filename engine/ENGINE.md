@@ -56,6 +56,24 @@ Formulas may carry an optional `risk_warnings` array. Each entry is `{condition,
 - **Equivalence semantics**: `warnings` participate in the solver's `sameResult` comparison, so a fixed-point re-derivation that only differs in warnings is treated as a changed result (defensive; order is deterministic).
 - **Validation**: loader and `tools/validate_catalog.py` both enforce — array of plain objects; `condition.variable` present and within `required_inputs`; comparison/between conditions need a registered, dimension-consistent `unit`; finite/not_finite conditions carry no unit; `code` matches `^[a-z][a-z0-9_]*$`; `message` non-empty. Violations are structured diagnostics, never throws.
 
+## Unit-misuse detection (Stage 5 minimal implementation)
+
+Applies to **user inputs only** (`setUserInput`); assumption instances and derived results are never checked. Trigger — all of (Part 2 §五 check order): the variable opts in via `unit_misuse_check: true`; the entered value converts legally; the converted value lands in **`extreme_warning`** (`invalid` and plain `warning` never trigger). Candidates re-interpret the *same number* in each other allowed unit of the variable; only candidates whose re-interpretation lands in the **normal** range become suggestions. With at least one suggestion, a structured `unit_misuse_suspected` warning mounts on the input instance **after** its range warnings:
+
+```json
+{ "code": "unit_misuse_suspected",
+  "message": "Value 13.8 foot lies outside the plausible range for wheel_radius; the same number would be in the normal range as: inch.",
+  "context": { "variable_id": "wheel_radius", "entered_value": 13.8, "entered_unit": "foot",
+               "suggestions": [ { "unit_id": "inch", "value_si": 0.35052, "would_be_status": "normal" } ] } }
+```
+
+Each suggestion carries `value_si` — the SI value of the re-interpreted number — so the Part 6 UI can display it directly. The engine **never switches units on its own**: adopting a suggestion is the UI re-calling `setUserInput(variableId, value, suggested_unit)`; "ignore and keep my input" is no engine operation at all (Part 2 unit-misuse rule 6). No new public API. Copy uses raw `unit_id`/`variable_id` tokens; ranked suggestions, statistical inference, and polished copy are deferred to v0.2. `suggestions` stays an array — under the current catalog an extreme-warning trigger yields at most one normal-range candidate.
+
+## Registered Part 6 obligations
+
+1. **User-confirmed flow (Part 2 §八)** is interactive state and is not implemented in the v0.1 engine. Implementation path: the UI keys confirmation state on the immutable `result_id` — an input revision mints a new `result_id`, so a stale confirmation resets naturally.
+2. **Rendering of upstream abnormalities on derived results** is Part 6 work, to be implemented over the existing `dependencies` → `getByResultId` channel (the propagation channel is proven by the unit-misuse tests; no new engine mechanism is required).
+
 ## Boundaries
 
-The engine adapts to `data/` and `schemas/` — never the reverse (gate G2). No unapproved formulas, variables, units, or models may be added (the foot unit is the owner-approved D3/G9 defect repair for the confirmed unit-misuse example); no algebraic inversion. The F008 low-speed policy is enacted (Stage 5): below 10 mph, F008 results carry the low_speed_ideal_model risk warning; V = 0 remains constraint-blocked. Plausibility ranges are Stage 5 calibrated. Unit-misuse copy belongs to work branch 5.
+The engine adapts to `data/` and `schemas/` — never the reverse (gate G2). No unapproved formulas, variables, units, or models may be added (the foot unit is the owner-approved D3/G9 defect repair for the confirmed unit-misuse example); no algebraic inversion. The F008 low-speed policy is enacted (Stage 5): below 10 mph, F008 results carry the low_speed_ideal_model risk warning; V = 0 remains constraint-blocked. Plausibility ranges are Stage 5 calibrated. Unit-misuse detection is implemented (Stage 5).

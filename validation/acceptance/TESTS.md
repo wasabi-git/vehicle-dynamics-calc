@@ -146,3 +146,33 @@ A3 wheel_radius [in]  —  cases-only duplicate judgment（引擎 PASS；cross_c
 - 数据落点:F008 新增 `risk_warnings` 条目(条件 `vehicle_speed < 10 mile_per_hour`);A7 的 `runs[0]` 新增 `required_warning_codes: ["low_speed_ideal_model"]`,类型保持 `stored_not_judged`,**不新增任何数值期望**。
 - 契约五条(engine/tests/acceptance.mjs 强制,任一违反即闸门失败):F008 派生结果存在;数值有限;result_id 可回查;active=false;该 F008 实例自身的 warnings 包含全部 required_warning_codes(禁止跨派生实例合并 warnings、禁止取第一个实例)。
 - cross_check.py 冻结未改,对 A7 新字段无感;reconcile 恒等式(23/23、cases-only 仅 A3 wheel_radius [in])原样成立,对账强制行 `enforced: 23/23` 即为见证。
+
+## 第 5 支终态(C5 追加,2026-07-14;上文各章未改动,A7 契约取代声明见上一章、此处援引不重复)
+
+### 终态测试计数
+
+- 机制单元测试:**117/117 通过**(第 4 支收档 94 + 第 5 支新增 23:risk_warnings 夹具与 F008 政策实测 14、A7 门禁负向 1、foot 换算 1、单位误用 7)。
+- 数值判定:**24/24 PASS**;行为断言(A5):2/2;A7 存储契约(五条,含 required_warning_codes):1/1。
+- 对账强制行:`enforced: 23/23 parsed, 23/23 matched, cases-only 1/1`(cross_check.py 冻结未改)。
+- validator:`pass_with_warnings`,**27 units**,仅 1 条常驻警告(F005 经验近似无源误差界,accepted v0.1 limitation;原警告 #1、#2 分别随 F008 政策启用与范围校准撤销)。
+- validate_catalog.py 负向回归:5 景 PASS(裸数组 + risk_warnings 四景:缺 variable、variable 非输入、unit 未注册/维度不符、code 非法)。
+
+### 单位误用检测说明(D4 最小实现)
+
+- 触发(全部满足,Part 2 §五 检查顺序为准):变量 `unit_misuse_check: true` ∧ 来源为用户输入 ∧ 换算合法 ∧ 范围状态恰为 `extreme_warning`(`invalid` 与普通 `warning` 均不触发)。
+- 候选:同一数字在该变量其余 allowed_units 下重新解释,仅落入 normal 者入建议;每个建议含 `unit_id`、`value_si`(重解释后 SI 值)、`would_be_status`。
+- 挂载:结构化警示 `unit_misuse_suspected`(含 context)置于范围警示之后;引擎绝不自动改单位——"采用"= UI 重调 setUserInput,"忽略并保留"= 无引擎操作(Part 2 单位误用节第 6 条)。排序/统计推断/精细文案递延 v0.2。
+- 测试锚点:13.8 foot → wheel_radius 得恰一条 inch 建议(13.8 in ∈ 校准后 [9, 22] normal;value_si ≈ 0.35052);正常值、misuse=false 变量、warning 层、invalid 层四路负向均不触发;传播通道经 dependencies → getByResultId 验证畅通(渲染归第 6 支)。
+
+### 终态实测摘录(2026-07-14)
+
+```
+engine tests: 117 passed, 0 failed
+numeric: 24 judged, FAIL = 0
+behavior: 2 judged, FAIL = 0
+A7  storage contract: PASS
+      longitudinal_acceleration = 20.74878 meter_per_second_squared (F008_ideal_power_acceleration_si, active=false, r_000009) - stored and verified, magnitude not judged (low-speed policy enacted, Stage 5)
+enforced: 23/23 parsed, 23/23 matched, cases-only 1/1 (must be A3 wheel_radius [in])
+validate_catalog regression: PASS (5 scenarios: exit 1, structured error, no traceback)
+one-shot gate: ALL GREEN
+```

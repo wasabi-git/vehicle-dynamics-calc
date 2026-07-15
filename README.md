@@ -239,13 +239,15 @@ The Phase 2 formula notes preserve cleaned formulas and future-module reference 
 2. Product-rule confirmation               Complete
 3. Formula and variable system             Complete
 4. Core inference engine                   Complete
-5. Units and engineering safety            Next
-6. Interface and interaction               Planned
+5. Units and engineering safety            Complete
+6. Interface and interaction               Next
 7. Formula-module expansion                Planned
 8. System testing and validation           Planned
 9. Release and documentation               Planned
 10. Promotion and portfolio packaging      Planned
 ```
+
+Part 6 carries two deferred obligations registered in Part 5 (user-confirmed flow; upstream-abnormality rendering).
 
 ## Engine (v0.1)
 
