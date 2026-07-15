@@ -1,0 +1,77 @@
+/* ui/tokens.css — single source of visual parameters (D30).
+   Every visual value used by ui/app.css and ui/render must reference
+   these custom properties. Layout-structural values (grid tracks, fr,
+   percentages, flex) live in app.css; everything visual lives here.
+   C10 visual-polish pass may change parameter VALUES in this file only. */
+
+:root {
+  /* Surfaces */
+  --surface-page: #F5F5F7;
+  --surface-card: #FFFFFF;
+  --border-card: #E3E3E6;
+  --border-separator: #ECECEE;
+
+  /* Text */
+  --text-primary: #1D1D1F;
+  --text-secondary: #6E6E73;      /* secondary text and all micro labels */
+  --color-decoration: #86868B;    /* pure decoration only; never for text
+                                     or information-bearing graphics */
+
+  /* Roles */
+  --accent: #0066CC;              /* buttons use accent background + white text */
+  --on-accent: #FFFFFF;
+  --warning-text: #8A5A00;
+  --warning-bg: #FBF5E9;
+  --danger-text: #B3261E;
+  --danger-bg: #FBEBEA;
+
+  /* Source dots (a text label always accompanies the dot) */
+  --dot-derived: #0066CC;
+  --dot-user-input: #1D1D1F;
+  --dot-assumed-outline: #6E6E73; /* hollow: outline only */
+
+  /* Typography */
+  --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-size-11: 11px;
+  --font-size-12: 12px;
+  --font-size-13: 13px;
+  --font-size-14: 14px;
+  --font-size-17: 17px;
+  --font-size-22: 22px;
+  --hero-size: 42px;
+  --hero-weight: 300;
+  --hero-tracking: -1px;
+  --section-label-size: 10px;
+  --section-label-tracking: 0.08em;
+
+  /* Radii */
+  --radius-card: 14px;
+  --radius-control: 8px;
+  --radius-inset: 10px;
+
+  /* Spacing (8px grid) */
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 32px;
+
+  /* Motion */
+  --motion-fast: 120ms;
+  --motion-base: 200ms;
+  --motion-collapse: 250ms;
+  --motion-ease: ease-out;
+
+  /* Numeric display precision (significant figures).
+     ui/adapter/view_model.mjs holds the same defaults for Node runs;
+     this file is the authoritative parameter source. */
+  --precision-result: 4;
+  --precision-si: 6;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-fast: 0ms;
+    --motion-base: 0ms;
+    --motion-collapse: 0ms;
+  }
+}

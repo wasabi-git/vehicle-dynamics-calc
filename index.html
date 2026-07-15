@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vehicle Dynamics Calculator</title>
+<link rel="stylesheet" href="./ui/tokens.css">
+<link rel="stylesheet" href="./ui/app.css">
+</head>
+<body>
+
+<header class="masthead">
+  <h1 class="masthead__title">Vehicle Dynamics Calculator</h1>
+  <p class="masthead__subtitle">Enter what you know. The engine derives what it can, shows every step, and never guesses.</p>
+</header>
+
+<main class="layout">
+
+  <aside class="column" id="column-inputs">
+
+    <section class="card" id="inputs-card" aria-labelledby="inputs-label">
+      <h2 class="section-label" id="inputs-label">Inputs</h2>
+      <div class="field-row">
+        <input class="text-input" type="search" id="variable-search"
+               placeholder="Search variables by name, symbol, or ID"
+               aria-label="Search variables" disabled>
+      </div>
+      <div class="chip-row" id="category-filter" aria-label="Filter by category"></div>
+      <ul class="picker-list" id="variable-picker" aria-label="Matching variables"></ul>
+      <ul class="input-list" id="input-list" aria-label="Current inputs"></ul>
+      <p class="empty-note" id="inputs-empty-note">No inputs yet. Add a variable to begin.</p>
+      <hr class="separator">
+      <div class="field-row" id="tire-quick">
+        <input class="text-input" type="text" id="tire-code-input"
+               placeholder="Tire code, e.g. 195/55R16"
+               aria-label="Tire code" disabled>
+        <button class="btn btn--outline" id="tire-apply" type="button" disabled>Apply tire code</button>
+      </div>
+      <div class="field-row">
+        <button class="btn btn--outline" id="clear-all" type="button" disabled>Clear all inputs</button>
+      </div>
+      <div id="inputs-confirm-slot"></div>
+    </section>
+
+    <section class="card" id="assumptions-card" aria-labelledby="assumptions-label">
+      <h2 class="section-label" id="assumptions-label">Assumptions</h2>
+      <div class="control-row">
+        <button class="btn btn--outline" id="assumptions-disable-all" type="button" disabled>Disable all</button>
+        <button class="btn btn--outline" id="assumptions-restore-defaults" type="button" disabled>Restore defaults</button>
+      </div>
+      <ul class="plain-list" id="assumption-list" aria-label="Assumptions"></ul>
+      <p class="empty-note" id="assumptions-empty-note">Assumptions appear here once the catalog is loaded.</p>
+    </section>
+
+    <section class="card" id="constants-card" aria-labelledby="constants-label">
+      <h2 class="section-label" id="constants-label">Constants</h2>
+      <ul class="plain-list" id="constant-list" aria-label="Constants"></ul>
+      <p class="empty-note" id="constants-empty-note">Constants appear here once the catalog is loaded.</p>
+    </section>
+
+  </aside>
+
+  <section class="column" id="column-results">
+
+    <section class="card" id="calc-card" aria-labelledby="calc-label">
+      <h2 class="section-label" id="calc-label">Calculation</h2>
+      <div class="calc-row">
+        <button class="btn btn--primary" id="calculate-btn" type="button" disabled>Calculate</button>
+        <span class="status-text" id="calc-status">Add inputs to enable calculation.</span>
+      </div>
+    </section>
+
+    <div class="results-region" id="results-region" aria-label="Results">
+      <p class="empty-note" id="results-empty-note">Results appear here after you calculate.</p>
+    </div>
+
+    <section class="card" id="target-card" aria-labelledby="target-label">
+      <h2 class="section-label" id="target-label">Query a target</h2>
+      <div class="field-row">
+        <select class="select" id="target-select" aria-label="Target variable" disabled>
+          <option value="">Select a variable</option>
+        </select>
+        <button class="btn btn--outline" id="target-query-btn" type="button" disabled>Show requirements</button>
+      </div>
+      <div class="target-report" id="target-report"></div>
+    </section>
+
+  </section>
+
+</main>
+
+<footer class="status-line" id="status-line">
+  <span id="boot-status">Static page. Application modules are not attached yet.</span>
+</footer>
+
+</body>
+</html>
