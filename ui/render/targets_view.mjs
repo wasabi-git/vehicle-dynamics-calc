@@ -33,9 +33,35 @@ export function initTargetsView(app) {
   queryBtn.addEventListener("click", () => renderReport(true));
   const unsubscribeTargets = store.subscribe(() => renderReport(false));
 
-  // Missing rows with an open inline-entry form (component-local view
-  // state; content persists via the silent draft mechanism, C9R7).
-  const inlineEntryOpen = new Set();
+  // Inline-entry state (C9R7R1): a SINGLE open entry, keyed by the stable
+  // occurrence key of the clicked row — `t:<target>/<formula chain>#<var>` —
+  // so the same missing variable on other paths stays closed. Toggling
+  // mutates only the clicked row's DOM (no report rebuild — ancestor
+  // <details> stay open); full re-renders re-mount the entry at the same
+  // occurrence. Submitting clears the slot, so a variable that later goes
+  // missing again never re-opens by itself. Value/unit drafts stay keyed by
+  // variable_id (one eventual input per variable).
+  let openEntryKey = null;
+  let openEntryRefs = null; // {mount, button} of the currently open row
+
+  function toggleEntry(m, occKey, mount, button) {
+    if (openEntryKey === occKey) {
+      openEntryKey = null;
+      openEntryRefs = null;
+      clear(mount);
+      button.textContent = "Enter value";
+      return;
+    }
+    if (openEntryRefs) {
+      clear(openEntryRefs.mount);
+      openEntryRefs.button.textContent = "Enter value";
+    }
+    openEntryKey = occKey;
+    openEntryRefs = { mount, button };
+    mount.append(inlineEntry(m));
+    button.textContent = "Close";
+    mount.querySelector("input")?.focus();
+  }
 
   function inlineEntry(m) {
     const variable = adapter.variablesById[m.variableId];
@@ -68,7 +94,8 @@ export function initTargetsView(app) {
     const commit = () => {
       const text = valueBox.value;
       const chosenUnit = unitSelect.value;
-      inlineEntryOpen.delete(m.variableId);
+      openEntryKey = null; // slot cleared: no auto-reopen if it goes missing again
+      openEntryRefs = null;
       s.displayUnitByVariableId.set(m.variableId, chosenUnit); // silent; add notifies
       addVariable(app, m.variableId);
       if (text.trim() !== "") submitValue(app, m.variableId, text, chosenUnit);
@@ -83,33 +110,39 @@ export function initTargetsView(app) {
     ]);
   }
 
-  function missingList(missingInputs) {
+  function missingList(missingInputs, prefix) {
     return el(
       "ul",
       { class: "missing-list" },
       missingInputs.map((m) => {
+        const occKey = `${prefix}#${m.variableId}`;
+        const mount = el("div");
+        let button = null;
+        if (m.canBeUserInput) {
+          button = el("button", {
+            type: "button",
+            class: "btn",
+            text: openEntryKey === occKey ? "Close" : "Enter value",
+          });
+          button.addEventListener("click", () => toggleEntry(m, occKey, mount, button));
+          if (openEntryKey === occKey) {
+            // A full re-render re-mounts the single open entry at exactly
+            // this occurrence and refreshes the live refs.
+            mount.append(inlineEntry(m));
+            openEntryRefs = { mount, button };
+          }
+        }
         const head = el("li", {}, [
           el("span", { text: `${adapter.variablesById[m.variableId]?.name ?? m.variableId} ` }),
           el("span", { class: "missing-list__reason", text: `— ${m.causeText}` }),
-          m.canBeUserInput
-            ? el("button", {
-                type: "button",
-                class: "btn",
-                text: inlineEntryOpen.has(m.variableId) ? "Close" : "Enter value",
-                onclick: () => {
-                  if (inlineEntryOpen.has(m.variableId)) inlineEntryOpen.delete(m.variableId);
-                  else inlineEntryOpen.add(m.variableId);
-                  renderReport(false); // view-local toggle; no store notify
-                },
-              })
-            : null,
-          m.canBeUserInput && inlineEntryOpen.has(m.variableId) ? inlineEntry(m) : null,
+          button,
+          mount,
         ]);
         if (m.derivationOptions.length > 0) {
           head.append(
             el("details", { class: "derivation" }, [
               el("summary", { text: `or derive it (${m.derivationOptions.length} option${m.derivationOptions.length > 1 ? "s" : ""})` }),
-              ...m.derivationOptions.map(pathOption),
+              ...m.derivationOptions.map((option) => pathOption(option, occKey)),
             ])
           );
         }
@@ -121,7 +154,7 @@ export function initTargetsView(app) {
     );
   }
 
-  function pathOption(path) {
+  function pathOption(path, prefix) {
     if (path.cycleDetected) {
       return el("div", { class: "path-option" }, [
         el("div", { class: "path-option__head" }, [
@@ -132,6 +165,7 @@ export function initTargetsView(app) {
     }
     const formula = adapter.formulasById[path.formulaId];
     const modelName = path.modelName ? adapter.modelsById[path.modelName]?.display_name ?? path.modelName : null;
+    const myPrefix = `${prefix}/${path.formulaId}`;
     return el("div", { class: "path-option" }, [
       el("div", { class: "path-option__head" }, [
         el("span", { text: formula ? formula.name : path.formulaId }),
@@ -139,7 +173,7 @@ export function initTargetsView(app) {
         el("span", { class: "micro-label", text: path.status }),
       ]),
       formula ? formulaBlock(formatFormula(formula.expression)) : null,
-      path.missingInputs.length > 0 ? missingList(path.missingInputs) : null,
+      path.missingInputs.length > 0 ? missingList(path.missingInputs, myPrefix) : null,
       path.missingInputs.length === 0 && path.blockedReasons.length > 0
         ? el("ul", { class: "missing-list" },
             path.blockedReasons.map((r) => el("li", {}, [
@@ -172,7 +206,7 @@ export function initTargetsView(app) {
         (view.canBeUserInput ? ` You can enter ${variable.name} directly as an input.` : "") }));
       return nodes;
     }
-    nodes.push(...view.paths.map(pathOption));
+    nodes.push(...view.paths.map((path) => pathOption(path, `t:${variableId}`)));
     if (view.recommendedNext) {
       const rec = adapter.variablesById[view.recommendedNext];
       const box = el("div", { class: "recommended-next", text: `Recommended next input: ${rec.name} (` });
@@ -184,6 +218,7 @@ export function initTargetsView(app) {
 
   function renderReport(explicit) {
     clear(report);
+    openEntryRefs = null; // rebuilt rows re-establish the live refs below
     const target = store.state.selectedTarget;
     if (target) {
       for (const node of renderTarget(target, explicit)) report.append(node);

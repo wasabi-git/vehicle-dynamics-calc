@@ -412,46 +412,101 @@
         n.id = id; targetsSkeleton.append(n); return n;
       };
       mkTg("select", "target-select"); mkTg("button", "target-query-btn"); mkTg("div", "target-report");
+      // real Inputs view mounted in the SAME fixture (C9R7R1 #6)
+      const mkTg2 = (tag, id) => { const n = document.createElement(tag); n.id = id; targetsSkeleton.append(n); return n; };
+      mkTg2("input", "variable-search"); mkTg2("div", "category-filter"); mkTg2("ul", "variable-picker");
+      mkTg2("ul", "input-list"); mkTg2("p", "inputs-empty-note");
+      mkTg2("input", "tire-width"); mkTg2("input", "tire-aspect"); mkTg2("input", "tire-rim");
+      mkTg2("button", "tire-apply"); mkTg2("button", "clear-all"); mkTg2("div", "inputs-confirm-slot");
       targetsCard.append(targetsSkeleton);
       document.querySelector("main").append(targetsCard);
       let disposeTargetsView = null;
+      let disposeInputsView2 = null;
       try {
         const fresh4 = await createEngine(readText);
         const store4 = (await import("../state/store.mjs")).createStore();
         const app4 = { engine: fresh4.engine, adapter, store: store4 };
+        const ic4 = await import("../render/inputs_controller.mjs");
         disposeTargetsView = (await import("../render/targets_view.mjs")).initTargetsView(app4);
+        disposeInputsView2 = (await import("../render/inputs_view.mjs")).initInputsView(app4);
         await new Promise((r) => setTimeout(r, 60));
-        const missingRow = [...document.querySelectorAll("#target-report .missing-list li")]
-          .find((li) => li.textContent.includes("Vehicle mass"));
-        const enterBtn = [...missingRow.querySelectorAll("button")].find((b) => b.textContent === "Enter value");
-        ok("C9R7: missing inputs in the target report offer an Enter value button",
-          Boolean(enterBtn));
-        enterBtn.click();
+        const massRows = () => [...document.querySelectorAll("#target-report .missing-list li")]
+          .filter((li) => li.textContent.includes("Vehicle mass —"));
+        const inlineInputs = () => document.querySelectorAll("#target-report .missing-list input.text-input").length;
+        // C9R7R1 #1: the same variable appears on BOTH candidate paths; opening
+        // one occurrence must not open the other.
+        ok("C9R7R1: the duplicated variable appears on two paths", massRows().length === 2);
+        massRows()[0].querySelector("button").click();
         await new Promise((r) => setTimeout(r, 40));
-        const openRow = [...document.querySelectorAll("#target-report .missing-list li")]
-          .find((li) => li.textContent.includes("Vehicle mass"));
-        const inlineBox = openRow.querySelector("input");
-        const inlineUnit = openRow.querySelector("select");
-        ok("C9R7: the inline entry opens with a value box and the full unit selector",
-          inlineBox !== null && inlineUnit !== null &&
-          [...inlineUnit.options].map((o) => o.value).join(",") ===
-            adapter.variablesById.vehicle_mass.allowed_units.join(","));
-        inlineUnit.value = "pound_mass";
-        inlineUnit.dispatchEvent(new Event("change"));
-        inlineBox.value = "3500";
-        inlineBox.dispatchEvent(new Event("input"));
-        inlineBox.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+        ok("C9R7R1 #1: exactly one occurrence opens; the sibling stays closed",
+          inlineInputs() === 1 &&
+          massRows()[0].querySelector("input.text-input") !== null &&
+          massRows()[1].querySelector("input.text-input") === null &&
+          massRows()[1].querySelector("button").textContent === "Enter value");
+        // C9R7R1 #2: drafts + single position survive a forced re-render.
+        const box4 = massRows()[0].querySelector("input.text-input");
+        const unit4 = massRows()[0].querySelector("select");
+        unit4.value = "pound_mass"; unit4.dispatchEvent(new Event("change"));
+        box4.value = "3500"; box4.dispatchEvent(new Event("input"));
+        app4.store.notify();
+        await new Promise((r) => setTimeout(r, 40));
+        ok("C9R7R1 #2: after a forced re-render the SAME single occurrence is open with content intact",
+          inlineInputs() === 1 &&
+          massRows()[0].querySelector("input.text-input").value === "3500" &&
+          massRows()[0].querySelector("select").value === "pound_mass" &&
+          massRows()[1].querySelector("input.text-input") === null);
+        // C9R7R1 #3: opening the other occurrence closes the first (single-open).
+        massRows()[1].querySelector("button").click();
+        await new Promise((r) => setTimeout(r, 40));
+        ok("C9R7R1 #3: switching rows keeps exactly one entry open, at the newly clicked row",
+          inlineInputs() === 1 &&
+          massRows()[1].querySelector("input.text-input") !== null &&
+          massRows()[0].querySelector("input.text-input") === null &&
+          massRows()[0].querySelector("button").textContent === "Enter value");
+        // C9R7R1 #4: submit -> rows disappear, no dangling open entry.
+        const box4b = massRows()[1].querySelector("input.text-input");
+        massRows()[1].querySelector("select").value = "pound_mass";
+        massRows()[1].querySelector("select").dispatchEvent(new Event("change"));
+        box4b.value = "3500"; box4b.dispatchEvent(new Event("input"));
+        box4b.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
         await new Promise((r) => setTimeout(r, 60));
         const landedMass = app4.engine.getResults("vehicle_mass").find((r) => r.source === "user_input");
-        ok("C9R7: Enter submits through the normal input pipeline in the picked unit",
-          Boolean(landedMass) &&
+        ok("C9R7R1 #4: submit lands the input and clears every occurrence",
+          Boolean(landedMass) && massRows().length === 0 && inlineInputs() === 0);
+        // C9R7R1 #6a: the REAL Inputs view shows the landed row: top, picked
+        // unit, focus in the formal value input.
+        ok("C9R7R1 #6a: landed row on top with the picked unit and focus",
           app4.store.state.uiInputOrder[0] === "vehicle_mass" &&
-          app4.store.state.inputSnapshotByResultId.get(landedMass.result_id)?.enteredUnit === "pound_mass");
-        ok("C9R7: the rebuilt report no longer lists the entered variable as missing",
-          ![...document.querySelectorAll("#target-report .missing-list li")]
-            .some((li) => li.textContent.includes("Vehicle mass —")));
+          document.querySelector("#input-row-vehicle_mass select").value === "pound_mass" &&
+          document.activeElement === document.querySelector("#input-row-vehicle_mass input"));
+        // C9R7R1 #5: removing the input makes the variable missing again —
+        // and nothing re-opens by itself.
+        app4.store.state.pendingConfirmation = { kind: "remove_input", payload: { variableId: "vehicle_mass" } };
+        ic4.confirmPending(app4);
+        await new Promise((r) => setTimeout(r, 60));
+        ok("C9R7R1 #5: re-missing rows come back closed (no auto-reopen)",
+          massRows().length === 2 && inlineInputs() === 0 &&
+          massRows().every((row) => row.querySelector("button").textContent === "Enter value"));
+        // C9R7R1 #6b: range hints on the landed row — enter 1000 kW for the
+        // missing engine_power right from the report.
+        const powerRow = [...document.querySelectorAll("#target-report .missing-list li")]
+          .find((li) => li.textContent.includes("Engine power —"));
+        powerRow.querySelector("button").click();
+        await new Promise((r) => setTimeout(r, 40));
+        const pBox = powerRow.querySelector("input.text-input");
+        const pUnit = powerRow.querySelector("select");
+        pUnit.value = "kilowatt"; pUnit.dispatchEvent(new Event("change"));
+        pBox.value = "1000"; pBox.dispatchEvent(new Event("input"));
+        pBox.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+        await new Promise((r) => setTimeout(r, 60));
+        const powerBanner = document.querySelector("#input-row-engine_power .banner");
+        ok("C9R7R1 #6b: the landed row carries the range hint in the picked unit",
+          powerBanner !== null &&
+          powerBanner.textContent.includes("Outside the normal range") &&
+          powerBanner.textContent.includes("≈0.000–745.7 kW (registered: 0–1000 hp)"));
       } finally {
         if (disposeTargetsView) disposeTargetsView();
+        if (disposeInputsView2) disposeInputsView2();
         targetsCard.remove();
       }
 
