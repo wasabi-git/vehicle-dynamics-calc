@@ -32,6 +32,15 @@
     const el = document.getElementById("log");
     const lines = [];
     let passed = 0, failed = 0;
+
+    // C9R6R1 #4: collect every window error, unhandled rejection, and
+    // console.error for the whole run; the final assertion demands zero
+    // across a delayed observation window that outlives all view timers.
+    const pageErrors = [];
+    window.addEventListener("error", (e) => pageErrors.push(`window error: ${e.message}`));
+    window.addEventListener("unhandledrejection", (e) => pageErrors.push(`unhandled rejection: ${String(e.reason)}`));
+    const nativeConsoleError = console.error.bind(console);
+    console.error = (...args) => { pageErrors.push(`console.error: ${args.map(String).join(" ")}`); nativeConsoleError(...args); };
     const ok = (label, cond) => {
       if (cond) { passed += 1; lines.push(`ok    ${label}`); }
       else { failed += 1; lines.push(`FAIL  ${label}`); }
@@ -227,7 +236,7 @@
         const store3 = (await import("../state/store.mjs")).createStore();
         return { engine: fresh.engine, adapter, store: store3, createScratchEngine: async () => (await createEngine(readText)).engine };
       })();
-      (await import("../render/inputs_view.mjs")).initInputsView(app3);
+      const disposeInputs = (await import("../render/inputs_view.mjs")).initInputsView(app3);
       const searchBox = document.getElementById("variable-search");
       searchBox.value = "torque";
       searchBox.dispatchEvent(new Event("input"));
@@ -240,7 +249,9 @@
           adapter.variablesById.engine_torque.allowed_units.join(",") &&
         pickerUnit.value === "foot_pound_force");
       pickerUnit.value = "newton_meter"; // switch the unit right in the picker
+      pickerUnit.dispatchEvent(new Event("change"));
       pickerBox.value = "310";
+      pickerBox.dispatchEvent(new Event("input"));
       pickerBox.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
       await new Promise((r) => setTimeout(r, 80));
       const landedTorque = app3.engine.getResults("engine_torque").find((r) => r.source === "user_input");
@@ -250,7 +261,43 @@
         document.querySelectorAll("#variable-picker .picker-row").length === 0 &&
         document.querySelector("#input-row-engine_torque input").value === "310" &&
         document.querySelector("#input-row-engine_torque select").value === "newton_meter");
+      ok("C9R6R1 #5: after the non-empty one-step submit, focus sits in the new formal value input",
+        document.activeElement === document.querySelector("#input-row-engine_torque input"));
+
+      // C9R6R1 #2: continuous entry — with the first item's 1.6s highlight
+      // timer still pending, start the second entry, then outwait the timer:
+      // the uncommitted value AND unit must survive the store re-render.
+      searchBox.focus();
+      searchBox.value = "weight";
+      searchBox.dispatchEvent(new Event("input"));
+      await new Promise((r) => setTimeout(r, 60));
+      let weightBox = document.querySelector("#variable-picker .picker-row input");
+      let weightUnit = document.querySelector("#variable-picker .picker-row select");
+      weightUnit.value = "newton";
+      weightUnit.dispatchEvent(new Event("change"));
+      weightBox.value = "3500";
+      weightBox.dispatchEvent(new Event("input"));
+      await new Promise((r) => setTimeout(r, 1750)); // highlight timer fires -> notify -> picker rebuild
+      weightBox = document.querySelector("#variable-picker .picker-row input");
+      weightUnit = document.querySelector("#variable-picker .picker-row select");
+      ok("C9R6R1 #2: uncommitted picker value and unit survive the timer-driven re-render",
+        weightBox.value === "3500" && weightUnit.value === "newton");
+      weightBox.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+      await new Promise((r) => setTimeout(r, 80));
+      ok("continuous entry lands the second row in the picked unit, focus in its value input",
+        app3.store.state.uiInputOrder[0] === "vehicle_weight" &&
+        document.querySelector("#input-row-vehicle_weight select").value === "newton" &&
+        document.activeElement === document.querySelector("#input-row-vehicle_weight input"));
+
+      disposeInputs(); // cancels the pending highlight timer + unsubscribes
       inputsSkeleton.remove();
+
+      // C9R6R1 #4: delayed observation window — outlives every view timer
+      // (highlight 1.6s) so late renders into detached nodes would surface.
+      await new Promise((r) => setTimeout(r, 1800));
+      ok("zero window errors and zero console errors across the delayed observation window",
+        pageErrors.length === 0);
+      for (const entry of pageErrors) lines.push(`      ${entry}`);
 
       lines.push("");
       lines.push(`browser assertions: ${passed} passed, ${failed} failed`);

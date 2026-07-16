@@ -136,20 +136,34 @@ export function initInputsView(app) {
         if (text.trim() !== "") submitValue(app, variable.variable_id, text, chosenUnit);
       };
       if (!alreadyAdded) {
+        // Uncommitted picker entry is keyed by variable_id in the store
+        // (inputDraftByVariableId for the text, displayUnitByVariableId for
+        // the unit — both within their registered purposes) and written
+        // SILENTLY on every keystroke, so any store re-render rebuilds the
+        // row with the content intact (C9R6R1).
         const entryUnit = s.displayUnitByVariableId.get(variable.variable_id) ?? variable.default_unit;
         valueBox = el("input", {
           class: "text-input",
           type: "text",
           size: "8",
           placeholder: "value",
+          value: s.inputDraftByVariableId.get(variable.variable_id) ?? "",
           "aria-label": `${variable.name} value`,
+        });
+        valueBox.addEventListener("input", () => {
+          if (valueBox.value === "") s.inputDraftByVariableId.delete(variable.variable_id);
+          else s.inputDraftByVariableId.set(variable.variable_id, valueBox.value);
         });
         valueBox.addEventListener("keydown", (event) => {
           if (event.key === "Enter") commitFromPicker();
         });
         unitSelect = el(
           "select",
-          { class: "select", "aria-label": `${variable.name} unit` },
+          {
+            class: "select",
+            "aria-label": `${variable.name} unit`,
+            onchange: () => s.displayUnitByVariableId.set(variable.variable_id, unitSelect.value), // silent
+          },
           variable.allowed_units.map((unitId) =>
             el("option", {
               value: unitId,
@@ -291,7 +305,10 @@ export function initInputsView(app) {
         target.scrollIntoView({ block: "nearest" });
         // Locate + focus (Part 2 single-input rule): the freshly added or
         // duplicate-located row is immediately typeable — no scrolling hunt.
-        if (focusedForHighlight !== s.highlightedVariableId) {
+        // Re-focus also when a re-render replaced the focused node and focus
+        // fell back to <body> (one-step submit renders twice, C9R6R1 #5).
+        const focusLost = document.activeElement === document.body || document.activeElement === null;
+        if (focusedForHighlight !== s.highlightedVariableId || focusLost) {
           focusedForHighlight = s.highlightedVariableId;
           target.querySelector("input")?.focus();
         }
@@ -330,6 +347,17 @@ export function initInputsView(app) {
     renderConfirmation();
   }
 
-  store.subscribe(render);
+  const unsubscribe = store.subscribe(render);
   render();
+
+  /**
+   * Cleanup (C9R6R1 #3): cancels the pending highlight timer and detaches
+   * the store subscription. Test fixtures MUST call this before removing
+   * the view's DOM, so no late timer or notify renders into detached nodes.
+   */
+  return function dispose() {
+    if (highlightTimer) clearTimeout(highlightTimer);
+    highlightTimer = null;
+    unsubscribe();
+  };
 }
