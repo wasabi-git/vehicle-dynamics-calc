@@ -2,7 +2,7 @@
 
 A metadata-driven vehicle-dynamics calculation system designed to derive every result supported by the currently available inputs, while preserving units, assumptions, model identity, source traceability, and derivation paths.
 
-> **Development status:** the project architecture, the v0.1 formula-data package, and the v0.1 core derivation engine (`engine/`, zero-dependency ES modules for Node and the browser) are complete. The user interface has not yet been implemented on the current branch.
+> **Development status:** the project architecture, the v0.1 formula-data package, the v0.1 core derivation engine (`engine/`, zero-dependency ES modules for Node and the browser), and the v0.1 user interface (root `index.html`, vanilla ES modules, no build step) are complete on the current branch.
 
 ## Project objective
 
@@ -240,16 +240,16 @@ The Phase 2 formula notes preserve cleaned formulas and future-module reference 
 3. Formula and variable system             Complete
 4. Core inference engine                   Complete
 5. Units and engineering safety            Complete
-6. Interface and interaction               Next
+6. Interface and interaction               Complete
 7. Formula-module expansion                Deferred to v0.2
-8. System testing and validation           Planned
+8. System testing and validation           Next
 9. Release and documentation               Planned
 10. Promotion and portfolio packaging      Planned
 ```
 
 v0.1 redline: 2026-08-03. If the redline is missed, v0.1 development stops unconditionally and the current project state is archived as-is.
 
-Part 6 carries two deferred obligations registered in Part 5 (user-confirmed flow; upstream-abnormality rendering).
+The two deferred obligations registered in Part 5 were fulfilled in Part 6 (user-confirmed flow; upstream-abnormality rendering).
 
 ## Engine (v0.1)
 
@@ -265,4 +265,18 @@ python -m http.server           # then open /engine/smoke.html for the
 
 ## Current repository behavior
 
-The previous prototype UI has been retired. The current main branch contains the validated data architecture, the documentation foundation, and the v0.1 core derivation engine with its acceptance runner and browser smoke page; it does not yet provide an end-user browser calculator interface.
+The root `index.html` provides the v0.1 browser calculator: inputs with unit selection and direct picker entry, tire-code quick input, solve/recalculate flow, layered results with model selection and derivation details, warning and unit-misuse handling, assumption and constant panels, and reverse target queries with inline entry for missing inputs. The validated data architecture, the documentation foundation, and the v0.1 core derivation engine with its acceptance runner and browser smoke page back it unchanged.
+
+## Usage
+
+```bash
+python -m http.server           # from the repository root,
+                                # then open http://localhost:8000/index.html
+node ui/tests/run.js            # UI logic gate (Node, zero dependencies)
+                                # /ui/tests/tests.html runs the browser
+                                # assertion page on the same local server
+```
+
+On GitHub Pages the calculator is served from the repository root of the existing Pages configuration (standard form `https://wasabi-git.github.io/vehicle-dynamics-calc/`).
+
+Local-development note: `python -m http.server` sends no cache headers, so browsers may keep serving older `.mjs` modules after an update. Hard-refresh (Ctrl+F5) or enable "Disable cache" in the developer-tools Network tab when the page seems stale.
