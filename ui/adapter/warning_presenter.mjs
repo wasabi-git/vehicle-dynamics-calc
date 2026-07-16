@@ -82,7 +82,9 @@ export function presentWarning(input) {
 
   const actions = [];
   if (canConfirm) actions.push({ kind: "keep_original", text: "Keep original" });
-  if (warning.code === "unit_misuse_suspected" && warning.context) {
+  // Misuse actions collapse once the user has decided to keep the value
+  // (ignore links into the same result_id-keyed confirmation flow).
+  if (warning.code === "unit_misuse_suspected" && warning.context && confirmed !== true) {
     for (const suggestion of warning.context.suggestions) {
       actions.push({
         kind: "adopt_suggestion",

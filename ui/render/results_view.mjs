@@ -18,7 +18,7 @@ import {
   buildResultsViewModel,
   useDerivedConfirmText,
 } from "./results_controller.mjs";
-import { cancelPending, confirmPending } from "./inputs_controller.mjs";
+import { cancelPending, confirmPending, adoptMisuseSuggestion, ignoreMisuseSuggestion } from "./inputs_controller.mjs";
 import { presentResultWarnings, upstreamAbnormalities } from "./warnings_controller.mjs";
 import { warningBanner, upstreamSection } from "./warnings_view.mjs";
 
@@ -104,7 +104,13 @@ export function initResultsView(app) {
   function warningNodes(view) {
     const instance = app.engine.getByResultId(view.resultId);
     if (!instance) return [];
-    const nodes = presentResultWarnings(app, instance).map((presented) => warningBanner(presented, { app }));
+    const nodes = presentResultWarnings(app, instance).map((presented) =>
+      warningBanner(presented, {
+        app,
+        onAdopt: (suggestion) => adoptMisuseSuggestion(app, suggestion),
+        onIgnore: (p) => ignoreMisuseSuggestion(app, p.resultId),
+      })
+    );
     const trace = upstreamSection(upstreamAbnormalities(app, instance));
     if (trace) nodes.push(trace);
     return nodes;

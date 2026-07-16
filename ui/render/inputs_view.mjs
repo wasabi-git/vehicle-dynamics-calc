@@ -24,6 +24,8 @@ import {
   cancelPending,
   confirmPending,
   applyTireCodeFlow,
+  adoptMisuseSuggestion,
+  ignoreMisuseSuggestion,
 } from "./inputs_controller.mjs";
 
 const CATEGORY_TEXT = {
@@ -182,7 +184,13 @@ export function initInputsView(app) {
         diagnosticNode = el(
           "div",
           {},
-          presentResultWarnings(app, instance).map((presented) => warningBanner(presented, { app }))
+          presentResultWarnings(app, instance).map((presented) =>
+            warningBanner(presented, {
+              app,
+              onAdopt: (suggestion) => adoptMisuseSuggestion(app, suggestion),
+              onIgnore: (p) => ignoreMisuseSuggestion(app, p.resultId),
+            })
+          )
         );
       }
 

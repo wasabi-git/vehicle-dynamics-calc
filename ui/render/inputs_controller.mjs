@@ -219,6 +219,31 @@ export function confirmPending({ engine, store }) {
 }
 
 /**
+ * §7.3 track 3 — adopt a unit-misuse suggestion: setUserInput with the SAME
+ * number in the suggested unit (the engine never switches units on its own).
+ * The physical value changes, so this is a computational change: a new
+ * result_id is minted, dependents go stale, and Recalculate is required.
+ * The row's display unit follows the adopted unit.
+ */
+export function adoptMisuseSuggestion(app, suggestion) {
+  const { variableId, enteredValue, suggestedUnit } = suggestion;
+  app.store.state.displayUnitByVariableId.set(variableId, suggestedUnit);
+  return submitValue(app, variableId, String(enteredValue), suggestedUnit);
+}
+
+/**
+ * Ignore a unit-misuse suggestion: ZERO engine operations. Keeping the
+ * original value links into the result_id-keyed confirmation flow, so the
+ * suggestion collapses and the row shows "User confirmed warning"; a
+ * replacement instance (new result_id) naturally resurfaces it.
+ */
+export function ignoreMisuseSuggestion({ store }, resultId) {
+  store.state.confirmedResultIds.add(resultId);
+  store.notify();
+  return { ignored: true, resultId };
+}
+
+/**
  * Tire-code flow: parse -> full precheck on a scratch engine -> live writes.
  * On success (or partial failure) every written instance gets its §7.4
  * snapshot and joins uiInputOrder; the returned report is presented as-is.
