@@ -47,6 +47,14 @@ function copyFor(code) {
 }
 
 /**
+ * Fixed user-facing title for a warning code (upstream-trace rows use this
+ * instead of the raw engine message, which stays developer-fallback only).
+ */
+export function warningTitleFor(code) {
+  return copyFor(code).title;
+}
+
+/**
  * Format one metadata range in its declared unit. The VALUES stay exactly
  * as the metadata declares them (no re-conversion — the UI has no
  * conversion authority); `symbolOf` only maps the declared unit id to its
@@ -118,7 +126,9 @@ export function presentWarning(input) {
     reason:
       warning.code === "range_warning" || warning.code === "range_extreme" || warning.code === "range_invalid"
         ? `${variable.name} is ${displayedValue} ${displayedUnit}.`
-        : warning.message,
+        : warning.code === "unit_misuse_suspected" && warning.context
+          ? `${variable.name} entered as ${warning.context.entered_value} ${symbolOf(warning.context.entered_unit)} is far outside its plausible range; the same number lands in the normal range as ${warning.context.suggestions.map((s) => symbolOf(s.unit_id)).join(", ")}.`
+          : warning.message, // risk warnings carry catalog-authored copy
     continuationPolicy: copy.policy,
     affectedResults: [...(upstreamRefs ?? [])],
     actions,

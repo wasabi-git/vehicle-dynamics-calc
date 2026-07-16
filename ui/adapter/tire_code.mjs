@@ -49,19 +49,38 @@ export function parseTireCode(text) {
 export async function precheckTireCode(parsed, { adapter, createScratchEngine }) {
   if (!parsed.ok) return { ok: false, stage: "syntax", message: parsed.message };
 
+  // User-facing copy uses variable names and unit display symbols; internal
+  // ids appear only in developerFallback fields.
+  const nameOf = (variableId) => adapter.variablesById?.[variableId]?.name ?? "this tire-code field";
+  const unitSymbolOf = (unitId) => adapter.unitsById?.[unitId]?.display_symbol ?? unitId;
+
   for (const item of parsed.values) {
     if (!(item.value > 0)) {
-      return { ok: false, stage: "positive", message: `Tire code value for ${item.variableId} must be positive.` };
+      return { ok: false, stage: "positive", message: `The ${nameOf(item.variableId)} part of the tire code must be positive.` };
     }
     const variable = adapter.variablesById[item.variableId];
     if (!variable) {
-      return { ok: false, stage: "variable", message: `Variable ${item.variableId} is not registered.` };
+      return {
+        ok: false,
+        stage: "variable",
+        message: "The tire code cannot be applied with the current catalog.",
+        developerFallback: `Variable ${item.variableId} is not registered.`,
+      };
     }
     if (variable.can_be_user_input !== true) {
-      return { ok: false, stage: "variable", message: `Variable ${item.variableId} does not accept user input.` };
+      return {
+        ok: false,
+        stage: "variable",
+        message: `${variable.name} does not accept direct input.`,
+      };
     }
     if (!variable.allowed_units.includes(item.unitId)) {
-      return { ok: false, stage: "unit", message: `Unit ${item.unitId} is not allowed for ${item.variableId}.` };
+      return {
+        ok: false,
+        stage: "unit",
+        message: `The unit ${unitSymbolOf(item.unitId)} is not allowed for ${variable.name}.`,
+        developerFallback: `Unit ${item.unitId} is not allowed for ${item.variableId}.`,
+      };
     }
   }
 
@@ -72,7 +91,8 @@ export async function precheckTireCode(parsed, { adapter, createScratchEngine })
       return {
         ok: false,
         stage: "dry_run",
-        message: outcome.diagnostic ? outcome.diagnostic.message : `Dry run failed at ${item.variableId}.`,
+        message: `The tire code cannot be applied: the ${nameOf(item.variableId)} value was rejected.`,
+        developerFallback: outcome.diagnostic ? outcome.diagnostic.message : null,
       };
     }
   }
@@ -98,7 +118,8 @@ export function applyTireCode(parsed, engine) {
         applied,
         failure: {
           variableId: item.variableId,
-          message: outcome.diagnostic ? outcome.diagnostic.message : `setUserInput failed for ${item.variableId}.`,
+          message: `The write was rejected at this tire-code field.`,
+          developerFallback: outcome.diagnostic ? outcome.diagnostic.message : `setUserInput failed for ${item.variableId}.`,
         },
       };
     }

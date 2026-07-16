@@ -6,6 +6,7 @@
 
 import { el } from "./dom_util.mjs";
 import { confirmKeepOriginal } from "./warnings_controller.mjs";
+import { warningTitleFor } from "../adapter/warning_presenter.mjs";
 
 /**
  * One presented warning -> banner element.
@@ -61,7 +62,9 @@ export function upstreamSection(entries, nameOf = (variableId) => variableId) {
         el("li", {}, [
           el("span", {
             text:
-              `${nameOf(entry.variableId)} (${entry.source.replace("_", " ")}${entry.retired ? ", superseded" : ""}) — ${entry.message} ` +
+              // Fixed per-code title; the raw engine message stays in the
+              // entry data as developer fallback and never enters this DOM.
+              `${nameOf(entry.variableId)} (${entry.source.replace("_", " ")}${entry.retired ? ", superseded" : ""}) — ${warningTitleFor(entry.code)} ` +
               `[${entry.direct ? "direct dependency" : `${entry.hops} hops upstream`}` +
               `${entry.confirmed ? ", user confirmed" : ""}]`,
           }),

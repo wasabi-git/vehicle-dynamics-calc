@@ -135,9 +135,19 @@ export function buildDerivationDetail(app, result) {
   };
 }
 
-/** Expand/collapse bookkeeping (expandedResultIds). */
+/**
+ * Expand/collapse bookkeeping (expandedResultIds). IDEMPOTENT: when the
+ * requested state already holds, nothing is written and — critically —
+ * store.notify() is NOT called. The details renderer re-fires a toggle
+ * event for elements created open; without this guard every render would
+ * notify again and the region would re-render in a loop, destroying nodes
+ * mid-scroll. Returns true only when the state actually changed.
+ */
 export function toggleExpanded({ store }, resultId, expanded) {
-  if (expanded) store.state.expandedResultIds.add(resultId);
-  else store.state.expandedResultIds.delete(resultId);
+  const set = store.state.expandedResultIds;
+  if (Boolean(expanded) === set.has(resultId)) return false;
+  if (expanded) set.add(resultId);
+  else set.delete(resultId);
   store.notify();
+  return true;
 }

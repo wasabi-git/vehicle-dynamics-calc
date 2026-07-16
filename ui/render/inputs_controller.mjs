@@ -100,8 +100,9 @@ export function clearHighlight({ store }) {
  *   number -> setUserInput in the row's current entry unit; on success the
  *   snapshot is recorded under the new result_id (§7.4).
  */
-export function submitValue({ engine, store }, variableId, rawText, unitId) {
+export function submitValue({ engine, store, adapter }, variableId, rawText, unitId) {
   const s = store.state;
+  const variableName = adapter?.variablesById?.[variableId]?.name ?? variableId;
   const text = String(rawText ?? "").trim();
 
   if (isUnfinishedDraft(text)) {
@@ -127,9 +128,12 @@ export function submitValue({ engine, store }, variableId, rawText, unitId) {
 
   const outcome = engine.setUserInput(variableId, value, unitId);
   if (outcome.ok !== true) {
+    // Raw engine diagnostics never enter the normal user DOM — the row shows
+    // friendly copy; the raw message survives only as developer fallback.
     s.inputDiagnosticByVariableId.set(variableId, {
       kind: "rejected",
-      message: outcome.diagnostic ? outcome.diagnostic.message : "The engine rejected this input.",
+      message: `This value cannot be used for ${variableName}.`,
+      developerFallback: outcome.diagnostic ? outcome.diagnostic.message : null,
     });
     store.notify();
     return { submitted: false, kind: "rejected", diagnostic: outcome.diagnostic };

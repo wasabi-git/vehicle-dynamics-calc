@@ -8,7 +8,7 @@ import { createStore } from "../state/store.mjs";
 import { submitValue } from "../render/inputs_controller.mjs";
 import { runSolve } from "../render/results_controller.mjs";
 import { presentResultWarnings, confirmKeepOriginal, directConsumers } from "../render/warnings_controller.mjs";
-import { presentWarning, formatRange } from "../adapter/warning_presenter.mjs";
+import { presentWarning, formatRange, warningTitleFor } from "../adapter/warning_presenter.mjs";
 
 export const name = "warning_presenter: structure + eligibility (§7.6)";
 
@@ -85,6 +85,26 @@ export async function run(t) {
       .find((p) => p.code === "unit_misuse_suspected")
       ?.actions.map((a) => a.kind)
       .join(",") === "adopt_suggestion,ignore_misuse");
+
+  t.section("C9R2: misuse copy never leaks internal ids (raw stays developer fallback)");
+  const misusePresented = presentResultWarnings(app, wheelNow).find((p) => p.code === "unit_misuse_suspected");
+  t.ok("reason uses the variable name and display symbols (ft, in)",
+    misusePresented.reason.includes("Wheel radius") &&
+    misusePresented.reason.includes("13.8 ft") &&
+    misusePresented.reason.includes("as in."));
+  t.ok("reason contains no internal ids",
+    !misusePresented.reason.includes("wheel_radius") &&
+    !misusePresented.reason.includes("foot") &&
+    !misusePresented.reason.includes("inch"));
+  t.ok("adopt action text uses the display symbol",
+    misusePresented.actions.find((a) => a.kind === "adopt_suggestion").text === "Adopt in");
+  t.ok("the raw engine message survives only as developerFallback",
+    misusePresented.developerFallback.includes("wheel_radius") && misusePresented.developerFallback.includes("foot"));
+  t.ok("warningTitleFor maps every code family to fixed user copy",
+    warningTitleFor("range_extreme") === "Far outside the normal range" &&
+    warningTitleFor("unit_misuse_suspected") === "Possible unit mistake" &&
+    warningTitleFor("range_invalid") === "Invalid value" &&
+    warningTitleFor("low_speed_ideal_model") === "Model applicability warning");
 
   t.section("affected results = live direct consumers");
   const consumers = directConsumers(engine, wheelNow.result_id);

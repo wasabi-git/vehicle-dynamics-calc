@@ -25,7 +25,9 @@
     import { queryTargetView } from "../render/targets_controller.mjs";
     import { toggleExpanded } from "../render/derivation_controller.mjs";
     import { formatFormula, plainSymbol } from "../adapter/formula_format.mjs";
-    import { formulaBlock, symbolSpan } from "../render/formula_view.mjs";
+    import { formulaBlock, symbolSpan, proseWithSymbols } from "../render/formula_view.mjs";
+    import { initResultsView } from "../render/results_view.mjs";
+    import { warningBanner } from "../render/warnings_view.mjs";
 
     const el = document.getElementById("log");
     const lines = [];
@@ -132,6 +134,69 @@
         adapter.unitsById.newton.display_symbol === "N" &&
         adapter.unitsById.radian.display_symbol === "rad" &&
         adapter.unitsById.kilogram.display_symbol === "kg");
+
+      // C9R2: prose symbol typesetting for source notes
+      const prose = proseWithSymbols("V = r_w ω_e / N_tf");
+      fixture.append(prose);
+      ok("source-note prose typesets real subscripts with no raw underscore",
+        prose.querySelectorAll("sub").length === 3 && !prose.textContent.includes("_"));
+
+      // C9R2: misuse banner DOM carries no internal ids
+      // (wheel_radius was adopted to inch earlier; enter the misuse case again)
+      const misuseResult = (await import("../render/inputs_controller.mjs")).submitValue(
+        { engine, adapter, store }, "wheel_radius", "13.8", "foot").result;
+      const misusePresented = (await import("../render/warnings_controller.mjs"))
+        .presentResultWarnings({ engine, adapter, store }, misuseResult)
+        .find((p) => p.code === "unit_misuse_suspected");
+      const misuseDom = warningBanner(misusePresented, { app: { engine, adapter, store }, onAdopt: () => {}, onIgnore: () => {} });
+      fixture.append(misuseDom);
+      ok("misuse banner DOM shows names and display symbols only",
+        misuseDom.textContent.includes("Wheel radius") &&
+        !misuseDom.textContent.includes("wheel_radius") &&
+        !misuseDom.textContent.includes("foot") &&
+        !misuseDom.textContent.includes("inch"));
+
+      // C9R2 real-view DOM regression: expansion is stable, controls stay live
+      const skeleton = document.createElement("div");
+      const mk = (tag, id) => { const n = document.createElement(tag); n.id = id; skeleton.append(n); return n; };
+      mk("button", "calculate-btn"); mk("span", "calc-status"); mk("div", "results-region");
+      document.body.append(skeleton);
+      const app2 = await (async () => {
+        const fresh = await createEngine(readText);
+        const store2 = (await import("../state/store.mjs")).createStore();
+        return { engine: fresh.engine, adapter, store: store2 };
+      })();
+      const ic = await import("../render/inputs_controller.mjs");
+      const rc = await import("../render/results_controller.mjs");
+      initResultsView(app2);
+      ic.submitValue(app2, "engine_torque", "310", "foot_pound_force");
+      ic.submitValue(app2, "engine_speed", "4800", "revolution_per_minute");
+      rc.runSolve(app2);
+      const region = document.getElementById("results-region");
+      const detailsEl = region.querySelector("details.derivation");
+      ok("real results view renders a derivation details element", Boolean(detailsEl));
+      let renders = 0;
+      const unsub2 = app2.store.subscribe(() => { renders += 1; });
+      detailsEl.open = true;
+      detailsEl.dispatchEvent(new Event("toggle"));
+      await new Promise((r) => setTimeout(r, 150));
+      const stableRef = region.querySelector("details.derivation[open]");
+      await new Promise((r) => setTimeout(r, 200)); // settle window: a loop would keep re-rendering here
+      ok("expanding notifies exactly once and the expanded node stays stable (no re-render loop)",
+        renders === 1 && stableRef !== null &&
+        region.querySelector("details.derivation[open]") === stableRef &&
+        stableRef.isConnected);
+      // Real user path: a click on the summary must still work after the
+      // expansion (controls live), and it collapses the details.
+      const summary = stableRef.querySelector("summary");
+      summary.click();
+      await new Promise((r) => setTimeout(r, 150));
+      ok("a real summary click after expansion collapses cleanly (one more notify, state cleared)",
+        renders === 2 &&
+        region.querySelector("details.derivation[open]") === null &&
+        app2.store.state.expandedResultIds.size === 0);
+      unsub2();
+      skeleton.remove();
 
       lines.push("");
       lines.push(`browser assertions: ${passed} passed, ${failed} failed`);

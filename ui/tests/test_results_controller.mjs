@@ -40,8 +40,9 @@ export async function run(t) {
   t.ok("calculating shows Calculating…", buttonStateFor("calculating", null).text === "Calculating…" && buttonStateFor("calculating", null).enabled === false);
   t.ok("complete shows a finished state with the button parked", buttonStateFor("complete", null).enabled === false && buttonStateFor("complete", null).status.includes("up to date"));
   t.ok("needs_recalc enables Recalculate", buttonStateFor("needs_recalc", null).text === "Recalculate" && buttonStateFor("needs_recalc", null).enabled === true);
-  const failed = buttonStateFor("failed", { ok: false, diagnostics: [{ severity: "error", message: "fixed point not reached" }] });
-  t.ok("failed names the specific reason and allows retry", failed.enabled === true && failed.status.includes("fixed point not reached"));
+  const failed = buttonStateFor("failed", { ok: false, diagnostics: [{ severity: "error", message: "raw engine diagnostic" }] });
+  t.ok("failed shows friendly copy, allows retry, and never leaks the raw diagnostic",
+    failed.enabled === true && failed.status.startsWith("Calculation failed") && !failed.status.includes("raw engine diagnostic"));
 
   t.section("solve flow");
   const app = await fullScenario(t);

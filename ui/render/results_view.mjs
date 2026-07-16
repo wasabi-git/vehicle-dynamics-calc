@@ -28,7 +28,8 @@ import {
   noResultState,
   NO_RESULT_TEXT,
 } from "./derivation_controller.mjs";
-import { formulaBlock, symbolSpan } from "./formula_view.mjs";
+import { formulaBlock, symbolSpan, proseWithSymbols } from "./formula_view.mjs";
+import { formatFormula, isFallback } from "../adapter/formula_format.mjs";
 
 export function initResultsView(app) {
   const { store } = app;
@@ -144,12 +145,19 @@ export function initResultsView(app) {
       el("div", { class: "trace-section" }, [
         el("h4", { class: "section-label", text: "Sources" }),
         el("ul", { class: "step-list" },
-          d.sources.map((s) =>
-            el("li", {}, [
+          d.sources.map((s) => {
+            // Notes go through the safe formula channel: a note that parses
+            // under the closed M3 table renders as a formula block; anything
+            // else is typeset as prose with real subscripts (no raw
+            // underscore ever shows).
+            const noteTree = formatFormula(s.note);
+            return el("li", {}, [
               el("span", { class: "micro-label", text: s.label }),
-              el("span", { text: ` ${s.note} (${s.locator})` }),
-            ])
-          )
+              el("span", { text: " " }),
+              isFallback(noteTree) ? proseWithSymbols(s.note) : formulaBlock(noteTree),
+              el("span", { text: ` (${s.locator})` }),
+            ]);
+          })
         ),
       ]),
       el("p", { class: "status-text", text: `Formula path: ${d.formulaPath.join(" → ")}` }),

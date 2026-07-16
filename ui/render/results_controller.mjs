@@ -74,10 +74,10 @@ export function buttonStateFor(phase, lastSolve) {
       return { text: "Recalculate", enabled: false, status: "Calculation complete. Results are up to date." };
     case "needs_recalc":
       return { text: "Recalculate", enabled: true, status: "Inputs changed. Affected results are marked stale until you recalculate." };
-    case "failed": {
-      const detail = (lastSolve?.diagnostics ?? []).map((d) => d.message).join(" ") || "The calculation could not be completed.";
-      return { text: "Recalculate", enabled: true, status: `Calculation failed: ${detail} Adjust the conditions and try again.` };
-    }
+    case "failed":
+      // Raw engine diagnostics stay in lastSolveDiagnostics as developer
+      // fallback; the status line carries friendly copy only.
+      return { text: "Recalculate", enabled: true, status: "Calculation failed: the derivation could not be completed with the current conditions. Adjust them and try again." };
     default:
       return { text: "Calculate", enabled: false, status: "" };
   }

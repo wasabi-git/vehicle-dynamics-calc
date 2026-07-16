@@ -80,7 +80,10 @@ export function initTargetsView(app) {
       path.missingInputs.length === 0 && path.blockedReasons.length > 0
         ? el("ul", { class: "missing-list" },
             path.blockedReasons.map((r) => el("li", {}, [
-              el("span", { class: "missing-list__reason", text: `${r.causeText}: ${r.message}` }),
+              el("span", { class: "missing-list__reason", text:
+                r.variableId
+                  ? `${r.causeText}: ${adapter.variablesById[r.variableId]?.name ?? r.variableId}`
+                  : r.causeText }),
             ])))
         : null,
     ]);
@@ -99,7 +102,11 @@ export function initTargetsView(app) {
       return nodes;
     }
     if (view.noRegisteredDirection) {
-      for (const d of view.diagnostics) nodes.push(el("p", { class: "status-text", text: d.message }));
+      // Friendly copy from catalog names; the raw engine diagnostic stays in
+      // view.diagnostics as developer fallback and never enters this DOM.
+      nodes.push(el("p", { class: "status-text", text:
+        `No registered formula produces ${variable.name}; the engine does not perform algebraic inversion.` +
+        (view.canBeUserInput ? ` You can enter ${variable.name} directly as an input.` : "") }));
       return nodes;
     }
     nodes.push(...view.paths.map(pathOption));

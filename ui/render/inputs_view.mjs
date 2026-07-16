@@ -62,17 +62,18 @@ export function initInputsView(app) {
   clearAllBtn.addEventListener("click", () => requestClearAll(app));
 
   let highlightTimer = null;
+  let focusedForHighlight = null;
 
   function renderTireReport(report) {
     const slot = document.getElementById("tire-report") ?? el("p", { id: "tire-report", class: "row-diagnostic" });
     if (!slot.isConnected) tireInput.closest(".field-row").after(slot);
     if (report.ok) {
       slot.className = "row-diagnostic row-diagnostic--muted";
-      slot.textContent = `Tire code applied: ${report.applied.map((a) => a.variableId).join(", ")}.`;
+      slot.textContent = `Tire code applied: ${report.applied.map((a) => app.adapter.variablesById[a.variableId]?.name ?? a.variableId).join(", ")}.`;
     } else {
       slot.className = "row-diagnostic row-diagnostic--danger";
       const appliedNote = report.applied.length
-        ? ` Already written before the failure: ${report.applied.map((a) => a.variableId).join(", ")} — remove them manually if unwanted.`
+        ? ` Already written before the failure: ${report.applied.map((a) => app.adapter.variablesById[a.variableId]?.name ?? a.variableId).join(", ")} — remove them manually if unwanted.`
         : "";
       slot.textContent = `${report.message ?? report.failure?.message ?? "Tire code failed."}${appliedNote}`;
     }
@@ -221,9 +222,19 @@ export function initInputsView(app) {
 
     if (s.highlightedVariableId) {
       const target = document.getElementById(`input-row-${s.highlightedVariableId}`);
-      if (target) target.scrollIntoView({ block: "nearest" });
+      if (target) {
+        target.scrollIntoView({ block: "nearest" });
+        // Locate + focus (Part 2 single-input rule): the freshly added or
+        // duplicate-located row is immediately typeable — no scrolling hunt.
+        if (focusedForHighlight !== s.highlightedVariableId) {
+          focusedForHighlight = s.highlightedVariableId;
+          target.querySelector("input")?.focus();
+        }
+      }
       if (highlightTimer) clearTimeout(highlightTimer);
       highlightTimer = setTimeout(() => clearHighlight(app), 1600);
+    } else {
+      focusedForHighlight = null; // a later re-add of the same variable refocuses
     }
   }
 
@@ -235,7 +246,7 @@ export function initInputsView(app) {
     const text =
       pending.kind === "clear_all"
         ? "Remove all inputs? Derived results that depended on them become unavailable after you recalculate."
-        : `Remove your input for ${pending.payload.variableId}? Dependent results go stale until you recalculate.`;
+        : `Remove your input for ${app.adapter.variablesById[pending.payload.variableId]?.name ?? pending.payload.variableId}? Dependent results go stale until you recalculate.`;
     slot.append(
       el("div", { class: "banner banner--neutral" }, [
         el("p", { class: "banner__body", text }),

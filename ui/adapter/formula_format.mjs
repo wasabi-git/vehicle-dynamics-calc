@@ -231,3 +231,25 @@ export function plainSymbol(symbolText) {
   const { base, sub } = splitSymbol(symbolText);
   return sub === null ? base : `${base}${sub}`;
 }
+
+/**
+ * Tokenize prose that may embed symbol notation (source notes such as
+ * "V = r_w ω_e / N_tf"): every `base_sub` run becomes a symbol token, the
+ * rest stays literal text. Pure and Node-testable; the DOM side
+ * (ui/render/formula_view.mjs proseWithSymbols) renders symbol tokens with
+ * real subscripts so no raw underscore reaches the user.
+ */
+export function tokenizeSymbolRuns(text) {
+  const source = String(text ?? "");
+  const out = [];
+  const re = /([A-Za-zΑ-ω]+)_([A-Za-z0-9]+)/g;
+  let last = 0;
+  let match;
+  while ((match = re.exec(source)) !== null) {
+    if (match.index > last) out.push({ kind: "text", text: source.slice(last, match.index) });
+    out.push({ kind: "sym", base: match[1], sub: match[2] });
+    last = match.index + match[0].length;
+  }
+  if (last < source.length) out.push({ kind: "text", text: source.slice(last) });
+  return out;
+}

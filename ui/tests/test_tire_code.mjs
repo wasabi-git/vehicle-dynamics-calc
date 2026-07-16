@@ -46,8 +46,11 @@ export async function run(t) {
 
   t.ok("valid code passes the full precheck (real adapter + scratch dry run)",
     (await precheckTireCode(parsed, { adapter, createScratchEngine })).ok === true);
+  const zeroWidth = await precheckTireCode(parseTireCode("00/55R16"), { adapter, createScratchEngine });
   t.ok("zero width fails the positive check",
-    (await precheckTireCode(parseTireCode("00/55R16"), { adapter, createScratchEngine })).stage === "positive");
+    zeroWidth.stage === "positive");
+  t.ok("C9R2: the positive-check copy uses the variable name, not the internal id",
+    zeroWidth.message.includes(adapter.variablesById.section_width.name) && !zeroWidth.message.includes("section_width"));
   t.ok("unregistered variable fails the variable check",
     (await precheckTireCode(parsed, { adapter: { variablesById: {} }, createScratchEngine })).stage === "variable");
   const noInputAdapter = {
@@ -72,8 +75,12 @@ export async function run(t) {
         ? { ok: false, result: null, diagnostic: { code: "x", message: "dry-run refusal" } }
         : { ok: true, result: {}, diagnostic: null },
   });
-  t.ok("scratch dry-run failure is reported as dry_run stage",
-    (await precheckTireCode(parsed, { adapter, createScratchEngine: failingScratch })).stage === "dry_run");
+  const dryRunFail = await precheckTireCode(parsed, { adapter, createScratchEngine: failingScratch });
+  t.ok("scratch dry-run failure is reported as dry_run stage", dryRunFail.stage === "dry_run");
+  t.ok("C9R2: dry-run copy is friendly; the raw diagnostic survives as developerFallback",
+    dryRunFail.message.includes(adapter.variablesById.aspect_ratio.name) &&
+    !dryRunFail.message.includes("aspect_ratio") &&
+    dryRunFail.developerFallback === "dry-run refusal");
 
   t.section("precheck never touches the live engine");
   const before = engine.getResults().length;

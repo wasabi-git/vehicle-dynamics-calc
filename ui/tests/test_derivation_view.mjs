@@ -92,9 +92,18 @@ export async function run(t) {
     dStale.substitutions.find((s) => s.variableId === "wheel_radius").entered === "0.311 m");
   runSolve(app);
 
-  t.section("expand/collapse bookkeeping");
-  toggleExpanded(app, f007.result_id, true);
-  t.ok("expanded set records the result", store.state.expandedResultIds.has(f007.result_id));
-  toggleExpanded(app, f007.result_id, false);
-  t.ok("collapse removes it", !store.state.expandedResultIds.has(f007.result_id));
+  t.section("expand/collapse bookkeeping is idempotent (C9R2)");
+  let notifications = 0;
+  const unsubscribe = store.subscribe(() => { notifications += 1; });
+  t.ok("first expand changes state and notifies once",
+    toggleExpanded(app, f007.result_id, true) === true &&
+    store.state.expandedResultIds.has(f007.result_id) && notifications === 1);
+  t.ok("re-expanding an expanded result is a silent no-op (no notify, no loop)",
+    toggleExpanded(app, f007.result_id, true) === false && notifications === 1);
+  t.ok("collapse changes state and notifies once",
+    toggleExpanded(app, f007.result_id, false) === true &&
+    !store.state.expandedResultIds.has(f007.result_id) && notifications === 2);
+  t.ok("re-collapsing a collapsed result is a silent no-op",
+    toggleExpanded(app, f007.result_id, false) === false && notifications === 2);
+  unsubscribe();
 }

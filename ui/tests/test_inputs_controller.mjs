@@ -99,6 +99,11 @@ export async function run(t) {
   const rejected = submitValue(app, "gravity", "310", "meter_per_second_squared");
   t.ok("constant rejects user input with a diagnostic",
     rejected.kind === "rejected" && store.state.inputDiagnosticByVariableId.get("gravity").kind === "rejected");
+  const rejectedDiag = store.state.inputDiagnosticByVariableId.get("gravity");
+  t.ok("C9R2: rejection copy is friendly (variable name), raw diagnostic only as developerFallback",
+    rejectedDiag.message.includes("Gravity") &&
+    !rejectedDiag.message.includes("gravity ") &&
+    typeof rejectedDiag.developerFallback === "string" && rejectedDiag.developerFallback.length > 0);
 
   t.section("G4 negative: display switch has zero engine side effects (§7.3)");
   submitValue(app, "engine_speed", "4800", "revolution_per_minute");

@@ -4,7 +4,7 @@
  * (whole-string fallback, no partial rendering), and catalog coverage.
  */
 
-import { formatFormula, isFallback, splitSymbol, plainSymbol } from "../adapter/formula_format.mjs";
+import { formatFormula, isFallback, splitSymbol, plainSymbol, tokenizeSymbolRuns } from "../adapter/formula_format.mjs";
 
 export const name = "formula_format: M3 parser (§7.9)";
 
@@ -127,4 +127,25 @@ export async function run(t) {
     adapter.unitsById.newton.display_symbol === "N" &&
     adapter.unitsById.radian.display_symbol === "rad" &&
     adapter.unitsById.kilogram.display_symbol === "kg");
+
+  t.section("C9R2: prose symbol tokenizer for source notes");
+  const runs = tokenizeSymbolRuns("V = r_w ω_e / N_tf");
+  t.ok("symbol runs are recognized incl. greek bases",
+    JSON.stringify(runs.filter((x) => x.kind === "sym")) ===
+    JSON.stringify([
+      { kind: "sym", base: "r", sub: "w" },
+      { kind: "sym", base: "ω", sub: "e" },
+      { kind: "sym", base: "N", sub: "tf" },
+    ]));
+  t.ok("literal text between symbols is preserved verbatim",
+    runs[0].kind === "text" && runs[0].text === "V = " &&
+    tokenizeSymbolRuns("plain prose without symbols").length === 1);
+  t.ok("empty and null inputs tokenize safely",
+    tokenizeSymbolRuns("").length === 0 && tokenizeSymbolRuns(null).length === 0);
+  t.ok("every catalog source note tokenizes with zero leftover underscores in symbol positions",
+    adapter.formulas.every((f) =>
+      (f.source_reference ?? []).every((ref) =>
+        tokenizeSymbolRuns(ref.note)
+          .filter((x) => x.kind === "text")
+          .every((x) => !/[A-Za-zΑ-ω]_[A-Za-z0-9]/.test(x.text)))));
 }
