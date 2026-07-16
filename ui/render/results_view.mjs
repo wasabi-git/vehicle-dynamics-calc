@@ -21,6 +21,14 @@ import {
 import { cancelPending, confirmPending, adoptMisuseSuggestion, ignoreMisuseSuggestion } from "./inputs_controller.mjs";
 import { presentResultWarnings, upstreamAbnormalities } from "./warnings_controller.mjs";
 import { warningBanner, upstreamSection } from "./warnings_view.mjs";
+import {
+  buildDerivationDetail,
+  comparisonsForVariable,
+  toggleExpanded,
+  noResultState,
+  NO_RESULT_TEXT,
+} from "./derivation_controller.mjs";
+import { formulaBlock } from "./formula_view.mjs";
 
 export function initResultsView(app) {
   const { store } = app;
@@ -101,6 +109,63 @@ export function initResultsView(app) {
     return children;
   }
 
+  function derivationDetails(view) {
+    if (view.source !== "derived") return null;
+    const instance = app.engine.getByResultId(view.resultId);
+    if (!instance) return null;
+    const d = buildDerivationDetail(app, instance);
+    const details = el("details", { class: "derivation", open: store.state.expandedResultIds.has(view.resultId) ? "open" : null }, [
+      el("summary", { text: "Derivation details" }),
+      el("p", { class: "status-text", text: d.summary }),
+      el("p", { class: "micro-label", text: `Formula · ${d.formulaName}` }),
+      d.formulaTree ? formulaBlock(d.formulaTree) : null,
+      el("div", { class: "rail" },
+        d.substitutions.map((s) =>
+          el("div", { class: "rail-row" }, [
+            el("span", { class: `dot ${s.source === "user_input" ? "dot--user" : s.source === "assumption" ? "dot--assumed" : s.source === "constant" ? "dot--assumed" : "dot--derived"}` }),
+            el("span", { class: "num", text: `${s.name} (${s.symbol}): ${s.conversion}${s.stale ? " — stale" : ""}${s.retired ? " — superseded" : ""}` }),
+            el("span", { class: "micro-label", text: s.source.replace("_", " ") }),
+          ])
+        )
+      ),
+      d.intermediates.length
+        ? el("p", { class: "status-text", text: `Intermediate variables: ${d.intermediates.map((i) => `${i.name} (${i.formulaId})`).join(", ")}` })
+        : null,
+      d.assumptionsUsed.length
+        ? el("p", { class: "status-text", text: `Assumptions used: ${d.assumptionsUsed.join(", ")}` })
+        : null,
+      d.constants.length
+        ? el("p", { class: "status-text", text: `Constants: ${d.constants.map((c) => `${c.name} = ${c.siText}`).join(", ")}` })
+        : null,
+      el("div", { class: "trace-section" }, [
+        el("h4", { class: "section-label", text: "Sources" }),
+        el("ul", { class: "step-list" },
+          d.sources.map((s) =>
+            el("li", {}, [
+              el("span", { class: "micro-label", text: s.label }),
+              el("span", { text: ` ${s.note} (${s.locator})` }),
+            ])
+          )
+        ),
+      ]),
+      el("p", { class: "status-text", text: `Formula path: ${d.formulaPath.join(" → ")}` }),
+      d.stale ? el("p", { class: "row-diagnostic row-diagnostic--warning", text: "This derivation is stale; recalculate to refresh it." }) : null,
+    ]);
+    details.addEventListener("toggle", () => toggleExpanded(app, view.resultId, details.open));
+    return details;
+  }
+
+  function comparisonNodes(view) {
+    if (view.source !== "user_input" || !view.useDerivedButton) return [];
+    return comparisonsForVariable(app, view.variableId).map((c) =>
+      el("p", { class: "status-text num", text:
+        `Difference vs derived${c.model ? ` (${c.model})` : ""}: ` +
+        `${c.absoluteSiText} SI` +
+        (c.displayDeltaText ? ` · ${c.displayDeltaText} ${c.displayUnit}` : "") +
+        ` · ${c.percentageText}` })
+    );
+  }
+
   function warningNodes(view) {
     const instance = app.engine.getByResultId(view.resultId);
     if (!instance) return [];
@@ -126,7 +191,9 @@ export function initResultsView(app) {
       statusRow(view),
       el("p", { class: "status-text num", text: `SI: ${view.si.text} ${view.si.unitId}` }),
       ...warningNodes(view),
+      ...comparisonNodes(view),
       useDerivedControls(view),
+      derivationDetails(view),
     ]);
     const section = sections[view.variableId];
     if (section && view.source === "derived" && view.active) {
@@ -142,9 +209,11 @@ export function initResultsView(app) {
       ...view.labels.map((l) => el("span", { class: "micro-label", text: l.text })),
       el("span", { class: "result-row__value num", text: view.display.ok ? `${view.display.text} ${view.display.unitSymbol}` : "—" }),
     ]);
-    const extras = [...warningNodes(view)];
+    const extras = [...warningNodes(view), ...comparisonNodes(view)];
     const controls = useDerivedControls(view);
     if (controls) extras.push(controls);
+    const details = derivationDetails(view);
+    if (details) extras.push(details);
     if (extras.length === 0) return row;
     return el("div", {}, [row, ...extras]);
   }
@@ -156,9 +225,17 @@ export function initResultsView(app) {
     status.textContent = state.status;
 
     clear(region);
+    const emptyState = noResultState(app);
+    if (emptyState === "not_calculated" || emptyState === "nothing_derivable") {
+      region.append(el("p", { class: "empty-note", id: "results-empty-note", text: NO_RESULT_TEXT[emptyState] }));
+      return;
+    }
     const vm = buildResultsViewModel(app);
-    if (!vm.hasAny || !store.state.hasCompletedSolve) {
-      region.append(el("p", { class: "empty-note", id: "results-empty-note", text: "Results appear here after you calculate." }));
+    if (emptyState === "target_unavailable") {
+      region.append(el("p", { class: "empty-note", text: NO_RESULT_TEXT.target_unavailable }));
+    }
+    if (!vm.hasAny) {
+      region.append(el("p", { class: "empty-note", id: "results-empty-note", text: NO_RESULT_TEXT.nothing_derivable }));
       return;
     }
 

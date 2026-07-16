@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>VD UI browser assertion page</title>
+  <style>body{font-family:monospace;margin:2rem}pre{white-space:pre-wrap}#fixture{border:1px dashed #999;padding:8px;margin-top:1rem}</style>
+</head>
+<body>
+  <h1>VD UI — browser assertion page (V-A manual gate)</h1>
+  <p>Serve the repository root statically (e.g. <code>python -m http.server</code>)
+     and open <code>/ui/tests/tests.html</code>. The page imports the UI modules as
+     native ES modules against the real engine and catalog, runs the §9.2
+     assertion set in this real browser environment, and renders formula DOM
+     (including the fallback presentation) into the fixture box below for
+     visual confirmation. Record the outcome in docs/UI.md at C11.</p>
+  <pre id="log">loading…</pre>
+  <div id="fixture"></div>
+  <script type="module">
+    import { createEngine } from "../../engine/index.mjs";
+    import { buildCatalogAdapter } from "../adapter/catalog_adapter.mjs";
+    import { createStore } from "../state/store.mjs";
+    import { submitValue, setDisplayUnit, requestClearAll, cancelPending, ignoreMisuseSuggestion, adoptMisuseSuggestion } from "../render/inputs_controller.mjs";
+    import { runSolve, buttonStateFor } from "../render/results_controller.mjs";
+    import { presentResultWarnings, confirmKeepOriginal } from "../render/warnings_controller.mjs";
+    import { queryTargetView } from "../render/targets_controller.mjs";
+    import { toggleExpanded } from "../render/derivation_controller.mjs";
+    import { formatFormula } from "../adapter/formula_format.mjs";
+    import { formulaBlock } from "../render/formula_view.mjs";
+
+    const el = document.getElementById("log");
+    const lines = [];
+    let passed = 0, failed = 0;
+    const ok = (label, cond) => {
+      if (cond) { passed += 1; lines.push(`ok    ${label}`); }
+      else { failed += 1; lines.push(`FAIL  ${label}`); }
+      el.textContent = lines.join("\n");
+    };
+
+    const ROOT = new URL("../../", document.baseURI);
+    const readText = async (rel) => {
+      const r = await fetch(new URL(rel, ROOT));
+      if (!r.ok) throw new Error(`HTTP ${r.status} for ${rel}`);
+      return r.text();
+    };
+
+    try {
+      const { ok: loaded, engine } = await createEngine(readText);
+      const adapter = await buildCatalogAdapter(readText);
+      ok("catalog + engine load in the browser", loaded === true);
+      const store = createStore();
+      const app = { engine, adapter, store };
+
+      // scenario
+      submitValue(app, "engine_torque", "310", "foot_pound_force");
+      submitValue(app, "engine_speed", "4800", "revolution_per_minute");
+      submitValue(app, "combined_gear_ratio", "8.0", "decimal");
+      submitValue(app, "drivetrain_efficiency", "0.90", "decimal");
+      submitValue(app, "vehicle_weight", "3500", "pound_force");
+      const wheel = submitValue(app, "wheel_radius", "13.8", "foot").result;
+      runSolve(app);
+
+      // §9.2 confirm flow resets on a new result_id
+      confirmKeepOriginal(app, wheel.result_id);
+      ok("confirm records the result_id", store.state.confirmedResultIds.has(wheel.result_id));
+      const replaced = submitValue(app, "wheel_radius", "13.8", "foot").result;
+      const rePresented = presentResultWarnings(app, replaced).find((p) => p.code === "range_extreme");
+      ok("confirmation resets with the new result_id", rePresented.canConfirm === true);
+
+      // §9.2 misuse two buttons
+      const misuse = presentResultWarnings(app, replaced).find((p) => p.code === "unit_misuse_suspected");
+      ok("misuse banner offers adopt + keep-my-input",
+        misuse.actions.map((a) => a.kind).join(",") === "adopt_suggestion,ignore_misuse");
+      ignoreMisuseSuggestion(app, replaced.result_id);
+      ok("ignore collapses the actions via the confirmation flow",
+        presentResultWarnings(app, replaced).find((p) => p.code === "unit_misuse_suspected").actions.length === 0);
+      const fresh = submitValue(app, "wheel_radius", "13.8", "foot").result;
+      const suggestion = presentResultWarnings(app, fresh)
+        .find((p) => p.code === "unit_misuse_suspected").actions
+        .find((a) => a.kind === "adopt_suggestion").suggestion;
+      adoptMisuseSuggestion(app, suggestion);
+      ok("adopt lands 13.8 inch in the normal range",
+        engine.getResults("wheel_radius").find((r) => r.source === "user_input").range_status === "normal");
+      runSolve(app);
+
+      // §9.2 clear-all cancel path
+      requestClearAll(app);
+      cancelPending(app);
+      ok("clear-all cancel leaves every input in place",
+        store.state.pendingConfirmation === null &&
+        engine.getResults().filter((r) => r.source === "user_input").length === 6);
+
+      // §9.2 display switch never triggers the Recalculate state
+      const phaseBefore = store.state.calculationPhase;
+      setDisplayUnit(app, "engine_power", "kilowatt");
+      ok("display switch keeps the phase (no Recalculate)",
+        store.state.calculationPhase === phaseBefore &&
+        buttonStateFor(store.state.calculationPhase, null).text !== "Calculating…");
+
+      // §9.2 expand / collapse
+      const active = engine.getActive("longitudinal_acceleration");
+      toggleExpanded(app, active.result_id, true);
+      ok("expand records the result", store.state.expandedResultIds.has(active.result_id));
+      toggleExpanded(app, active.result_id, false);
+      ok("collapse clears it", !store.state.expandedResultIds.has(active.result_id));
+
+      // §9.2 target flow
+      const targetView = queryTargetView(app, "longitudinal_acceleration");
+      ok("target query returns the availability outcome", targetView.outcome === "already_available");
+
+      // §9.2 formula DOM rendering, incl. fallback presentation
+      const fixture = document.getElementById("fixture");
+      fixture.append(formulaBlock(formatFormula("a_x = \\frac{F_x-D_A-R_x-W\\sin\\theta-R_{hx}}{M_fM}")));
+      ok("parsed formula renders fraction DOM", fixture.querySelectorAll(".frac").length === 1);
+      const evil = "<script>alert(1)<\/script>";
+      fixture.append(formulaBlock(formatFormula(evil)));
+      ok("malicious source renders as escaped text, no element, no handler",
+        fixture.querySelectorAll("script").length === 0 &&
+        fixture.textContent.includes("<script>"));
+
+      lines.push("");
+      lines.push(`browser assertions: ${passed} passed, ${failed} failed`);
+      lines.push(failed === 0 ? "UI BROWSER PASS" : "UI BROWSER FAIL");
+      el.textContent = lines.join("\n");
+    } catch (error) {
+      lines.push(`UI BROWSER FAIL: ${error.message}`);
+      el.textContent = lines.join("\n");
+    }
+  </script>
+</body>
+</html>

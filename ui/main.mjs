@@ -13,6 +13,7 @@ import { createStore } from "./state/store.mjs";
 import { initInputsView } from "./render/inputs_view.mjs";
 import { initResultsView } from "./render/results_view.mjs";
 import { initTargetsView } from "./render/targets_view.mjs";
+import { initAssumptionsView } from "./render/assumptions_view.mjs";
 
 const ROOT = new URL("./", document.baseURI);
 const textCache = new Map();
@@ -68,7 +69,7 @@ async function boot() {
     initInputsView(app);
     initResultsView(app);
     initTargetsView(app);
-    // C9 attaches the assumptions panel, derivation details, and comparisons.
+    initAssumptionsView(app);
   } catch (error) {
     setBootStatus(`Startup failed: ${error.message}`);
   }
