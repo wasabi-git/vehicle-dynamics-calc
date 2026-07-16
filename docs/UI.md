@@ -170,7 +170,7 @@ exhaustive per-item owner verification):
 | B1 | Inputs region: search/category, picker direct entry with units, duplicate locate-highlight, tire three-box, clear-all confirm, display-unit switch | signed 2026-07-16 — owner broadly reviewed, no issue reported |
 | B2 | Results: hero card + model rows/switch, stale styling, warning banners + Keep original, misuse adopt/ignore, comparison + use-derived flow, intermediates | signed 2026-07-16 — owner broadly reviewed, no issue reported |
 | B3 | Targets and frame: grouped selector, missing rows + inline entry, recommended next, no-result three states, assumptions/constants panels, 900px collapse | signed 2026-07-16 — owner broadly reviewed, no issue reported |
-| B4 | Part 2 §2.8 acceptance scenarios (eight) walked end-to-end on the live page | signed 2026-07-16 — owner broadly reviewed, no issue reported; one owner-proposed change applied as C9R11 and re-verified |
+| B4 | Part 2 §2.8 acceptance scenarios — eight scenarios broadly reviewed on the live page | signed 2026-07-16 — owner broadly reviewed, no issue reported; one owner-proposed change applied as C9R11 and re-verified |
 
 **Evidence matrix — §8 master table, row by row** (tiers: full = 必做,
 minimal = 最简, n/a per the source text). "Owner review Bn" means the row's
@@ -227,7 +227,7 @@ browser = `ui/tests/tests.html` assertion.
 | 45 | Stale/invalid-path/reverse display without fabrication (1962–2033) | Node test_derivation_view (stale detail, superseded rows); engine gates; owner review B4 |
 | 46 | Chain form (2035–2052), minimal; traceable / no code internals (2054–2083) | browser (rail step list DOM); formula-path anchors are registered catalog ids (registered decision); owner review B2 |
 | 47 | Rounding never flows back (2085–2093) | Node test_view_model (display-only formatting), test_comparison (unrounded subtraction, last-step formatting) |
-| 48 | Part 2 §2.8 acceptance scenarios (2462–2549) — eight in the cited range | owner review B4 (end-to-end walkthrough) |
+| 48 | Part 2 §2.8 acceptance scenarios (2462–2549) — eight in the cited range | owner broad review B4 |
 | 49 | Not-doing guardrails (2.1 十 / 2.5 二十一 / 2.7 二十五 / 2.8 二十四) | Guardrail respected: none of the listed features exist in the branch; owner review B1–B4 raised none |
 
 Scenario-count note: the work package cites "nine acceptance scenarios" for the
