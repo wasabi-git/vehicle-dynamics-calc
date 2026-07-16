@@ -19,6 +19,25 @@ export function directConsumers(engine, resultId) {
     .map((r) => r.result_id);
 }
 
+/**
+ * Range display data for one metadata range (owner-approved C9R3b):
+ * conversion to the current display unit goes EXCLUSIVELY through the
+ * public engine.convertUnitValue — read-only, zero pool effects. The
+ * warning tier itself stays whatever the engine already judged; the UI
+ * never re-evaluates ranges. When the display unit equals the declared
+ * unit, or ANY endpoint fails to convert, `converted` is null and the
+ * presenter falls back to the registered metadata values verbatim.
+ */
+export function buildRangeDisplay(engine, range, displayUnitId) {
+  if (!range || range.min === undefined || range.max === undefined) return null;
+  const registered = { min: range.min, max: range.max, unitId: range.unit };
+  if (!displayUnitId || displayUnitId === range.unit) return { registered, converted: null };
+  const min = engine.convertUnitValue(range.min, range.unit, displayUnitId);
+  const max = engine.convertUnitValue(range.max, range.unit, displayUnitId);
+  if (min.ok !== true || max.ok !== true) return { registered, converted: null };
+  return { registered, converted: { min: min.value, max: max.value, unitId: displayUnitId } };
+}
+
 /** Presented warning list for one result (engine order preserved). */
 export function presentResultWarnings({ engine, adapter, store }, result) {
   if (result.warnings.length === 0) return [];
@@ -37,6 +56,12 @@ export function presentResultWarnings({ engine, adapter, store }, result) {
     upstreamRefs: directConsumers(engine, result.result_id),
     confirmed: store.state.confirmedResultIds.has(result.result_id),
     unitSymbolOf: (id) => adapter.unitsById[id]?.display_symbol ?? id,
+    rangeDisplays: {
+      normal: buildRangeDisplay(engine, variable.normal_range, unitId),
+      warning: buildRangeDisplay(engine, variable.warning_range, unitId),
+    },
+    // Converted bounds are formatted only at this last step (§11.2 precision).
+    formatValue: (v) => formatSignificant(v, PRECISION.result),
   });
 }
 

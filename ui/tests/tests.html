@@ -156,6 +156,17 @@
         !misuseDom.textContent.includes("foot") &&
         !misuseDom.textContent.includes("inch"));
 
+      // C9R3b: range bounds follow the current display unit in the DOM
+      const wc = await import("../render/warnings_controller.mjs");
+      store.state.displayUnitByVariableId.set("wheel_radius", "foot");
+      const ftPresented = wc.presentResultWarnings({ engine, adapter, store }, misuseResult)
+        .find((p) => p.code === "range_extreme");
+      const ftDom = warningBanner(ftPresented, { app: { engine, adapter, store } });
+      fixture.append(ftDom);
+      ok("range banner shows ≈converted display-unit bounds with the registered values",
+        ftDom.textContent.includes("≈0.7500–1.833 ft (registered: 9–22 in)"));
+      store.state.displayUnitByVariableId.delete("wheel_radius");
+
       // C9R2 real-view DOM regression: expansion is stable, controls stay live
       const skeleton = document.createElement("div");
       const mk = (tag, id) => { const n = document.createElement(tag); n.id = id; skeleton.append(n); return n; };

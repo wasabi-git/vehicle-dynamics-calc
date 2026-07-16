@@ -56,13 +56,33 @@ export function warningTitleFor(code) {
 
 /**
  * Format one metadata range in its declared unit. The VALUES stay exactly
- * as the metadata declares them (no re-conversion — the UI has no
- * conversion authority); `symbolOf` only maps the declared unit id to its
- * registered display symbol (owner-directed C10 polish).
+ * as the metadata declares them; `symbolOf` only maps the declared unit id
+ * to its registered display symbol.
  */
 export function formatRange(range, symbolOf = (u) => u) {
   if (!range || range.min === undefined || range.max === undefined) return null;
   return `${range.min} to ${range.max} ${symbolOf(range.unit)}`;
+}
+
+/**
+ * Owner-approved C9R3b range display (deviation from the original
+ * verbatim-only rule explicitly approved): the CURRENT display unit leads;
+ * when it differs from the metadata unit the converted bounds are marked ≈
+ * (formatted only at this last step) and the registered values follow in
+ * parentheses; same unit → single verbatim form; any failed endpoint →
+ * whole line falls back to the registered metadata values. Conversion
+ * happens in the controller through the public engine.convertUnitValue
+ * ONLY — this function just formats plain data.
+ */
+export function formatRangeDisplay(display, symbolOf = (u) => u, formatValue = (v) => String(v)) {
+  if (!display) return null;
+  const reg = display.registered;
+  if (!display.converted) return `${reg.min} to ${reg.max} ${symbolOf(reg.unitId)}`;
+  const c = display.converted;
+  return (
+    `≈${formatValue(c.min)}–${formatValue(c.max)} ${symbolOf(c.unitId)} ` +
+    `(registered: ${reg.min}–${reg.max} ${symbolOf(reg.unitId)})`
+  );
 }
 
 /**
@@ -135,8 +155,12 @@ export function presentWarning(input) {
     canConfirm,
     confirmed: confirmed === true,
     ranges: {
-      normal: formatRange(variable.normal_range, symbolOf),
-      warning: formatRange(variable.warning_range, symbolOf),
+      normal: input.rangeDisplays
+        ? formatRangeDisplay(input.rangeDisplays.normal, symbolOf, input.formatValue ?? ((v) => String(v)))
+        : formatRange(variable.normal_range, symbolOf),
+      warning: input.rangeDisplays
+        ? formatRangeDisplay(input.rangeDisplays.warning, symbolOf, input.formatValue ?? ((v) => String(v)))
+        : formatRange(variable.warning_range, symbolOf),
     },
     misuseContext: warning.code === "unit_misuse_suspected" ? warning.context ?? null : null,
     developerFallback: warning.message,

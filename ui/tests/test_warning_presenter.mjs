@@ -8,7 +8,9 @@ import { createStore } from "../state/store.mjs";
 import { submitValue } from "../render/inputs_controller.mjs";
 import { runSolve } from "../render/results_controller.mjs";
 import { presentResultWarnings, confirmKeepOriginal, directConsumers } from "../render/warnings_controller.mjs";
-import { presentWarning, formatRange, warningTitleFor } from "../adapter/warning_presenter.mjs";
+import { presentWarning, formatRange, formatRangeDisplay, warningTitleFor } from "../adapter/warning_presenter.mjs";
+import { buildRangeDisplay } from "../render/warnings_controller.mjs";
+import { setDisplayUnit } from "../render/inputs_controller.mjs";
 
 export const name = "warning_presenter: structure + eligibility (§7.6)";
 
@@ -126,6 +128,52 @@ export async function run(t) {
   t.ok("a new result_id naturally returns to unconfirmed",
     replacement.result_id !== wheelNow.result_id &&
     presentResultWarnings(app, replacement).find((p) => p.code === "range_extreme").canConfirm === true);
+
+  t.section("C9R3b: ranges follow the current display unit (owner-approved deviation)");
+  const power = submitValue(app, "engine_power", "1000", "kilowatt").result;
+  t.ok("1000 kW stores above the normal envelope (engine judgment untouched)",
+    power.range_status !== "normal");
+  setDisplayUnit(app, "engine_power", "kilowatt");
+  const powerRanges = presentResultWarnings(app, power)[0].ranges;
+  t.ok("normal range: converted kW leads with ≈, registered hp follows",
+    powerRanges.normal === "≈0.000–745.7 kW (registered: 0–1000 hp)");
+  t.ok("warning envelope converts the same way",
+    powerRanges.warning === "≈0.000–2237 kW (registered: 0–3000 hp)");
+  setDisplayUnit(app, "engine_power", "horsepower_mechanical");
+  const powerSame = presentResultWarnings(app, power)[0].ranges;
+  t.ok("same unit shows the registered form once, no ≈",
+    powerSame.normal === "0 to 1000 hp" && !powerSame.normal.includes("≈"));
+
+  t.section("C9R3b: conversion matrix (in↔ft, percent↔decimal, deg↔rad, m/s²↔g)");
+  setDisplayUnit(app, "wheel_radius", "foot");
+  const wheelFt = presentResultWarnings(app, engine.getResults("wheel_radius").find((r) => r.source === "user_input"))[0].ranges;
+  t.ok("inch ranges convert to feet", wheelFt.normal === "≈0.7500–1.833 ft (registered: 9–22 in)");
+  const effDisplay = buildRangeDisplay(engine, adapter.variablesById.drivetrain_efficiency.normal_range, "decimal");
+  t.ok("percent -> decimal endpoints convert",
+    Math.abs(effDisplay.converted.min - 0.7) < 1e-12 && Math.abs(effDisplay.converted.max - 1.0) < 1e-12);
+  const gradeDisplay = buildRangeDisplay(engine, adapter.variablesById.road_grade_angle.normal_range, "radian");
+  t.ok("degree -> radian endpoints convert",
+    Math.abs(gradeDisplay.converted.max - (7 * Math.PI) / 180) < 1e-12);
+  const accelDisplay = buildRangeDisplay(engine, adapter.variablesById.longitudinal_acceleration.normal_range, "standard_gravity");
+  t.ok("m/s² -> g endpoints convert through the constant-reference unit",
+    Math.abs(accelDisplay.converted.max - 10 / 9.80665) < 1e-9);
+
+  t.section("C9R3b: fallback and G4 guarantees");
+  t.ok("same-unit display yields no converted block",
+    buildRangeDisplay(engine, adapter.variablesById.wheel_radius.normal_range, "inch").converted === null);
+  t.ok("a failing endpoint falls the whole line back to registered values",
+    (() => {
+      const broken = buildRangeDisplay(engine, adapter.variablesById.wheel_radius.normal_range, "kilowatt");
+      return broken.converted === null &&
+        formatRangeDisplay(broken, (u) => u) === "9 to 22 inch";
+    })());
+  t.ok("formatRangeDisplay tolerates null", formatRangeDisplay(null) === null);
+  const fingerprintBefore = engine.getResults().map((r) => `${r.result_id}:${r.stale}`).sort().join("|");
+  setDisplayUnit(app, "engine_power", "kilowatt");
+  presentResultWarnings(app, power);
+  presentResultWarnings(app, engine.getResults("wheel_radius").find((r) => r.source === "user_input"));
+  t.ok("range conversion + display switch: zero recalc, zero stale, zero new Results (G4)",
+    engine.getResults().map((r) => `${r.result_id}:${r.stale}`).sort().join("|") === fingerprintBefore);
 
   t.section("pure presenter: no engine access");
   const pure = presentWarning({
