@@ -11,7 +11,7 @@
 
 import { el, clear } from "./dom_util.mjs";
 import { queryTargetView, defaultTargets, selectTarget } from "./targets_controller.mjs";
-import { formatFormula } from "../adapter/formula_format.mjs";
+import { formatFormula, plainSymbol } from "../adapter/formula_format.mjs";
 import { formulaBlock, symbolSpan } from "./formula_view.mjs";
 
 export function initTargetsView(app) {
@@ -24,7 +24,9 @@ export function initTargetsView(app) {
   queryBtn.disabled = false;
   for (const variable of adapter.variables) {
     if (variable.is_constant === true) continue;
-    select.append(el("option", { value: variable.variable_id, text: `${variable.name} (${variable.symbol})` }));
+    // Native <option> cannot carry <sub> markup: use the underscore-free
+    // plain form of the symbol (F_x -> Fx), never the raw catalog string.
+    select.append(el("option", { value: variable.variable_id, text: `${variable.name} (${plainSymbol(variable.symbol)})` }));
   }
   select.addEventListener("change", () => selectTarget(app, select.value));
   queryBtn.addEventListener("click", () => renderReport(true));

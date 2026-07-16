@@ -208,3 +208,26 @@ export function formatFormula(expression) {
 export function isFallback(tree) {
   return Boolean(tree) && tree.type === "fallback";
 }
+
+/**
+ * Split a catalog variable symbol at its first underscore into base and
+ * subscript ("F_x" -> {base:"F", sub:"x"}, "M" -> {base:"M", sub:null}).
+ * Pure and Node-testable; the single source both for the DOM typesetter
+ * (ui/render/formula_view.mjs symbolSpan) and for the plain-text form.
+ */
+export function splitSymbol(symbolText) {
+  const text = String(symbolText ?? "");
+  const cut = text.indexOf("_");
+  if (cut <= 0) return { base: text, sub: null };
+  return { base: text.slice(0, cut), sub: text.slice(cut + 1) };
+}
+
+/**
+ * Underscore-free plain-text form for surfaces that cannot carry subscript
+ * markup (native <option> text): "F_x" -> "Fx", "ω_e" -> "ωe", "M" -> "M".
+ * The raw underscore form must never reach a user-visible position.
+ */
+export function plainSymbol(symbolText) {
+  const { base, sub } = splitSymbol(symbolText);
+  return sub === null ? base : `${base}${sub}`;
+}

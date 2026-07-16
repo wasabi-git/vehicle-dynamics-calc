@@ -136,7 +136,7 @@ export function initResultsView(app) {
         ? el("p", { class: "status-text", text: `Intermediate variables: ${d.intermediates.map((i) => `${i.name} (${i.formulaId})`).join(", ")}` })
         : null,
       d.assumptionsUsed.length
-        ? el("p", { class: "status-text", text: `Assumptions used: ${d.assumptionsUsed.join(", ")}` })
+        ? el("p", { class: "status-text", text: `Assumptions used: ${d.assumptionsUsed.map((id) => app.adapter.variablesById[id]?.name ?? id).join(", ")}` })
         : null,
       d.constants.length
         ? el("p", { class: "status-text", text: `Constants: ${d.constants.map((c) => `${c.name} = ${c.siText}`).join(", ")}` })

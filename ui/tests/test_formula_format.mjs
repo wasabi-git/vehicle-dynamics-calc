@@ -4,7 +4,7 @@
  * (whole-string fallback, no partial rendering), and catalog coverage.
  */
 
-import { formatFormula, isFallback } from "../adapter/formula_format.mjs";
+import { formatFormula, isFallback, splitSymbol, plainSymbol } from "../adapter/formula_format.mjs";
 
 export const name = "formula_format: M3 parser (§7.9)";
 
@@ -106,4 +106,25 @@ export async function run(t) {
   t.section("parser is DOM-free");
   t.ok("module exposes plain objects only",
     typeof formatFormula("M = \\frac{W}{g}") === "object" && typeof globalThis.document === "undefined");
+
+  t.section("symbol typesetting helpers (C9R1: no raw underscore reaches the user)");
+  t.ok("splitSymbol: F_x -> F + x",
+    JSON.stringify(splitSymbol("F_x")) === JSON.stringify({ base: "F", sub: "x" }));
+  t.ok("splitSymbol: greek base ω_e -> ω + e",
+    JSON.stringify(splitSymbol("ω_e")) === JSON.stringify({ base: "ω", sub: "e" }));
+  t.ok("splitSymbol: multi-letter subscript R_hx -> R + hx",
+    JSON.stringify(splitSymbol("R_hx")) === JSON.stringify({ base: "R", sub: "hx" }));
+  t.ok("splitSymbol: plain M passes through",
+    JSON.stringify(splitSymbol("M")) === JSON.stringify({ base: "M", sub: null }));
+  t.ok("splitSymbol tolerates empty and null", splitSymbol("").sub === null && splitSymbol(null).base === "");
+  t.ok("plainSymbol strips the underscore for option-safe text",
+    plainSymbol("F_x") === "Fx" && plainSymbol("ω_e") === "ωe" && plainSymbol("M") === "M");
+  t.ok("every catalog variable symbol has an underscore-free plain form",
+    adapter.variables.every((v) => !plainSymbol(v.symbol).includes("_")));
+  t.ok("every registered unit exposes an underscore-free display_symbol",
+    adapter.units.every((u) => typeof u.display_symbol === "string" && u.display_symbol.length > 0 && !u.display_symbol.includes("_")));
+  t.ok("the units named by the owner map to their common symbols",
+    adapter.unitsById.newton.display_symbol === "N" &&
+    adapter.unitsById.radian.display_symbol === "rad" &&
+    adapter.unitsById.kilogram.display_symbol === "kg");
 }

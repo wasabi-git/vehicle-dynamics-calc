@@ -24,8 +24,8 @@
     import { presentResultWarnings, confirmKeepOriginal } from "../render/warnings_controller.mjs";
     import { queryTargetView } from "../render/targets_controller.mjs";
     import { toggleExpanded } from "../render/derivation_controller.mjs";
-    import { formatFormula } from "../adapter/formula_format.mjs";
-    import { formulaBlock } from "../render/formula_view.mjs";
+    import { formatFormula, plainSymbol } from "../adapter/formula_format.mjs";
+    import { formulaBlock, symbolSpan } from "../render/formula_view.mjs";
 
     const el = document.getElementById("log");
     const lines = [];
@@ -116,6 +116,22 @@
       ok("malicious source renders as escaped text, no element, no handler",
         fixture.querySelectorAll("script").length === 0 &&
         fixture.textContent.includes("<script>"));
+
+      // C9R1 DOM assertions: symbols typeset with real subscripts; no raw
+      // underscore or internal unit_id in user-visible text.
+      const fx = symbolSpan("F_x");
+      fixture.append(fx);
+      ok("symbolSpan renders F_x as base + <sub> without an underscore",
+        fx.querySelector("sub")?.textContent === "x" && fx.textContent === "Fx");
+      ok("symbolSpan passes plain symbols through", symbolSpan("M").textContent === "M" && symbolSpan("M").querySelector("sub") === null);
+      ok("every catalog symbol typesets underscore-free in the DOM",
+        adapter.variables.every((v) => !symbolSpan(v.symbol).textContent.includes("_")));
+      ok("plain option form is underscore-free for every variable",
+        adapter.variables.every((v) => !plainSymbol(v.symbol).includes("_")));
+      ok("owner-named units resolve to common symbols (N, rad, kg)",
+        adapter.unitsById.newton.display_symbol === "N" &&
+        adapter.unitsById.radian.display_symbol === "rad" &&
+        adapter.unitsById.kilogram.display_symbol === "kg");
 
       lines.push("");
       lines.push(`browser assertions: ${passed} passed, ${failed} failed`);

@@ -6,6 +6,7 @@
  */
 
 import { el } from "./dom_util.mjs";
+import { splitSymbol } from "../adapter/formula_format.mjs";
 
 function renderNode(node) {
   switch (node.type) {
@@ -48,12 +49,12 @@ export function formulaBlock(tree) {
  * Render a catalog variable symbol ("F_x", "ω_e", "R_hx", "M") as typeset
  * DOM: the part after the first underscore becomes a subscript. Plain
  * symbols pass through. textContent only — same safety rule as formulas.
+ * Splitting comes from the pure adapter helper so Node can assert it.
  */
 export function symbolSpan(symbolText, className = "formula-sym") {
-  const text = String(symbolText ?? "");
-  const cut = text.indexOf("_");
-  if (cut <= 0) return el("span", { class: className, text });
-  const wrap = el("span", { class: className, text: text.slice(0, cut) });
-  wrap.append(el("sub", { text: text.slice(cut + 1) }));
+  const { base, sub } = splitSymbol(symbolText);
+  if (sub === null) return el("span", { class: className, text: base });
+  const wrap = el("span", { class: className, text: base });
+  wrap.append(el("sub", { text: sub }));
   return wrap;
 }
