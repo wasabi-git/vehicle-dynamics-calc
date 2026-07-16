@@ -31,9 +31,14 @@
       <p class="empty-note" id="inputs-empty-note">No inputs yet. Add a variable to begin.</p>
       <hr class="separator">
       <div class="field-row" id="tire-quick">
-        <input class="text-input" type="text" id="tire-code-input"
-               placeholder="Tire code, e.g. 195/55R16"
-               aria-label="Tire code" disabled>
+        <input class="text-input" type="text" inputmode="numeric" size="4" id="tire-width"
+               placeholder="195" aria-label="Tire width (mm)" disabled>
+        <span class="status-text" aria-hidden="true">/</span>
+        <input class="text-input" type="text" inputmode="numeric" size="3" id="tire-aspect"
+               placeholder="55" aria-label="Aspect ratio (%)" disabled>
+        <span class="status-text" aria-hidden="true">R</span>
+        <input class="text-input" type="text" inputmode="numeric" size="3" id="tire-rim"
+               placeholder="16" aria-label="Rim diameter (in)" disabled>
         <button class="btn btn--outline" id="tire-apply" type="button" disabled>Apply tire code</button>
       </div>
       <div class="field-row">

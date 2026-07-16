@@ -29,6 +29,18 @@ export const TIRE_FIELDS = Object.freeze([
   Object.freeze({ variableId: "rim_diameter", unitId: "inch", group: 3 }),
 ]);
 
+/**
+ * Compose the three field texts (width / aspect / rim) into the canonical
+ * tire-code string. The composed string goes through the SAME
+ * parseTireCode -> precheck -> apply pipeline — §7.12's syntax gate stays
+ * the single enforcement point; junk in any box is rejected there with the
+ * fixed hint, exactly as a typed string would be.
+ */
+export function composeTireCode(width, aspect, rim) {
+  const clean = (v) => String(v ?? "").trim();
+  return `${clean(width)}/${clean(aspect)}R${clean(rim)}`;
+}
+
 /** Parse the tire-code string. Returns {ok, values} or {ok:false, message}. */
 export function parseTireCode(text) {
   const match = TIRE_CODE_SYNTAX.exec(String(text ?? ""));

@@ -7,6 +7,7 @@ import {
   parseTireCode,
   precheckTireCode,
   applyTireCode,
+  composeTireCode,
   TIRE_CODE_HINT,
   TIRE_FIELDS,
 } from "../adapter/tire_code.mjs";
@@ -39,6 +40,14 @@ export async function run(t) {
     parsed.values[2].variableId === "rim_diameter" && parsed.values[2].unitId === "inch" && parsed.values[2].value === 16
   );
   t.ok("field table is frozen", Object.isFrozen(TIRE_FIELDS) && TIRE_FIELDS.every(Object.isFrozen));
+
+  t.section("C9R4: three-box composition feeds the same syntax gate");
+  t.ok("boxes compose the canonical string", composeTireCode("195", "55", "16") === "195/55R16");
+  t.ok("composed canonical string parses identically",
+    JSON.stringify(parseTireCode(composeTireCode(" 195 ", "55", "16"))) === JSON.stringify(parseTireCode("195/55R16")));
+  t.ok("junk in any box is rejected by the same parser with the fixed hint",
+    parseTireCode(composeTireCode("195", "55x", "16")).message === TIRE_CODE_HINT &&
+    parseTireCode(composeTireCode("", "55", "16")).ok === false);
 
   t.section("precheck matrix");
   const { engine, adapter } = await t.freshApp();

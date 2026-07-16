@@ -56,8 +56,18 @@ export async function run(t) {
     !availableCategories(app).includes("constants"));
 
   t.section("add + duplicate locate-highlight");
+  store.state.variableSearchQuery = "torque";
   t.ok("first add succeeds", addVariable(app, "engine_torque").added === true);
   t.ok("row order records the add", store.state.uiInputOrder.includes("engine_torque"));
+  t.ok("C9R4: add clears the search query so the picker collapses",
+    store.state.variableSearchQuery === "");
+  addVariable(app, "engine_speed");
+  t.ok("C9R4: the newest row is inserted at the TOP (typeable right under the picker)",
+    store.state.uiInputOrder[0] === "engine_speed" && store.state.uiInputOrder[1] === "engine_torque");
+  t.ok("C9R4: the new row is highlighted for the focus pass",
+    store.state.highlightedVariableId === "engine_speed");
+  store.state.uiInputOrder = store.state.uiInputOrder.filter((v) => v !== "engine_speed");
+  clearHighlight(app);
   const dup = addVariable(app, "engine_torque");
   t.ok("duplicate add does not add a second row",
     dup.duplicate === true && store.state.uiInputOrder.filter((v) => v === "engine_torque").length === 1);

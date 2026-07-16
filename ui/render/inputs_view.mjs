@@ -13,6 +13,7 @@ import { formatSignificant, PRECISION } from "../adapter/view_model.mjs";
 import { presentResultWarnings } from "./warnings_controller.mjs";
 import { warningBanner } from "./warnings_view.mjs";
 import { symbolSpan } from "./formula_view.mjs";
+import { composeTireCode } from "../adapter/tire_code.mjs";
 import {
   filterVariables,
   availableCategories,
@@ -41,12 +42,16 @@ const CATEGORY_TEXT = {
 export function initInputsView(app) {
   const { store } = app;
   const searchInput = document.getElementById("variable-search");
-  const tireInput = document.getElementById("tire-code-input");
+  const tireWidth = document.getElementById("tire-width");
+  const tireAspect = document.getElementById("tire-aspect");
+  const tireRim = document.getElementById("tire-rim");
   const tireApply = document.getElementById("tire-apply");
   const clearAllBtn = document.getElementById("clear-all");
 
   searchInput.disabled = false;
-  tireInput.disabled = false;
+  tireWidth.disabled = false;
+  tireAspect.disabled = false;
+  tireRim.disabled = false;
   tireApply.disabled = false;
   clearAllBtn.disabled = false;
 
@@ -54,10 +59,16 @@ export function initInputsView(app) {
     store.state.variableSearchQuery = searchInput.value;
     store.notify();
   });
+  // Three boxes compose the canonical code string; §7.12's parser stays the
+  // single syntax gate for whatever lands in the boxes.
   tireApply.addEventListener("click", async () => {
-    const report = await applyTireCodeFlow(app, tireInput.value);
+    const report = await applyTireCodeFlow(app, composeTireCode(tireWidth.value, tireAspect.value, tireRim.value));
     renderTireReport(report);
-    if (report.ok) tireInput.value = "";
+    if (report.ok) {
+      tireWidth.value = "";
+      tireAspect.value = "";
+      tireRim.value = "";
+    }
   });
   clearAllBtn.addEventListener("click", () => requestClearAll(app));
 
@@ -66,7 +77,7 @@ export function initInputsView(app) {
 
   function renderTireReport(report) {
     const slot = document.getElementById("tire-report") ?? el("p", { id: "tire-report", class: "row-diagnostic" });
-    if (!slot.isConnected) tireInput.closest(".field-row").after(slot);
+    if (!slot.isConnected) tireApply.closest(".field-row").after(slot);
     if (report.ok) {
       slot.className = "row-diagnostic row-diagnostic--muted";
       slot.textContent = `Tire code applied: ${report.applied.map((a) => app.adapter.variablesById[a.variableId]?.name ?? a.variableId).join(", ")}.`;
@@ -101,6 +112,11 @@ export function initInputsView(app) {
     const list = document.getElementById("variable-picker");
     clear(list);
     const s = store.state;
+    // Keep the search box in sync when the controller clears the query on
+    // add (never clobber while the user is typing in it).
+    if (searchInput.value !== s.variableSearchQuery && document.activeElement !== searchInput) {
+      searchInput.value = s.variableSearchQuery;
+    }
     if (!s.variableSearchQuery.trim() && !s.selectedCategory) return;
     for (const variable of filterVariables(app)) {
       list.append(

@@ -71,8 +71,12 @@ export function availableCategories({ adapter }) {
 }
 
 /**
- * Add a variable row. A duplicate add highlights and locates the existing
- * row instead of adding a second one (single input per variable).
+ * Add a variable row. The new row is inserted at the TOP of the list —
+ * directly under the picker — and the search query clears so the picker
+ * collapses: the value field is focused and typeable immediately, with no
+ * scroll hunt (owner-directed C9R4). A duplicate add highlights and
+ * locates the existing row instead of adding a second one (single input
+ * per variable).
  */
 export function addVariable({ store }, variableId) {
   const s = store.state;
@@ -81,7 +85,8 @@ export function addVariable({ store }, variableId) {
     store.notify();
     return { added: false, duplicate: true };
   }
-  s.uiInputOrder.push(variableId);
+  s.uiInputOrder.unshift(variableId);
+  s.variableSearchQuery = "";
   s.highlightedVariableId = variableId;
   store.notify();
   return { added: true, duplicate: false };
@@ -261,16 +266,18 @@ export async function applyTireCodeFlow({ engine, store, adapter, createScratchE
 
   const report = applyTireCode(parsed, engine);
   const s = store.state;
+  const newRows = [];
   for (const item of report.applied) {
     s.inputSnapshotByResultId.set(item.result.result_id, {
       variableId: item.variableId,
       enteredValue: item.value,
       enteredUnit: item.unitId,
     });
-    if (!s.uiInputOrder.includes(item.variableId)) s.uiInputOrder.push(item.variableId);
+    if (!s.uiInputOrder.includes(item.variableId)) newRows.push(item.variableId);
     s.inputDraftByVariableId.delete(item.variableId);
     s.inputDiagnosticByVariableId.delete(item.variableId);
   }
+  s.uiInputOrder.unshift(...newRows); // tire rows surface at the top, in code order
   if (report.applied.length > 0) recomputePhase({ engine, store }, { changed: true });
   store.notify();
   return report.ok
