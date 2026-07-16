@@ -342,14 +342,22 @@
         document.querySelector("#input-row-vehicle_weight select").value === "newton" &&
         document.activeElement === document.querySelector("#input-row-vehicle_weight input"));
 
-      // C9R6R2: in-progress typing in the FORMAL row survives a rebuild too.
+      // C9R6R4: in-progress typing in the FORMAL row survives a rebuild —
+      // the uncommitted draft (3575) is clearly distinct from the committed
+      // value (3500), and the draft must never reach the engine.
+      const committedWeight = () =>
+        app3.engine.getResults("vehicle_weight").find((r) => r.source === "user_input").value_si;
+      ok("C9R6R4 precondition: the committed value 3500 N sits in the engine",
+        Math.abs(committedWeight() - 3500) < 1e-12);
       const formalInput = document.querySelector("#input-row-vehicle_weight input");
-      formalInput.value = "3500";
+      formalInput.value = "3575";
       formalInput.dispatchEvent(new Event("input"));
-      app3.store.notify();
+      app3.store.notify(); // forced rebuild while the draft is uncommitted
       await new Promise((r) => setTimeout(r, 40));
-      ok("C9R6R2: uncommitted formal-row text survives a rebuild via the silent draft",
-        document.querySelector("#input-row-vehicle_weight input").value === "3500");
+      ok("C9R6R4: the uncommitted draft 3575 survives the forced rebuild",
+        document.querySelector("#input-row-vehicle_weight input").value === "3575");
+      ok("C9R6R4: the engine still holds the committed 3500 — the draft never entered it",
+        Math.abs(committedWeight() - 3500) < 1e-12);
       } finally {
         // Cancels the pending highlight timer + unsubscribes BEFORE the DOM
         // goes away, even when an assertion in the block throws (C9R6R1 #3).
