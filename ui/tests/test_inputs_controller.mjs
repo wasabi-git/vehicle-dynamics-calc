@@ -68,6 +68,16 @@ export async function run(t) {
     store.state.highlightedVariableId === "engine_speed");
   store.state.uiInputOrder = store.state.uiInputOrder.filter((v) => v !== "engine_speed");
   clearHighlight(app);
+  t.ok("C9R5: picker one-step flow — add then submit lands a valued row at the top",
+    (() => {
+      addVariable(app, "vehicle_weight");
+      const outcome = submitValue(app, "vehicle_weight", "3500", "pound_force");
+      const top = store.state.uiInputOrder[0] === "vehicle_weight";
+      const stored = engine.getResults("vehicle_weight").some((r) => r.source === "user_input");
+      store.state.pendingConfirmation = { kind: "remove_input", payload: { variableId: "vehicle_weight" } };
+      confirmPending(app);
+      return outcome.submitted === true && top && stored;
+    })());
   const dup = addVariable(app, "engine_torque");
   t.ok("duplicate add does not add a second row",
     dup.duplicate === true && store.state.uiInputOrder.filter((v) => v === "engine_torque").length === 1);

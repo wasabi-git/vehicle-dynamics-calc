@@ -209,6 +209,42 @@
       unsub2();
       skeleton.remove();
 
+      // C9R5 real-view DOM regression: type the value directly in the
+      // picker row and press Enter — added and submitted in one step.
+      const inputsSkeleton = document.createElement("div");
+      const mkIn = (tag, id, cls) => {
+        const n = document.createElement(tag);
+        n.id = id; if (cls) n.className = cls;
+        inputsSkeleton.append(n); return n;
+      };
+      mkIn("input", "variable-search"); mkIn("div", "category-filter"); mkIn("ul", "variable-picker");
+      mkIn("ul", "input-list"); mkIn("p", "inputs-empty-note");
+      mkIn("input", "tire-width"); mkIn("input", "tire-aspect"); mkIn("input", "tire-rim");
+      mkIn("button", "tire-apply"); mkIn("button", "clear-all"); mkIn("div", "inputs-confirm-slot");
+      document.body.append(inputsSkeleton);
+      const app3 = await (async () => {
+        const fresh = await createEngine(readText);
+        const store3 = (await import("../state/store.mjs")).createStore();
+        return { engine: fresh.engine, adapter, store: store3, createScratchEngine: async () => (await createEngine(readText)).engine };
+      })();
+      (await import("../render/inputs_view.mjs")).initInputsView(app3);
+      const searchBox = document.getElementById("variable-search");
+      searchBox.value = "torque";
+      searchBox.dispatchEvent(new Event("input"));
+      await new Promise((r) => setTimeout(r, 60));
+      const pickerBox = document.querySelector("#variable-picker .picker-row input");
+      ok("picker rows carry a direct value box with the unit placeholder",
+        pickerBox !== null && pickerBox.placeholder === adapter.unitsById.foot_pound_force.display_symbol);
+      pickerBox.value = "310";
+      pickerBox.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+      await new Promise((r) => setTimeout(r, 80));
+      ok("Enter in the picker box adds AND submits in one step (row on top, value stored, picker collapsed)",
+        app3.store.state.uiInputOrder[0] === "engine_torque" &&
+        app3.engine.getResults("engine_torque").some((r) => r.source === "user_input") &&
+        document.querySelectorAll("#variable-picker .picker-row").length === 0 &&
+        document.querySelector("#input-row-engine_torque input").value === "310");
+      inputsSkeleton.remove();
+
       lines.push("");
       lines.push(`browser assertions: ${passed} passed, ${failed} failed`);
       lines.push(failed === 0 ? "UI BROWSER PASS" : "UI BROWSER FAIL");

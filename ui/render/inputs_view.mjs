@@ -119,15 +119,43 @@ export function initInputsView(app) {
     }
     if (!s.variableSearchQuery.trim() && !s.selectedCategory) return;
     for (const variable of filterVariables(app)) {
+      const alreadyAdded = s.uiInputOrder.includes(variable.variable_id);
+
+      // Direct entry in the picker row itself (owner-directed C9R5): type a
+      // value right here and press Enter — added and submitted in one step
+      // (default/display unit; the row then sits at the top for unit tweaks).
+      let valueBox = null;
+      if (!alreadyAdded) {
+        const entryUnit = s.displayUnitByVariableId.get(variable.variable_id) ?? variable.default_unit;
+        valueBox = el("input", {
+          class: "text-input",
+          type: "text",
+          size: "8",
+          placeholder: app.adapter.unitsById[entryUnit]?.display_symbol ?? entryUnit,
+          "aria-label": `${variable.name} value`,
+        });
+        valueBox.addEventListener("keydown", (event) => {
+          if (event.key !== "Enter") return;
+          const text = valueBox.value;
+          addVariable(app, variable.variable_id);
+          if (text.trim() !== "") submitValue(app, variable.variable_id, text, entryUnit);
+        });
+      }
+
       list.append(
         el("li", { class: "picker-row" }, [
           el("span", { text: variable.name }),
           symbolSpan(variable.symbol, "picker-row__symbol"),
+          valueBox,
           el("button", {
             type: "button",
             class: "btn picker-row__add",
-            text: s.uiInputOrder.includes(variable.variable_id) ? "Added — locate" : "Add",
-            onclick: () => addVariable(app, variable.variable_id),
+            text: alreadyAdded ? "Added — locate" : "Add",
+            onclick: () => {
+              const text = valueBox ? valueBox.value : "";
+              addVariable(app, variable.variable_id);
+              if (text.trim() !== "") submitValue(app, variable.variable_id, text, s.displayUnitByVariableId.get(variable.variable_id) ?? variable.default_unit);
+            },
           }),
         ])
       );
