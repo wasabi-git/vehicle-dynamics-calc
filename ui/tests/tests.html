@@ -163,6 +163,17 @@
         adapter.unitsById.radian.display_symbol === "rad" &&
         adapter.unitsById.kilogram.display_symbol === "kg");
 
+      // C9R8: the three approved private placeholders never reach presented
+      // source output (the label alone represents such references).
+      const f008inst = engine.getResults("longitudinal_acceleration")
+        .find((r) => r.formula_id === "F008_ideal_power_acceleration_si");
+      const d8sources = (await import("../render/derivation_controller.mjs"))
+        .buildDerivationDetail({ engine, adapter, store }, f008inst).sources;
+      ok("C9R8: private placeholders are suppressed from presented sources",
+        d8sources.length === 4 &&
+        !JSON.stringify(d8sources).includes("kept privately") &&
+        d8sources.filter((s) => s.note === null && s.locator === null && s.label === "Validated lecture reference").length === 2);
+
       // C9R2: prose symbol typesetting for source notes
       const prose = proseWithSymbols("V = r_w ω_e / N_tf");
       fixture.append(prose);

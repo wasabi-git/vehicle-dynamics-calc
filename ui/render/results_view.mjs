@@ -149,13 +149,14 @@ export function initResultsView(app) {
             // Notes go through the safe formula channel: a note that parses
             // under the closed M3 table renders as a formula block; anything
             // else is typeset as prose with real subscripts (no raw
-            // underscore ever shows).
-            const noteTree = formatFormula(s.note);
+            // underscore ever shows). Null note/locator (suppressed private
+            // placeholders, C9R8) render as the label alone.
+            const noteTree = s.note === null ? null : formatFormula(s.note);
             return el("li", {}, [
               el("span", { class: "micro-label", text: s.label }),
-              el("span", { text: " " }),
-              isFallback(noteTree) ? proseWithSymbols(s.note) : formulaBlock(noteTree),
-              el("span", { text: ` (${s.locator})` }),
+              s.note === null ? null : el("span", { text: " " }),
+              s.note === null ? null : (isFallback(noteTree) ? proseWithSymbols(s.note) : formulaBlock(noteTree)),
+              s.locator === null ? null : el("span", { text: ` (${s.locator})` }),
             ]);
           })
         ),

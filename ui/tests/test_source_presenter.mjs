@@ -53,13 +53,21 @@ export async function run(t) {
   t.section("⑤ closed output field set {label, locator, note}");
   t.ok("no extra fields ever",
     allOutputs.every((o) => JSON.stringify(Object.keys(o).sort()) === JSON.stringify(["label", "locator", "note"])));
-  t.ok("locator and note pass through verbatim",
+  t.ok("engineering locator/note text passes through verbatim; the three approved private placeholders are suppressed to null (C9R8)",
     (() => {
       const f008 = adapter.formulasById.F008_ideal_power_acceleration_si;
       const presented = presentFormulaSources(adapter, f008);
-      return f008.source_reference.every((ref, i) =>
-        presented[i].locator === ref.locator && presented[i].note === ref.note);
+      return f008.source_reference.every((ref, i) => {
+        const placeholder = ref.locator === "(reference kept privately)";
+        return placeholder
+          ? presented[i].locator === null && presented[i].note === null
+          : presented[i].locator === ref.locator && presented[i].note === ref.note;
+      });
     })());
+  t.ok("suppressed placeholders never reach any presented output string",
+    !JSON.stringify(presentFormulaSources(adapter, adapter.formulasById.F008_ideal_power_acceleration_si)).includes("kept privately"));
+  t.ok("only exact placeholder strings are suppressed; similar real text passes through",
+    presentSource(null, { source_id: "S001_vehicle_dynamics_formulae", locator: "kept privately in spirit", note: "n" }).locator === "kept privately in spirit");
 
   t.section("⑥ renderers receive presenter output only (structural convention)");
   const store = createStore();

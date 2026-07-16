@@ -25,15 +25,31 @@ const APPROVED_LABELS = Object.freeze({
 const FALLBACK_LABEL = "Reference";
 
 /**
+ * The three D33R-approved private-reference placeholders. They stay in the
+ * public data for traceability (sanitized, reviewer-approved — they carry
+ * no recoverable information even when inspected via devtools or the
+ * repository), but the UI suppresses them (owner-directed C9R8): the
+ * approved label alone represents such a source. Exact-match only — any
+ * other text keeps passing through verbatim.
+ */
+const PRIVATE_PLACEHOLDERS = Object.freeze(
+  new Set([
+    "(reference kept privately)",
+    "(engine-power derivation reference kept privately)",
+    "(low-speed model behavior reference kept privately)",
+  ])
+);
+
+/**
  * @param {object} _sourceRecord — accepted to prove no pass-through; never read.
  * @param {object} reference — {source_id, locator, note}
- * @returns {{label: string, locator: string, note: string}}
+ * @returns {{label: string, locator: string|null, note: string|null}}
  */
 export function presentSource(_sourceRecord, reference) {
   return {
     label: APPROVED_LABELS[reference.source_id] ?? FALLBACK_LABEL,
-    locator: reference.locator,
-    note: reference.note,
+    locator: PRIVATE_PLACEHOLDERS.has(reference.locator) ? null : reference.locator,
+    note: PRIVATE_PLACEHOLDERS.has(reference.note) ? null : reference.note,
   };
 }
 
