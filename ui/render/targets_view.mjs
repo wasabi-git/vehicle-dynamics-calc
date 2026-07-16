@@ -13,6 +13,7 @@ import { el, clear } from "./dom_util.mjs";
 import { queryTargetView, defaultTargets, selectTarget } from "./targets_controller.mjs";
 import { formatFormula, plainSymbol } from "../adapter/formula_format.mjs";
 import { formulaBlock, symbolSpan } from "./formula_view.mjs";
+import { addVariable, submitValue } from "./inputs_controller.mjs";
 
 export function initTargetsView(app) {
   const { store, adapter } = app;
@@ -30,7 +31,57 @@ export function initTargetsView(app) {
   }
   select.addEventListener("change", () => selectTarget(app, select.value));
   queryBtn.addEventListener("click", () => renderReport(true));
-  store.subscribe(() => renderReport(false));
+  const unsubscribeTargets = store.subscribe(() => renderReport(false));
+
+  // Missing rows with an open inline-entry form (component-local view
+  // state; content persists via the silent draft mechanism, C9R7).
+  const inlineEntryOpen = new Set();
+
+  function inlineEntry(m) {
+    const variable = adapter.variablesById[m.variableId];
+    const s = store.state;
+    const entryUnit = s.displayUnitByVariableId.get(m.variableId) ?? variable.default_unit;
+    const valueBox = el("input", {
+      class: "text-input",
+      type: "text",
+      size: "8",
+      placeholder: "value",
+      value: s.inputDraftByVariableId.get(m.variableId) ?? "",
+      "aria-label": `${variable.name} value`,
+    });
+    valueBox.addEventListener("input", () => {
+      if (valueBox.value === "") s.inputDraftByVariableId.delete(m.variableId);
+      else s.inputDraftByVariableId.set(m.variableId, valueBox.value);
+    });
+    const unitSelect = el(
+      "select",
+      {
+        class: "select",
+        "aria-label": `${variable.name} unit`,
+        onchange: () => s.displayUnitByVariableId.set(m.variableId, unitSelect.value), // silent
+      },
+      variable.allowed_units.map((unitId) =>
+        el("option", { value: unitId, text: adapter.unitsById[unitId]?.display_symbol ?? unitId })
+      )
+    );
+    unitSelect.value = entryUnit;
+    const commit = () => {
+      const text = valueBox.value;
+      const chosenUnit = unitSelect.value;
+      inlineEntryOpen.delete(m.variableId);
+      s.displayUnitByVariableId.set(m.variableId, chosenUnit); // silent; add notifies
+      addVariable(app, m.variableId);
+      if (text.trim() !== "") submitValue(app, m.variableId, text, chosenUnit);
+    };
+    valueBox.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") commit();
+    });
+    return el("div", { class: "field-row" }, [
+      valueBox,
+      unitSelect,
+      el("button", { type: "button", class: "btn", text: "Add input", onclick: commit }),
+    ]);
+  }
 
   function missingList(missingInputs) {
     return el(
@@ -40,7 +91,19 @@ export function initTargetsView(app) {
         const head = el("li", {}, [
           el("span", { text: `${adapter.variablesById[m.variableId]?.name ?? m.variableId} ` }),
           el("span", { class: "missing-list__reason", text: `— ${m.causeText}` }),
-          m.canBeUserInput ? el("span", { class: "micro-label", text: " enter directly" }) : null,
+          m.canBeUserInput
+            ? el("button", {
+                type: "button",
+                class: "btn",
+                text: inlineEntryOpen.has(m.variableId) ? "Close" : "Enter value",
+                onclick: () => {
+                  if (inlineEntryOpen.has(m.variableId)) inlineEntryOpen.delete(m.variableId);
+                  else inlineEntryOpen.add(m.variableId);
+                  renderReport(false); // view-local toggle; no store notify
+                },
+              })
+            : null,
+          m.canBeUserInput && inlineEntryOpen.has(m.variableId) ? inlineEntry(m) : null,
         ]);
         if (m.derivationOptions.length > 0) {
           head.append(
@@ -133,4 +196,9 @@ export function initTargetsView(app) {
   }
 
   renderReport(false);
+
+  /** Cleanup for test fixtures: detaches the store subscription. */
+  return function dispose() {
+    unsubscribeTargets();
+  };
 }

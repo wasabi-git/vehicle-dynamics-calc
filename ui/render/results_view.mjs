@@ -291,21 +291,37 @@ export function initResultsView(app) {
     }
 
     if (vm.layers.intermediate.length > 0) {
+      // Section title sits at the same level as "Query a target"; the
+      // expanded/collapsed state is component-local view state that
+      // survives re-renders — an action inside the section no longer
+      // snaps it shut (owner-directed C9R7).
+      const intermediateDetails = el(
+        "details",
+        { class: "derivation", open: intermediatesOpen ? "open" : null },
+        [
+          el("summary", { text: `Show intermediate results (${vm.layers.intermediate.length})` }),
+          ...vm.layers.intermediate.map((v) => secondaryRow(v, vm.modelSections)),
+        ]
+      );
+      intermediateDetails.addEventListener("toggle", () => {
+        intermediatesOpen = intermediateDetails.open; // silent view state, no notify
+      });
       region.append(
         el("div", { class: "card" }, [
-          el(
-            "details",
-            { class: "derivation" },
-            [
-              el("summary", { text: `Intermediate results (${vm.layers.intermediate.length})` }),
-              ...vm.layers.intermediate.map((v) => secondaryRow(v, vm.modelSections)),
-            ]
-          ),
+          el("h2", { class: "section-label", text: "Intermediate results" }),
+          intermediateDetails,
         ])
       );
     }
   }
 
-  store.subscribe(render);
+  let intermediatesOpen = false;
+
+  const unsubscribeResults = store.subscribe(render);
   render();
+
+  /** Cleanup for test fixtures: detaches the store subscription. */
+  return function dispose() {
+    unsubscribeResults();
+  };
 }

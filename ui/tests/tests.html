@@ -209,6 +209,7 @@
       mk("button", "calculate-btn"); mk("span", "calc-status"); mk("div", "results-region");
       skeletonCard.append(skeleton);
       document.querySelector("main").append(skeletonCard);
+      let disposeResults = null;
       try {
       const app2 = await (async () => {
         const fresh = await createEngine(readText);
@@ -217,7 +218,7 @@
       })();
       const ic = await import("../render/inputs_controller.mjs");
       const rc = await import("../render/results_controller.mjs");
-      initResultsView(app2);
+      disposeResults = initResultsView(app2);
       ic.submitValue(app2, "engine_torque", "310", "foot_pound_force");
       ic.submitValue(app2, "engine_speed", "4800", "revolution_per_minute");
       rc.runSolve(app2);
@@ -245,7 +246,27 @@
         region.querySelector("details.derivation[open]") === null &&
         app2.store.state.expandedResultIds.size === 0);
       unsub2();
+
+      // C9R7: the Intermediate results section keeps its expanded state
+      // across re-renders triggered by actions inside (or anywhere else),
+      // and carries a section-level title like the other cards.
+      ic.submitValue(app2, "vehicle_weight", "3500", "pound_force");
+      rc.runSolve(app2);
+      const intermediateCardLabel = [...region.parentElement.querySelectorAll(".section-label")]
+        .find((l) => l.textContent === "Intermediate results");
+      ok("C9R7: the intermediates card carries a section-label title",
+        Boolean(intermediateCardLabel));
+      const interDetails = intermediateCardLabel.parentElement.querySelector("details");
+      interDetails.open = true;
+      interDetails.dispatchEvent(new Event("toggle")); // silent view state
+      ic.setDisplayUnit(app2, "engine_power", "kilowatt"); // real action -> notify -> rebuild
+      await new Promise((r) => setTimeout(r, 60));
+      const rebuiltDetails = [...region.parentElement.querySelectorAll(".section-label")]
+        .find((l) => l.textContent === "Intermediate results").parentElement.querySelector("details");
+      ok("C9R7: an action no longer snaps the intermediates section shut",
+        rebuiltDetails.open === true);
       } finally {
+        if (disposeResults) disposeResults();
         skeletonCard.remove();
       }
 
@@ -363,6 +384,64 @@
         // goes away, even when an assertion in the block throws (C9R6R1 #3).
         if (disposeInputsView) disposeInputsView();
         inputsCard.remove();
+      }
+
+      // C9R7 real-view DOM regression: click a missing input in the target
+      // report and enter its value right there (value box + unit selector,
+      // same pipeline as the Inputs region).
+      const targetsCard = document.createElement("section");
+      targetsCard.className = "card";
+      const targetsLabel = document.createElement("h2");
+      targetsLabel.className = "section-label";
+      targetsLabel.textContent = "Live targets-view fixture — auto-removed";
+      targetsCard.append(targetsLabel);
+      const targetsSkeleton = document.createElement("div");
+      const mkTg = (tag, id) => {
+        const n = document.createElement(tag);
+        n.id = id; targetsSkeleton.append(n); return n;
+      };
+      mkTg("select", "target-select"); mkTg("button", "target-query-btn"); mkTg("div", "target-report");
+      targetsCard.append(targetsSkeleton);
+      document.querySelector("main").append(targetsCard);
+      let disposeTargetsView = null;
+      try {
+        const fresh4 = await createEngine(readText);
+        const store4 = (await import("../state/store.mjs")).createStore();
+        const app4 = { engine: fresh4.engine, adapter, store: store4 };
+        disposeTargetsView = (await import("../render/targets_view.mjs")).initTargetsView(app4);
+        await new Promise((r) => setTimeout(r, 60));
+        const missingRow = [...document.querySelectorAll("#target-report .missing-list li")]
+          .find((li) => li.textContent.includes("Vehicle mass"));
+        const enterBtn = [...missingRow.querySelectorAll("button")].find((b) => b.textContent === "Enter value");
+        ok("C9R7: missing inputs in the target report offer an Enter value button",
+          Boolean(enterBtn));
+        enterBtn.click();
+        await new Promise((r) => setTimeout(r, 40));
+        const openRow = [...document.querySelectorAll("#target-report .missing-list li")]
+          .find((li) => li.textContent.includes("Vehicle mass"));
+        const inlineBox = openRow.querySelector("input");
+        const inlineUnit = openRow.querySelector("select");
+        ok("C9R7: the inline entry opens with a value box and the full unit selector",
+          inlineBox !== null && inlineUnit !== null &&
+          [...inlineUnit.options].map((o) => o.value).join(",") ===
+            adapter.variablesById.vehicle_mass.allowed_units.join(","));
+        inlineUnit.value = "pound_mass";
+        inlineUnit.dispatchEvent(new Event("change"));
+        inlineBox.value = "3500";
+        inlineBox.dispatchEvent(new Event("input"));
+        inlineBox.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+        await new Promise((r) => setTimeout(r, 60));
+        const landedMass = app4.engine.getResults("vehicle_mass").find((r) => r.source === "user_input");
+        ok("C9R7: Enter submits through the normal input pipeline in the picked unit",
+          Boolean(landedMass) &&
+          app4.store.state.uiInputOrder[0] === "vehicle_mass" &&
+          app4.store.state.inputSnapshotByResultId.get(landedMass.result_id)?.enteredUnit === "pound_mass");
+        ok("C9R7: the rebuilt report no longer lists the entered variable as missing",
+          ![...document.querySelectorAll("#target-report .missing-list li")]
+            .some((li) => li.textContent.includes("Vehicle mass —")));
+      } finally {
+        if (disposeTargetsView) disposeTargetsView();
+        targetsCard.remove();
       }
 
       // C9R6R1 #4: delayed observation window — outlives every view timer
