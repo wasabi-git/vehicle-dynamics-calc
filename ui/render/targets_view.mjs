@@ -10,7 +10,7 @@
  */
 
 import { el, clear } from "./dom_util.mjs";
-import { queryTargetView, defaultTargets, selectTarget } from "./targets_controller.mjs";
+import { queryTargetView, defaultTargets, selectTarget, groupTargetOptions } from "./targets_controller.mjs";
 import { formatFormula, plainSymbol } from "../adapter/formula_format.mjs";
 import { formulaBlock, symbolSpan } from "./formula_view.mjs";
 import { addVariable, submitValue } from "./inputs_controller.mjs";
@@ -23,11 +23,21 @@ export function initTargetsView(app) {
 
   select.disabled = false;
   queryBtn.disabled = false;
-  for (const variable of adapter.variables) {
-    if (variable.is_constant === true) continue;
-    // Native <option> cannot carry <sub> markup: use the underscore-free
-    // plain form of the symbol (F_x -> Fx), never the raw catalog string.
-    select.append(el("option", { value: variable.variable_id, text: `${variable.name} (${plainSymbol(variable.symbol)})` }));
+  // Honest grouping (C9R9): computable answers first, then derivable
+  // intermediates, then variables that can only be entered directly.
+  // Native <option> cannot carry <sub> markup: use the underscore-free
+  // plain form of the symbol (F_x -> Fx), never the raw catalog string.
+  const optionFor = (variableId) => {
+    const variable = adapter.variablesById[variableId];
+    return el("option", { value: variable.variable_id, text: `${variable.name} (${plainSymbol(variable.symbol)})` });
+  };
+  const grouped = groupTargetOptions(adapter);
+  for (const [label, ids] of [
+    ["Primary results", grouped.primary],
+    ["Derived intermediates", grouped.intermediates],
+    ["Direct-input only", grouped.inputOnly],
+  ]) {
+    select.append(el("optgroup", { label: `${label} (${ids.length})` }, ids.map(optionFor)));
   }
   select.addEventListener("change", () => selectTarget(app, select.value));
   queryBtn.addEventListener("click", () => renderReport(true));

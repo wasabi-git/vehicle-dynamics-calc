@@ -14,6 +14,7 @@ import {
   queryTargetView,
   defaultTargets,
   selectTarget,
+  groupTargetOptions,
 } from "../render/targets_controller.mjs";
 
 export const name = "targets: §7.10 fixed rules + reverse-query views";
@@ -81,6 +82,23 @@ export async function run(t) {
   t.ok("selectedTarget records the choice", store.state.selectedTarget === "tractive_force");
   selectTarget(app, "");
   t.ok("clearing returns to null", store.state.selectedTarget === null);
+
+  t.section("C9R9: honest target grouping (19 = 4 primary + 3 intermediates + 12 input-only)");
+  const groups = groupTargetOptions(adapter);
+  t.ok("primary results are the four user-facing answers",
+    JSON.stringify([...groups.primary].sort()) ===
+    JSON.stringify(["engine_power", "longitudinal_acceleration", "tractive_force", "vehicle_speed"]));
+  t.ok("derived intermediates are the three intermediate producers",
+    JSON.stringify([...groups.intermediates].sort()) ===
+    JSON.stringify(["mass_factor", "vehicle_mass", "wheel_radius"]));
+  t.ok("twelve variables are direct-input only (no registered output direction)",
+    groups.inputOnly.length === 12 &&
+    groups.inputOnly.every((id) => !adapter.formulas.some((f) => f.output === id)));
+  t.ok("constants never appear and the groups cover all 19 options exactly once",
+    (() => {
+      const all = [...groups.primary, ...groups.intermediates, ...groups.inputOnly];
+      return all.length === 19 && new Set(all).size === 19 && !all.includes("gravity");
+    })());
 
   t.section("no-registered-direction target (fresh engine, no user input present)");
   const torque = queryTargetView({ engine: e2 }, "engine_torque");

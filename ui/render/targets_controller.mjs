@@ -96,3 +96,27 @@ export function selectTarget({ store }, variableId) {
   store.state.selectedTarget = variableId || null;
   store.notify();
 }
+
+/**
+ * Honest target grouping (owner-directed C9R9; registered coverage: 19
+ * options = 7 with a registered output direction + 12 direct-input only).
+ * Derived from the catalog, never hardcoded:
+ *   primary       — producers whose display_role is primary_output or
+ *                   derived_output (the results users treat as answers);
+ *   intermediates — producers with display_role intermediate;
+ *   inputOnly     — no registered formula outputs them (v0.1 minimal
+ *                   acceleration chain; new computable targets are
+ *                   Part 7/v0.2 scope, G9).
+ * Constants never appear.
+ */
+export function groupTargetOptions(adapter) {
+  const producers = new Set(adapter.formulas.map((f) => f.output));
+  const groups = { primary: [], intermediates: [], inputOnly: [] };
+  for (const variable of adapter.variables) {
+    if (variable.is_constant === true) continue;
+    if (!producers.has(variable.variable_id)) groups.inputOnly.push(variable.variable_id);
+    else if (variable.display_role === "intermediate") groups.intermediates.push(variable.variable_id);
+    else groups.primary.push(variable.variable_id);
+  }
+  return groups;
+}

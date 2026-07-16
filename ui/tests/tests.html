@@ -430,6 +430,14 @@
         disposeTargetsView = (await import("../render/targets_view.mjs")).initTargetsView(app4);
         disposeInputsView2 = (await import("../render/inputs_view.mjs")).initInputsView(app4);
         await new Promise((r) => setTimeout(r, 60));
+        // C9R9: the selector groups targets honestly (4 + 3 + 12).
+        const optgroups = [...document.querySelectorAll("#target-select optgroup")];
+        ok("C9R9: target selector carries the three honest groups (4 primary, 3 intermediates, 12 input-only)",
+          optgroups.length === 3 &&
+          optgroups[0].label.startsWith("Primary results") && optgroups[0].children.length === 4 &&
+          optgroups[1].label.startsWith("Derived intermediates") && optgroups[1].children.length === 3 &&
+          optgroups[2].label.startsWith("Direct-input only") && optgroups[2].children.length === 12);
+
         const massRows = () => [...document.querySelectorAll("#target-report .missing-list li")]
           .filter((li) => li.textContent.includes("Vehicle mass —"));
         const inlineInputs = () => document.querySelectorAll("#target-report .missing-list input.text-input").length;
