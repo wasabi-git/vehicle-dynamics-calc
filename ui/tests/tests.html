@@ -2,19 +2,38 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>VD UI browser assertion page</title>
-  <style>body{font-family:monospace;margin:2rem}pre{white-space:pre-wrap}#fixture{border:1px dashed #999;padding:8px;margin-top:1rem}</style>
+  <link rel="stylesheet" href="../tokens.css">
+  <link rel="stylesheet" href="../app.css">
+  <style>
+    body { padding: 24px; }
+    main { max-width: 960px; margin: 0 auto; display: grid; gap: 16px; }
+    pre { white-space: pre-wrap; font-family: monospace, monospace; font-size: 13px; margin: 0; }
+  </style>
 </head>
 <body>
-  <h1>VD UI — browser assertion page (V-A manual gate)</h1>
-  <p>Serve the repository root statically (e.g. <code>python -m http.server</code>)
-     and open <code>/ui/tests/tests.html</code>. The page imports the UI modules as
-     native ES modules against the real engine and catalog, runs the §9.2
-     assertion set in this real browser environment, and renders formula DOM
-     (including the fallback presentation) into the fixture box below for
-     visual confirmation. Record the outcome in docs/UI.md at C11.</p>
-  <pre id="log">loading…</pre>
-  <div id="fixture"></div>
+  <main>
+  <header>
+    <h1 class="masthead__title">VD UI — browser assertion page (V-A manual gate)</h1>
+    <p class="masthead__subtitle">Serve the repository root statically (e.g. <code>python -m http.server</code>)
+       and open <code>/ui/tests/tests.html</code>. The page imports the UI modules as
+       native ES modules against the real engine and catalog, runs the §9.2
+       assertion set in this real browser environment (several seconds — real
+       timers are exercised), and renders formula DOM (including the fallback
+       presentation) into the fixture card below for visual confirmation.
+       Live-view fixtures appear in their own card while they run and are
+       removed automatically. Record the outcome in docs/UI.md at C11.</p>
+  </header>
+  <section class="card">
+    <h2 class="section-label">Assertion log</h2>
+    <pre id="log">loading…</pre>
+  </section>
+  <section class="card">
+    <h2 class="section-label">Rendered fixtures (visual confirmation)</h2>
+    <div id="fixture"></div>
+  </section>
+  </main>
   <script type="module">
     import { createEngine } from "../../engine/index.mjs";
     import { buildCatalogAdapter } from "../adapter/catalog_adapter.mjs";
@@ -176,11 +195,21 @@
         ftDom.textContent.includes("≈0.7500–1.833 ft (registered: 9–22 in)"));
       store.state.displayUnitByVariableId.delete("wheel_radius");
 
-      // C9R2 real-view DOM regression: expansion is stable, controls stay live
+      // C9R2 real-view DOM regression: expansion is stable, controls stay live.
+      // The skeleton lives in a labeled card while it runs and is removed in
+      // a finally block, so the page never shows dangling bare controls.
+      const skeletonCard = document.createElement("section");
+      skeletonCard.className = "card";
+      const skeletonLabel = document.createElement("h2");
+      skeletonLabel.className = "section-label";
+      skeletonLabel.textContent = "Live results-view fixture — auto-removed";
+      skeletonCard.append(skeletonLabel);
       const skeleton = document.createElement("div");
       const mk = (tag, id) => { const n = document.createElement(tag); n.id = id; skeleton.append(n); return n; };
       mk("button", "calculate-btn"); mk("span", "calc-status"); mk("div", "results-region");
-      document.body.append(skeleton);
+      skeletonCard.append(skeleton);
+      document.querySelector("main").append(skeletonCard);
+      try {
       const app2 = await (async () => {
         const fresh = await createEngine(readText);
         const store2 = (await import("../state/store.mjs")).createStore();
@@ -216,10 +245,19 @@
         region.querySelector("details.derivation[open]") === null &&
         app2.store.state.expandedResultIds.size === 0);
       unsub2();
-      skeleton.remove();
+      } finally {
+        skeletonCard.remove();
+      }
 
       // C9R5 real-view DOM regression: type the value directly in the
       // picker row and press Enter — added and submitted in one step.
+      // Same labeled-card + finally-cleanup pattern as the results fixture.
+      const inputsCard = document.createElement("section");
+      inputsCard.className = "card";
+      const inputsLabel = document.createElement("h2");
+      inputsLabel.className = "section-label";
+      inputsLabel.textContent = "Live inputs-view fixture — auto-removed";
+      inputsCard.append(inputsLabel);
       const inputsSkeleton = document.createElement("div");
       const mkIn = (tag, id, cls) => {
         const n = document.createElement(tag);
@@ -230,13 +268,16 @@
       mkIn("ul", "input-list"); mkIn("p", "inputs-empty-note");
       mkIn("input", "tire-width"); mkIn("input", "tire-aspect"); mkIn("input", "tire-rim");
       mkIn("button", "tire-apply"); mkIn("button", "clear-all"); mkIn("div", "inputs-confirm-slot");
-      document.body.append(inputsSkeleton);
+      inputsCard.append(inputsSkeleton);
+      document.querySelector("main").append(inputsCard);
+      let disposeInputsView = null;
+      try {
       const app3 = await (async () => {
         const fresh = await createEngine(readText);
         const store3 = (await import("../state/store.mjs")).createStore();
         return { engine: fresh.engine, adapter, store: store3, createScratchEngine: async () => (await createEngine(readText)).engine };
       })();
-      const disposeInputs = (await import("../render/inputs_view.mjs")).initInputsView(app3);
+      disposeInputsView = (await import("../render/inputs_view.mjs")).initInputsView(app3);
       const searchBox = document.getElementById("variable-search");
       searchBox.value = "torque";
       searchBox.dispatchEvent(new Event("input"));
@@ -309,9 +350,12 @@
       await new Promise((r) => setTimeout(r, 40));
       ok("C9R6R2: uncommitted formal-row text survives a rebuild via the silent draft",
         document.querySelector("#input-row-vehicle_weight input").value === "3500");
-
-      disposeInputs(); // cancels the pending highlight timer + unsubscribes
-      inputsSkeleton.remove();
+      } finally {
+        // Cancels the pending highlight timer + unsubscribes BEFORE the DOM
+        // goes away, even when an assertion in the block throws (C9R6R1 #3).
+        if (disposeInputsView) disposeInputsView();
+        inputsCard.remove();
+      }
 
       // C9R6R1 #4: delayed observation window — outlives every view timer
       // (highlight 1.6s) so late renders into detached nodes would surface.
