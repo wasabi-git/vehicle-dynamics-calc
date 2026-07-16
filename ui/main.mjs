@@ -11,6 +11,7 @@ import { createEngine } from "../engine/index.mjs";
 import { buildCatalogAdapter } from "./adapter/catalog_adapter.mjs";
 import { createStore } from "./state/store.mjs";
 import { initInputsView } from "./render/inputs_view.mjs";
+import { initResultsView } from "./render/results_view.mjs";
 
 const ROOT = new URL("./", document.baseURI);
 const textCache = new Map();
@@ -64,7 +65,8 @@ async function boot() {
     };
     app = { engine, adapter, store, createScratchEngine, diagnostics };
     initInputsView(app);
-    // Later commits attach the results, warnings, and target regions here.
+    initResultsView(app);
+    // Later commits attach the warnings and target regions here.
   } catch (error) {
     setBootStatus(`Startup failed: ${error.message}`);
   }

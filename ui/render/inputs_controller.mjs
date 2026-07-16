@@ -30,7 +30,7 @@ export function isUnfinishedDraft(text) {
  * `changed` marks a computational change (input/assumption/model). A failed
  * solve stops short-circuiting once conditions change (lastSolve -> null).
  */
-export function recomputePhase({ engine, store }, { changed = false, isCalculating = false } = {}) {
+export function recomputePhase({ engine, store }, { changed = false, isCalculating = false, afterSolve = false } = {}) {
   const s = store.state;
   if (changed && s.lastSolveDiagnostics !== null) s.lastSolveDiagnostics = null;
   s.calculationPhase = judgeCalculationPhase({
@@ -39,7 +39,9 @@ export function recomputePhase({ engine, store }, { changed = false, isCalculati
     hasCompletedSolve: s.hasCompletedSolve,
     effectiveUserInputCount: countEffectiveUserInputs(engine),
     hasStale: hasStaleInstances(engine),
-    hasUnrecalculatedChange: changed || s.calculationPhase === "needs_recalc",
+    // A completed solve consumes every pending computational change; the
+    // sticky needs_recalc otherwise persists until the user recalculates.
+    hasUnrecalculatedChange: afterSolve ? false : changed || s.calculationPhase === "needs_recalc",
   });
 }
 
@@ -179,8 +181,10 @@ export function cancelPending({ store }) {
 }
 
 /**
- * Execute the pending confirmation (remove_input / clear_all). use_derived
- * (D25) is handled by the results controller in a later commit.
+ * Execute the pending confirmation (remove_input / clear_all / use_derived).
+ * use_derived is the D25 flow (§7.8): removeUserInput only — the derived
+ * value does NOT become Active here; promotion happens exclusively inside
+ * solve(), after the user clicks Recalculate.
  * Returns {done, kind} — a no-op when nothing is pending.
  */
 export function confirmPending({ engine, store }) {
@@ -188,7 +192,7 @@ export function confirmPending({ engine, store }) {
   if (!pending) return { done: false, kind: null };
   const s = store.state;
 
-  if (pending.kind === "remove_input") {
+  if (pending.kind === "remove_input" || pending.kind === "use_derived") {
     const { variableId } = pending.payload;
     engine.removeUserInput(variableId);
     s.uiInputOrder = s.uiInputOrder.filter((id) => id !== variableId);
@@ -197,7 +201,7 @@ export function confirmPending({ engine, store }) {
     s.pendingConfirmation = null;
     recomputePhase({ engine, store }, { changed: true });
     store.notify();
-    return { done: true, kind: "remove_input" };
+    return { done: true, kind: pending.kind };
   }
 
   if (pending.kind === "clear_all") {
