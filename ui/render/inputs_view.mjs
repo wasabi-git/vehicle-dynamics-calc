@@ -121,25 +121,43 @@ export function initInputsView(app) {
     for (const variable of filterVariables(app)) {
       const alreadyAdded = s.uiInputOrder.includes(variable.variable_id);
 
-      // Direct entry in the picker row itself (owner-directed C9R5): type a
-      // value right here and press Enter — added and submitted in one step
-      // (default/display unit; the row then sits at the top for unit tweaks).
+      // Direct entry in the picker row itself (owner-directed C9R5/C9R6):
+      // type a value right here, pick any allowed unit in the row's own
+      // selector, and press Enter — added and submitted in one step. The
+      // chosen unit becomes the row's display unit, so the landed row shows
+      // exactly what was entered.
       let valueBox = null;
+      let unitSelect = null;
+      const commitFromPicker = () => {
+        const text = valueBox.value;
+        const chosenUnit = unitSelect.value;
+        s.displayUnitByVariableId.set(variable.variable_id, chosenUnit); // silent; the add below notifies
+        addVariable(app, variable.variable_id);
+        if (text.trim() !== "") submitValue(app, variable.variable_id, text, chosenUnit);
+      };
       if (!alreadyAdded) {
         const entryUnit = s.displayUnitByVariableId.get(variable.variable_id) ?? variable.default_unit;
         valueBox = el("input", {
           class: "text-input",
           type: "text",
           size: "8",
-          placeholder: app.adapter.unitsById[entryUnit]?.display_symbol ?? entryUnit,
+          placeholder: "value",
           "aria-label": `${variable.name} value`,
         });
         valueBox.addEventListener("keydown", (event) => {
-          if (event.key !== "Enter") return;
-          const text = valueBox.value;
-          addVariable(app, variable.variable_id);
-          if (text.trim() !== "") submitValue(app, variable.variable_id, text, entryUnit);
+          if (event.key === "Enter") commitFromPicker();
         });
+        unitSelect = el(
+          "select",
+          { class: "select", "aria-label": `${variable.name} unit` },
+          variable.allowed_units.map((unitId) =>
+            el("option", {
+              value: unitId,
+              text: app.adapter.unitsById[unitId]?.display_symbol ?? unitId,
+            })
+          )
+        );
+        unitSelect.value = entryUnit;
       }
 
       list.append(
@@ -147,14 +165,17 @@ export function initInputsView(app) {
           el("span", { text: variable.name }),
           symbolSpan(variable.symbol, "picker-row__symbol"),
           valueBox,
+          unitSelect,
           el("button", {
             type: "button",
             class: "btn picker-row__add",
             text: alreadyAdded ? "Added — locate" : "Add",
             onclick: () => {
-              const text = valueBox ? valueBox.value : "";
-              addVariable(app, variable.variable_id);
-              if (text.trim() !== "") submitValue(app, variable.variable_id, text, s.displayUnitByVariableId.get(variable.variable_id) ?? variable.default_unit);
+              if (alreadyAdded) {
+                addVariable(app, variable.variable_id);
+                return;
+              }
+              commitFromPicker();
             },
           }),
         ])

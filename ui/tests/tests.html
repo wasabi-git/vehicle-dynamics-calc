@@ -233,16 +233,23 @@
       searchBox.dispatchEvent(new Event("input"));
       await new Promise((r) => setTimeout(r, 60));
       const pickerBox = document.querySelector("#variable-picker .picker-row input");
-      ok("picker rows carry a direct value box with the unit placeholder",
-        pickerBox !== null && pickerBox.placeholder === adapter.unitsById.foot_pound_force.display_symbol);
+      const pickerUnit = document.querySelector("#variable-picker .picker-row select");
+      ok("picker rows carry a direct value box AND a unit selector (all allowed units)",
+        pickerBox !== null && pickerUnit !== null &&
+        [...pickerUnit.options].map((o) => o.value).join(",") ===
+          adapter.variablesById.engine_torque.allowed_units.join(",") &&
+        pickerUnit.value === "foot_pound_force");
+      pickerUnit.value = "newton_meter"; // switch the unit right in the picker
       pickerBox.value = "310";
       pickerBox.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
       await new Promise((r) => setTimeout(r, 80));
-      ok("Enter in the picker box adds AND submits in one step (row on top, value stored, picker collapsed)",
+      const landedTorque = app3.engine.getResults("engine_torque").find((r) => r.source === "user_input");
+      ok("Enter submits in the PICKED unit and the landed row keeps it",
         app3.store.state.uiInputOrder[0] === "engine_torque" &&
-        app3.engine.getResults("engine_torque").some((r) => r.source === "user_input") &&
+        Math.abs(landedTorque.value_si - 310) < 1e-12 && // 310 N·m stored as 310 SI
         document.querySelectorAll("#variable-picker .picker-row").length === 0 &&
-        document.querySelector("#input-row-engine_torque input").value === "310");
+        document.querySelector("#input-row-engine_torque input").value === "310" &&
+        document.querySelector("#input-row-engine_torque select").value === "newton_meter");
       inputsSkeleton.remove();
 
       lines.push("");
