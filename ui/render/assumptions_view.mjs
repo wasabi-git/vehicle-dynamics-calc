@@ -5,6 +5,7 @@
  */
 
 import { el, clear } from "./dom_util.mjs";
+import { symbolSpan } from "./formula_view.mjs";
 import {
   listAssumptions,
   setAssumptionFlow,
@@ -82,7 +83,11 @@ export function initAssumptionsView(app) {
       list.append(
         el("li", { class: "assumption-row" }, [
           el("span", { class: "dot dot--assumed" }),
-          el("span", { text: `${row.name} (${row.symbol})` }),
+          (() => {
+            const label = el("span", { text: `${row.name} (` });
+            label.append(symbolSpan(row.symbol, ""), el("span", { text: ")" }));
+            return label;
+          })(),
           el("span", { class: "assumption-row__status", text: statusText(row) }),
           ...actions,
         ])
@@ -96,9 +101,11 @@ export function initAssumptionsView(app) {
     const constantRows = listConstants(app);
     constantsNote.classList.toggle("hidden", constantRows.length > 0);
     for (const row of constantRows) {
+      const label = el("span", { text: `${row.name} (` });
+      label.append(symbolSpan(row.symbol, ""), el("span", { text: ")" }));
       constants.append(
         el("li", { class: "constant-row" }, [
-          el("span", { text: `${row.name} (${row.symbol})` }),
+          label,
           el("span", { class: "micro-label", text: "Constant" }),
           el("span", { class: "constant-row__value num", text: row.valueText }),
         ])

@@ -78,6 +78,7 @@ function describeDependency({ engine, adapter, store }, resultId) {
   const variable = adapter.variablesById[node.variable_id];
   const snapshot = store.state.inputSnapshotByResultId.get(resultId) ?? null;
   const retired = engine.getResults(node.variable_id).every((live) => live.result_id !== resultId);
+  const symbolOf = (unitId) => adapter.unitsById[unitId]?.display_symbol ?? unitId;
   return {
     resultId,
     variableId: node.variable_id,
@@ -85,8 +86,8 @@ function describeDependency({ engine, adapter, store }, resultId) {
     symbol: variable ? variable.symbol : "",
     source: node.source,
     formulaId: node.formula_id,
-    entered: snapshot ? `${snapshot.enteredValue} ${snapshot.enteredUnit}` : null,
-    siText: `${formatSignificant(node.value_si, PRECISION.si)} ${node.internal_unit}`,
+    entered: snapshot ? `${snapshot.enteredValue} ${symbolOf(snapshot.enteredUnit)}` : null,
+    siText: `${formatSignificant(node.value_si, PRECISION.si)} ${symbolOf(node.internal_unit)}`,
     stale: node.stale === true,
     retired,
     warnings: node.warnings.length,

@@ -67,9 +67,10 @@ export async function run(t) {
   t.ok("developerFallback is the raw engine message",
     rangeEntry.developerFallback === extreme.warnings.find((w) => w.code === "range_extreme").message);
   const wheelVar = adapter.variablesById.wheel_radius;
-  t.ok("range bounds render verbatim in metadata-declared units (no re-conversion)",
-    rangeEntry.ranges.normal === `${wheelVar.normal_range.min} to ${wheelVar.normal_range.max} ${wheelVar.normal_range.unit}` &&
-    rangeEntry.ranges.warning === `${wheelVar.warning_range.min} to ${wheelVar.warning_range.max} ${wheelVar.warning_range.unit}`);
+  const sym = (id) => adapter.unitsById[id].display_symbol;
+  t.ok("range bounds keep the metadata-declared values and unit (symbol form, no re-conversion)",
+    rangeEntry.ranges.normal === `${wheelVar.normal_range.min} to ${wheelVar.normal_range.max} ${sym(wheelVar.normal_range.unit)}` &&
+    rangeEntry.ranges.warning === `${wheelVar.warning_range.min} to ${wheelVar.warning_range.max} ${sym(wheelVar.warning_range.unit)}`);
   t.ok("formatRange returns null without min/max", formatRange({}) === null && formatRange(null) === null);
   t.ok("observedValue uses the display unit and 4 significant figures",
     typeof rangeEntry.observedValue === "string" && rangeEntry.observedValue.length > 0);

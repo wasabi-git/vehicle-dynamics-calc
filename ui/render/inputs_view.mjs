@@ -12,6 +12,7 @@ import { el, clear } from "./dom_util.mjs";
 import { formatSignificant, PRECISION } from "../adapter/view_model.mjs";
 import { presentResultWarnings } from "./warnings_controller.mjs";
 import { warningBanner } from "./warnings_view.mjs";
+import { symbolSpan } from "./formula_view.mjs";
 import {
   filterVariables,
   availableCategories,
@@ -104,7 +105,7 @@ export function initInputsView(app) {
       list.append(
         el("li", { class: "picker-row" }, [
           el("span", { text: variable.name }),
-          el("span", { class: "picker-row__symbol", text: variable.symbol }),
+          symbolSpan(variable.symbol, "picker-row__symbol"),
           el("button", {
             type: "button",
             class: "btn picker-row__add",
@@ -203,7 +204,7 @@ export function initInputsView(app) {
         [
           el("div", { class: "input-row__head" }, [
             el("span", { class: "input-row__name", text: variable.name }),
-            el("span", { class: "input-row__symbol", text: variable.symbol }),
+            symbolSpan(variable.symbol, "input-row__symbol"),
             el("button", {
               type: "button",
               class: "btn input-row__remove",

@@ -12,7 +12,7 @@
 import { el, clear } from "./dom_util.mjs";
 import { queryTargetView, defaultTargets, selectTarget } from "./targets_controller.mjs";
 import { formatFormula } from "../adapter/formula_format.mjs";
-import { formulaBlock } from "./formula_view.mjs";
+import { formulaBlock, symbolSpan } from "./formula_view.mjs";
 
 export function initTargetsView(app) {
   const { store, adapter } = app;
@@ -89,7 +89,9 @@ export function initTargetsView(app) {
     const variable = adapter.variablesById[variableId];
     const nodes = [];
     if (view.outcome === "already_available" && !showAlways) return nodes;
-    nodes.push(el("h3", { class: "result-card__name", text: `${variable.name} (${variable.symbol})` }));
+    const heading = el("h3", { class: "result-card__name", text: `${variable.name} (` });
+    heading.append(symbolSpan(variable.symbol, ""), el("span", { text: ")" }));
+    nodes.push(heading);
     if (view.outcome === "already_available") {
       nodes.push(el("p", { class: "status-text", text: "Already available in the current results." }));
       return nodes;
@@ -101,9 +103,9 @@ export function initTargetsView(app) {
     nodes.push(...view.paths.map(pathOption));
     if (view.recommendedNext) {
       const rec = adapter.variablesById[view.recommendedNext];
-      nodes.push(
-        el("div", { class: "recommended-next", text: `Recommended next input: ${rec.name} (${rec.symbol}) — it unlocks the most candidate paths. Enter the value yourself; nothing is pre-filled.` })
-      );
+      const box = el("div", { class: "recommended-next", text: `Recommended next input: ${rec.name} (` });
+      box.append(symbolSpan(rec.symbol, ""), el("span", { text: ") — it unlocks the most candidate paths. Enter the value yourself; nothing is pre-filled." }));
+      nodes.push(box);
     }
     return nodes;
   }

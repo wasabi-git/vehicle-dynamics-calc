@@ -50,7 +50,7 @@ export function warningBanner(presented, { app, onAdopt, onIgnore } = {}) {
 }
 
 /** Upstream abnormality entries -> a titled trace section (or null). */
-export function upstreamSection(entries) {
+export function upstreamSection(entries, nameOf = (variableId) => variableId) {
   if (entries.length === 0) return null;
   return el("div", { class: "trace-section" }, [
     el("h4", { class: "section-label", text: "Upstream abnormalities" }),
@@ -61,7 +61,7 @@ export function upstreamSection(entries) {
         el("li", {}, [
           el("span", {
             text:
-              `${entry.variableId} (${entry.source}${entry.retired ? ", superseded" : ""}) — ${entry.message} ` +
+              `${nameOf(entry.variableId)} (${entry.source.replace("_", " ")}${entry.retired ? ", superseded" : ""}) — ${entry.message} ` +
               `[${entry.direct ? "direct dependency" : `${entry.hops} hops upstream`}` +
               `${entry.confirmed ? ", user confirmed" : ""}]`,
           }),

@@ -46,10 +46,15 @@ function copyFor(code) {
   return COPY[code] ?? COPY.risk_default;
 }
 
-/** Format one metadata range verbatim in its declared unit. */
-export function formatRange(range) {
+/**
+ * Format one metadata range in its declared unit. The VALUES stay exactly
+ * as the metadata declares them (no re-conversion — the UI has no
+ * conversion authority); `symbolOf` only maps the declared unit id to its
+ * registered display symbol (owner-directed C10 polish).
+ */
+export function formatRange(range, symbolOf = (u) => u) {
   if (!range || range.min === undefined || range.max === undefined) return null;
-  return `${range.min} to ${range.max} ${range.unit}`;
+  return `${range.min} to ${range.max} ${symbolOf(range.unit)}`;
 }
 
 /**
@@ -73,6 +78,7 @@ export function formatRange(range) {
 export function presentWarning(input) {
   const { result, warning, variable, displayedValue, displayedUnit, siValue, inputSnapshot, upstreamRefs, confirmed } = input;
   const copy = copyFor(warning.code);
+  const symbolOf = input.unitSymbolOf ?? ((u) => u);
 
   const canConfirm =
     result.source === "user_input" &&
@@ -88,7 +94,7 @@ export function presentWarning(input) {
     for (const suggestion of warning.context.suggestions) {
       actions.push({
         kind: "adopt_suggestion",
-        text: `Adopt ${suggestion.unit_id}`,
+        text: `Adopt ${symbolOf(suggestion.unit_id)}`,
         suggestion: {
           variableId: warning.context.variable_id,
           enteredValue: warning.context.entered_value,
@@ -100,7 +106,7 @@ export function presentWarning(input) {
   }
 
   const entered = inputSnapshot
-    ? `${inputSnapshot.enteredValue} ${inputSnapshot.enteredUnit}`
+    ? `${inputSnapshot.enteredValue} ${symbolOf(inputSnapshot.enteredUnit)}`
     : null;
 
   return {
@@ -119,8 +125,8 @@ export function presentWarning(input) {
     canConfirm,
     confirmed: confirmed === true,
     ranges: {
-      normal: formatRange(variable.normal_range),
-      warning: formatRange(variable.warning_range),
+      normal: formatRange(variable.normal_range, symbolOf),
+      warning: formatRange(variable.warning_range, symbolOf),
     },
     misuseContext: warning.code === "unit_misuse_suspected" ? warning.context ?? null : null,
     developerFallback: warning.message,

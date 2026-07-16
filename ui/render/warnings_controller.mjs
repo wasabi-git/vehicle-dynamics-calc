@@ -36,6 +36,7 @@ export function presentResultWarnings({ engine, adapter, store }, result) {
     inputSnapshot: store.state.inputSnapshotByResultId.get(result.result_id) ?? null,
     upstreamRefs: directConsumers(engine, result.result_id),
     confirmed: store.state.confirmedResultIds.has(result.result_id),
+    unitSymbolOf: (id) => adapter.unitsById[id]?.display_symbol ?? id,
   });
 }
 

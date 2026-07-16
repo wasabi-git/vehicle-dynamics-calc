@@ -33,16 +33,17 @@ export function listAssumptions({ engine, adapter }) {
       const display = instance
         ? engine.displayValue(instance, variable.default_unit)
         : null;
+      const symbolOf = (unitId) => adapter.unitsById[unitId]?.display_symbol ?? unitId;
       return {
         variableId,
         name: variable.name,
         symbol: variable.symbol,
-        defaultText: `${variable.default_assumption.value} ${variable.default_assumption.unit}`,
+        defaultText: `${variable.default_assumption.value} ${symbolOf(variable.default_assumption.unit)}`,
         enabledByDefault: variable.default_assumption.enabled_by_default === true,
         enabled: instance !== null,
         active: instance ? instance.active === true : false,
         displaced: instance !== null && !instance.active,
-        valueText: display && display.ok ? `${formatSignificant(display.value, PRECISION.result)} ${variable.default_unit}` : null,
+        valueText: display && display.ok ? `${formatSignificant(display.value, PRECISION.result)} ${symbolOf(variable.default_unit)}` : null,
         userInputPresent: userInput !== null,
       };
     });

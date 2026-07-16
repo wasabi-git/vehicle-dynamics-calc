@@ -28,7 +28,7 @@ import {
   noResultState,
   NO_RESULT_TEXT,
 } from "./derivation_controller.mjs";
-import { formulaBlock } from "./formula_view.mjs";
+import { formulaBlock, symbolSpan } from "./formula_view.mjs";
 
 export function initResultsView(app) {
   const { store } = app;
@@ -123,7 +123,11 @@ export function initResultsView(app) {
         d.substitutions.map((s) =>
           el("div", { class: "rail-row" }, [
             el("span", { class: `dot ${s.source === "user_input" ? "dot--user" : s.source === "assumption" ? "dot--assumed" : s.source === "constant" ? "dot--assumed" : "dot--derived"}` }),
-            el("span", { class: "num", text: `${s.name} (${s.symbol}): ${s.conversion}${s.stale ? " — stale" : ""}${s.retired ? " — superseded" : ""}` }),
+            el("span", { class: "num" }, [
+              el("span", { text: `${s.name} (` }),
+              symbolSpan(s.symbol, ""),
+              el("span", { text: `): ${s.conversion}${s.stale ? " — stale" : ""}${s.retired ? " — superseded" : ""}` }),
+            ]),
             el("span", { class: "micro-label", text: s.source.replace("_", " ") }),
           ])
         )
@@ -157,11 +161,13 @@ export function initResultsView(app) {
 
   function comparisonNodes(view) {
     if (view.source !== "user_input" || !view.useDerivedButton) return [];
+    const unitSymbol = (id) => app.adapter.unitsById[id]?.display_symbol ?? id;
+    const modelName = (name) => app.adapter.modelsById[name]?.display_name ?? name;
     return comparisonsForVariable(app, view.variableId).map((c) =>
       el("p", { class: "status-text num", text:
-        `Difference vs derived${c.model ? ` (${c.model})` : ""}: ` +
+        `Difference vs derived${c.model ? ` (${modelName(c.model)})` : ""}: ` +
         `${c.absoluteSiText} SI` +
-        (c.displayDeltaText ? ` · ${c.displayDeltaText} ${c.displayUnit}` : "") +
+        (c.displayDeltaText ? ` · ${c.displayDeltaText} ${unitSymbol(c.displayUnit)}` : "") +
         ` · ${c.percentageText}` })
     );
   }
@@ -176,20 +182,29 @@ export function initResultsView(app) {
         onIgnore: (p) => ignoreMisuseSuggestion(app, p.resultId),
       })
     );
-    const trace = upstreamSection(upstreamAbnormalities(app, instance));
+    const trace = upstreamSection(
+      upstreamAbnormalities(app, instance),
+      (variableId) => app.adapter.variablesById[variableId]?.name ?? variableId
+    );
     if (trace) nodes.push(trace);
     return nodes;
   }
 
+  function cardTitle(view) {
+    const title = el("h3", { class: "result-card__name", text: `${view.variableName} (` });
+    title.append(symbolSpan(view.symbol, ""), el("span", { text: ")" }));
+    return title;
+  }
+
   function primaryCard(view, sections) {
     const card = el("div", { class: `result-card${view.stale ? " is-stale" : ""}` }, [
-      el("h3", { class: "result-card__name", text: `${view.variableName} (${view.symbol})` }),
+      cardTitle(view),
       el("div", { class: "hero-value" }, [
         el("span", { class: "num", text: view.display.ok ? view.display.text : "—" }),
         el("span", { class: "hero-value__unit", text: view.display.ok ? view.display.unitSymbol : "" }),
       ]),
       statusRow(view),
-      el("p", { class: "status-text num", text: `SI: ${view.si.text} ${view.si.unitId}` }),
+      el("p", { class: "status-text num", text: `SI: ${view.si.text} ${view.si.unitSymbol}` }),
       ...warningNodes(view),
       ...comparisonNodes(view),
       useDerivedControls(view),
@@ -204,8 +219,10 @@ export function initResultsView(app) {
   }
 
   function secondaryRow(view, sections) {
+    const rowTitle = el("span", { text: `${view.variableName} (` });
+    rowTitle.append(symbolSpan(view.symbol, ""), el("span", { text: ")" }));
     const row = el("div", { class: `result-row${view.stale ? " is-stale" : ""}` }, [
-      el("span", { text: `${view.variableName} (${view.symbol})` }),
+      rowTitle,
       ...view.labels.map((l) => el("span", { class: "micro-label", text: l.text })),
       el("span", { class: "result-row__value num", text: view.display.ok ? `${view.display.text} ${view.display.unitSymbol}` : "—" }),
     ]);
@@ -242,7 +259,7 @@ export function initResultsView(app) {
     for (const view of vm.layers.primary) {
       if (view.kind === "selection_pending") {
         const card = el("div", { class: "result-card" }, [
-          el("h3", { class: "result-card__name", text: `${view.variableName} (${view.symbol})` }),
+          cardTitle(view),
           el("div", { class: "hero-value" }, [
             el("span", { class: "num", text: "—" }),
           ]),

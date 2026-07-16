@@ -62,7 +62,8 @@ export async function run(t) {
       // dependencies are the user inputs themselves.
       const dF004 = buildDerivationDetail(app, engine.getResults("tractive_force").find((r) => r.source === "derived"));
       const torqueRow = dF004.substitutions.find((s) => s.variableId === "engine_torque");
-      return torqueRow.entered === "310 foot_pound_force" && torqueRow.conversion.includes("→") && torqueRow.conversion.includes("newton_meter");
+      // units render as registered display symbols (owner-directed C10)
+      return torqueRow.entered === "310 ft·lbf" && torqueRow.conversion.includes("→") && torqueRow.conversion.includes("N·m");
     })());
   t.ok("5 intermediates list the derived dependencies with their formulas",
     d.intermediates.some((i) => i.variableId === "tractive_force" && i.formulaId));
@@ -88,7 +89,7 @@ export async function run(t) {
   t.ok("stale detail flags the superseded input row via the retired instance",
     dStale.stale === true && dStale.substitutions.some((s) => s.variableId === "wheel_radius" && s.retired === true));
   t.ok("the retired row still reconstructs its entered value from the snapshot",
-    dStale.substitutions.find((s) => s.variableId === "wheel_radius").entered === "0.311 meter");
+    dStale.substitutions.find((s) => s.variableId === "wheel_radius").entered === "0.311 m");
   runSolve(app);
 
   t.section("expand/collapse bookkeeping");

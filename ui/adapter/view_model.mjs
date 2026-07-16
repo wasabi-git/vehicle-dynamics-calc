@@ -125,6 +125,7 @@ export function buildResultView(result, { engine, adapter, store }) {
     },
     si: {
       unitId: result.internal_unit,
+      unitSymbol: adapter.unitsById[result.internal_unit]?.display_symbol ?? result.internal_unit,
       text: formatSignificant(result.value_si, PRECISION.si),
     },
     labels: deriveLabels(result, {

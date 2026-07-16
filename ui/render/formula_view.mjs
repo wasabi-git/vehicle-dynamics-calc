@@ -43,3 +43,17 @@ function renderNode(node) {
 export function formulaBlock(tree) {
   return el("div", { class: "formula-block" }, [renderNode(tree)]);
 }
+
+/**
+ * Render a catalog variable symbol ("F_x", "ω_e", "R_hx", "M") as typeset
+ * DOM: the part after the first underscore becomes a subscript. Plain
+ * symbols pass through. textContent only — same safety rule as formulas.
+ */
+export function symbolSpan(symbolText, className = "formula-sym") {
+  const text = String(symbolText ?? "");
+  const cut = text.indexOf("_");
+  if (cut <= 0) return el("span", { class: className, text });
+  const wrap = el("span", { class: className, text: text.slice(0, cut) });
+  wrap.append(el("sub", { text: text.slice(cut + 1) }));
+  return wrap;
+}
