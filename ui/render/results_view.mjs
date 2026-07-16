@@ -241,7 +241,10 @@ export function initResultsView(app) {
     const details = derivationDetails(view);
     if (details) extras.push(details);
     if (extras.length === 0) return row;
-    return el("div", {}, [row, ...extras]);
+    // Row + its own extras (warnings, comparisons, derivation details) form
+    // ONE group: the separator draws under the whole group, never between a
+    // row and its own details (owner-directed C9R10).
+    return el("div", { class: "result-group" }, [row, ...extras]);
   }
 
   function render() {

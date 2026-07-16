@@ -236,6 +236,17 @@
       const region = document.getElementById("results-region");
       const detailsEl = region.querySelector("details.derivation");
       ok("real results view renders a derivation details element", Boolean(detailsEl));
+      // C9R10: a row and its own derivation details form one visual group —
+      // no separator line between them; the separator sits under the group.
+      const group = region.querySelector(".result-group");
+      ok("C9R10: row + details share one group; the row's own separator is removed",
+        group !== null &&
+        group.querySelector(".result-row") !== null &&
+        group.querySelector("details.derivation") !== null &&
+        getComputedStyle(group.querySelector(".result-row")).borderBottomWidth === "0px");
+      ok("C9R10: the separator draws under the whole group instead",
+        getComputedStyle(group).borderBottomWidth === "1px" ||
+        group === group.parentElement.lastElementChild);
       let renders = 0;
       const unsub2 = app2.store.subscribe(() => { renders += 1; });
       detailsEl.open = true;

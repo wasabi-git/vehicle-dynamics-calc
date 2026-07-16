@@ -512,6 +512,21 @@ summary:focus-visible {
   border-bottom: 0;
 }
 
+/* A row grouped with its own derivation details / warnings / comparisons:
+   the separator belongs to the WHOLE group, never between the row and its
+   details (owner-directed C9R10 correction). */
+.result-group {
+  border-bottom: 1px solid var(--border-separator);
+}
+
+.result-group .result-row {
+  border-bottom: 0;
+}
+
+.result-group:last-child {
+  border-bottom: 0;
+}
+
 .result-row__value {
   margin-left: auto;
   font-variant-numeric: tabular-nums;
