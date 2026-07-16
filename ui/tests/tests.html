@@ -401,6 +401,21 @@
         document.querySelector("#input-row-vehicle_weight input").value === "3575");
       ok("C9R6R4: the engine still holds the committed 3500 — the draft never entered it",
         Math.abs(committedWeight() - 3500) < 1e-12);
+
+      // C9R11: the remove confirmation renders inside the clicked row, not
+      // in the bottom slot.
+      document.querySelector("#input-row-vehicle_weight .input-row__remove").click();
+      await new Promise((r) => setTimeout(r, 40));
+      ok("C9R11: remove confirmation sits inline in the row, bottom slot stays empty",
+        document.querySelector("#input-row-vehicle_weight .banner--neutral") !== null &&
+        document.getElementById("inputs-confirm-slot").children.length === 0);
+      const cancelBtn = [...document.querySelectorAll("#input-row-vehicle_weight .banner--neutral .btn")]
+        .find((b) => b.textContent === "Cancel");
+      cancelBtn.click();
+      await new Promise((r) => setTimeout(r, 40));
+      ok("C9R11: cancel clears the inline confirmation and keeps the input",
+        document.querySelector("#input-row-vehicle_weight .banner--neutral") === null &&
+        app3.engine.getResults("vehicle_weight").some((r) => r.source === "user_input"));
       } finally {
         // Cancels the pending highlight timer + unsubscribes BEFORE the DOM
         // goes away, even when an assertion in the block throws (C9R6R1 #3).

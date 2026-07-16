@@ -300,6 +300,20 @@ export function initInputsView(app) {
           ]),
           el("div", { class: "input-row__controls" }, [valueInput, unitSelect]),
           diagnosticNode,
+          // The remove confirmation renders INSIDE the row, right where the
+          // Remove button was clicked (owner-directed C9R11) — never in the
+          // far-away bottom slot.
+          s.pendingConfirmation &&
+          s.pendingConfirmation.kind === "remove_input" &&
+          s.pendingConfirmation.payload.variableId === variableId
+            ? el("div", { class: "banner banner--neutral" }, [
+                el("p", { class: "banner__body", text: `Remove your input for ${variable.name}? Dependent results go stale until you recalculate.` }),
+                el("div", { class: "banner__actions" }, [
+                  el("button", { type: "button", class: "btn", text: "Confirm", onclick: () => confirmPending(app) }),
+                  el("button", { type: "button", class: "btn", text: "Cancel", onclick: () => cancelPending(app) }),
+                ]),
+              ])
+            : null,
         ]
       );
       list.append(row);
@@ -336,14 +350,13 @@ export function initInputsView(app) {
   }
 
   function renderConfirmation() {
+    // Only the clear-all confirmation lives in the bottom slot (next to the
+    // Clear all button itself); per-row removal confirms inline (C9R11).
     const slot = document.getElementById("inputs-confirm-slot");
     clear(slot);
     const pending = store.state.pendingConfirmation;
-    if (!pending || (pending.kind !== "clear_all" && pending.kind !== "remove_input")) return;
-    const text =
-      pending.kind === "clear_all"
-        ? "Remove all inputs? Derived results that depended on them become unavailable after you recalculate."
-        : `Remove your input for ${app.adapter.variablesById[pending.payload.variableId]?.name ?? pending.payload.variableId}? Dependent results go stale until you recalculate.`;
+    if (!pending || pending.kind !== "clear_all") return;
+    const text = "Remove all inputs? Derived results that depended on them become unavailable after you recalculate.";
     slot.append(
       el("div", { class: "banner banner--neutral" }, [
         el("p", { class: "banner__body", text }),
