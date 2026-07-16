@@ -18,7 +18,6 @@ import {
   filterVariables,
   availableCategories,
   addVariable,
-  clearHighlight,
   submitValue,
   setDisplayUnit,
   requestRemoveInput,
@@ -233,6 +232,13 @@ export function initInputsView(app) {
         value: rowValueText(variableId, displayUnit),
         "aria-label": `${variable.name} value`,
       });
+      // In-progress typing persists as a silent draft keyed by variable_id,
+      // so a re-render mid-typing rebuilds the row with the text intact
+      // (same mechanism as the picker box, C9R6R2).
+      valueInput.addEventListener("input", () => {
+        if (valueInput.value === "") s.inputDraftByVariableId.delete(variableId);
+        else s.inputDraftByVariableId.set(variableId, valueInput.value);
+      });
       const commit = () => submitValue(app, variableId, valueInput.value, s.displayUnitByVariableId.get(variableId) ?? variable.default_unit);
       valueInput.addEventListener("change", commit);
       valueInput.addEventListener("keydown", (e) => { if (e.key === "Enter") commit(); });
@@ -314,7 +320,16 @@ export function initInputsView(app) {
         }
       }
       if (highlightTimer) clearTimeout(highlightTimer);
-      highlightTimer = setTimeout(() => clearHighlight(app), 1600);
+      // Silent expiry (C9R6R2): the highlight is visual-only, so clearing it
+      // must NOT notify — a notify here rebuilt every view 1.6s after each
+      // add ("one automatic refresh") and wiped in-progress typing. The
+      // class is removed directly; the store field clears silently.
+      highlightTimer = setTimeout(() => {
+        highlightTimer = null;
+        store.state.highlightedVariableId = null;
+        focusedForHighlight = null;
+        target.classList.remove("input-row--highlight");
+      }, 1600);
     } else {
       focusedForHighlight = null; // a later re-add of the same variable refocuses
     }

@@ -277,10 +277,22 @@
       weightUnit.dispatchEvent(new Event("change"));
       weightBox.value = "3500";
       weightBox.dispatchEvent(new Event("input"));
-      await new Promise((r) => setTimeout(r, 1750)); // highlight timer fires -> notify -> picker rebuild
+      // C9R6R2: the highlight expiry is SILENT — no notify, no rebuild, no
+      // "automatic refresh" 1.6s after adding.
+      let windowNotifies = 0;
+      const unsubWindow = app3.store.subscribe(() => { windowNotifies += 1; });
+      await new Promise((r) => setTimeout(r, 1750));
+      unsubWindow();
+      ok("C9R6R2: zero store notifies across the highlight-expiry window (no auto refresh)",
+        windowNotifies === 0 &&
+        app3.store.state.highlightedVariableId === null &&
+        !document.getElementById("input-row-engine_torque").classList.contains("input-row--highlight"));
+      // Persistence must still hold across a REAL rebuild:
+      app3.store.notify();
+      await new Promise((r) => setTimeout(r, 40));
       weightBox = document.querySelector("#variable-picker .picker-row input");
       weightUnit = document.querySelector("#variable-picker .picker-row select");
-      ok("C9R6R1 #2: uncommitted picker value and unit survive the timer-driven re-render",
+      ok("C9R6R1 #2: uncommitted picker value and unit survive a forced re-render",
         weightBox.value === "3500" && weightUnit.value === "newton");
       weightBox.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
       await new Promise((r) => setTimeout(r, 80));
@@ -288,6 +300,15 @@
         app3.store.state.uiInputOrder[0] === "vehicle_weight" &&
         document.querySelector("#input-row-vehicle_weight select").value === "newton" &&
         document.activeElement === document.querySelector("#input-row-vehicle_weight input"));
+
+      // C9R6R2: in-progress typing in the FORMAL row survives a rebuild too.
+      const formalInput = document.querySelector("#input-row-vehicle_weight input");
+      formalInput.value = "3500";
+      formalInput.dispatchEvent(new Event("input"));
+      app3.store.notify();
+      await new Promise((r) => setTimeout(r, 40));
+      ok("C9R6R2: uncommitted formal-row text survives a rebuild via the silent draft",
+        document.querySelector("#input-row-vehicle_weight input").value === "3500");
 
       disposeInputs(); // cancels the pending highlight timer + unsubscribes
       inputsSkeleton.remove();
