@@ -265,7 +265,7 @@ python -m http.server           # then open /engine/smoke.html for the
 
 ## Current repository behavior
 
-The root `index.html` provides the v0.1 browser calculator: inputs with unit selection and direct picker entry, tire-code quick input, solve/recalculate flow, layered results with model selection and derivation details, warning and unit-misuse handling, assumption and constant panels, and reverse target queries with inline entry for missing inputs. The validated data architecture, the documentation foundation, and the v0.1 core derivation engine with its acceptance runner and browser smoke page back it unchanged.
+The root `index.html` provides the v0.1 browser calculator: inputs with unit selection and direct picker entry, tire-code quick input, solve/recalculate flow, layered results with model selection and derivation details, warning and unit-misuse handling, assumption and constant panels, and reverse target queries with inline entry for missing inputs. The validated data architecture, the documentation foundation, and the v0.1 core derivation engine with its acceptance runner and browser smoke page back it; the engine stayed frozen for this branch except one owner-approved read-only addition, the `convertUnitValue` API (recorded in `docs/UI.md`).
 
 ## Usage
 
