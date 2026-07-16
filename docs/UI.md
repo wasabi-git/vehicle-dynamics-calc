@@ -137,6 +137,7 @@ holds the same defaults so the Node gate runs without CSS parsing.
 | C9R8 | The three approved private-reference placeholders are suppressed from rendered sources (exact match only; data untouched) |
 | C9R9 | Honest target grouping: Primary results (4) / Derived intermediates (3) / Direct-input only (12), catalog-derived. Registered coverage: 19 options = 7 with a registered output direction + 12 direct-input only; new computable targets are Part 7/v0.2 scope |
 | C9R10 | Separator misattribution fix in Other derived results: row + own details form one group (owner-approved app.css structural addition under the separate-approval clause) |
+| C9R11 | Acceptance finding during UI-A B4: the remove-input confirmation renders inline in the clicked row (bottom slot keeps only clear-all); re-verified by the owner before sign-off |
 
 Additional register entries:
 - Solve-failure status line shows fixed friendly copy; the raw engine diagnostics stay in `lastSolveDiagnostics` as developer fallback (owner-directed; tension with the "show the specific reason" reading of the button-state rules recorded here).
@@ -150,7 +151,7 @@ Additional register entries:
 - `python tools/validate_catalog.py --no-write` — pass_with_warnings, F005 standing warning only
 - `node engine/tests/run.js` — 121 passed, 0 failed, one-shot gate ALL GREEN
 - `node ui/tests/run.js` — 387 passed, 0 failed (14 modules incl. the §11.2 contrast matrix)
-- `ui/tests/tests.html` — 48 passed, 0 failed, UI BROWSER PASS (incl. real-view DOM regressions and a zero-window-error observation window)
+- `ui/tests/tests.html` — 50 passed, 0 failed, UI BROWSER PASS (incl. real-view DOM regressions and a zero-window-error observation window; 50 reflects the C9R11 additions at sign-off time)
 - G8 scans tree/head/msg/struct — PASS on every commit
 
 **C10 (visual polish)**: owner reviewed the live page and approved with **zero parameter changes** — `ui/tokens.css` ships with its C1 values.
@@ -161,9 +162,19 @@ Additional register entries:
 
 | Batch | Scope | Owner sign-off |
 |---|---|---|
-| B1 | Inputs region: search/category, picker direct entry with units, duplicate locate-highlight, tire three-box, clear-all confirm, display-unit switch | pending |
-| B2 | Results: hero card + model rows/switch, stale styling, warning banners + Keep original, misuse adopt/ignore, comparison + use-derived flow, intermediates | pending |
-| B3 | Targets and frame: grouped selector, missing rows + inline entry, recommended next, no-result three states, assumptions/constants panels, 900px collapse | pending |
-| B4 | Part 2 §2.8 nine acceptance scenarios walked on the live page | pending |
+| B1 | Inputs region: search/category, picker direct entry with units, duplicate locate-highlight, tire three-box, clear-all confirm, display-unit switch | signed, all pass — owner, 2026-07-16 |
+| B2 | Results: hero card + model rows/switch, stale styling, warning banners + Keep original, misuse adopt/ignore, comparison + use-derived flow, intermediates | signed, all pass — owner, 2026-07-16 |
+| B3 | Targets and frame: grouped selector, missing rows + inline entry, recommended next, no-result three states, assumptions/constants panels, 900px collapse | signed, all pass — owner, 2026-07-16 |
+| B4 | Part 2 §2.8 acceptance scenarios walked end-to-end on the live page | signed, all pass — owner, 2026-07-16 (one finding, fixed as C9R11 and re-verified before sign-off) |
+
+Scenario-count note: the work package cites "nine acceptance scenarios" for the
+Part 2 §2.8 range; the cited range contains eight scenario sections (十六–二十三,
+the separately-listed "not-doing" list and completion standard excluded). B4
+covered the full cited range; the count difference is a package-side tally slip
+recorded here for the reviewer.
+
+**GitHub Pages**: enabled by the owner (settings untouched by the implementation
+session, per the deployment boundary); root page, catalog fetch, module and
+assertion-page URLs verified 200 by both sides on 2026-07-16.
 
 - [ ] Final branch verification record (reviewer re-run, §9.4)
