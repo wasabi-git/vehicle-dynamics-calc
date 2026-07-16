@@ -19,6 +19,8 @@ import {
   useDerivedConfirmText,
 } from "./results_controller.mjs";
 import { cancelPending, confirmPending } from "./inputs_controller.mjs";
+import { presentResultWarnings, upstreamAbnormalities } from "./warnings_controller.mjs";
+import { warningBanner, upstreamSection } from "./warnings_view.mjs";
 
 export function initResultsView(app) {
   const { store } = app;
@@ -99,6 +101,15 @@ export function initResultsView(app) {
     return children;
   }
 
+  function warningNodes(view) {
+    const instance = app.engine.getByResultId(view.resultId);
+    if (!instance) return [];
+    const nodes = presentResultWarnings(app, instance).map((presented) => warningBanner(presented, { app }));
+    const trace = upstreamSection(upstreamAbnormalities(app, instance));
+    if (trace) nodes.push(trace);
+    return nodes;
+  }
+
   function primaryCard(view, sections) {
     const card = el("div", { class: `result-card${view.stale ? " is-stale" : ""}` }, [
       el("h3", { class: "result-card__name", text: `${view.variableName} (${view.symbol})` }),
@@ -108,6 +119,7 @@ export function initResultsView(app) {
       ]),
       statusRow(view),
       el("p", { class: "status-text num", text: `SI: ${view.si.text} ${view.si.unitId}` }),
+      ...warningNodes(view),
       useDerivedControls(view),
     ]);
     const section = sections[view.variableId];
@@ -124,9 +136,11 @@ export function initResultsView(app) {
       ...view.labels.map((l) => el("span", { class: "micro-label", text: l.text })),
       el("span", { class: "result-row__value num", text: view.display.ok ? `${view.display.text} ${view.display.unitSymbol}` : "—" }),
     ]);
+    const extras = [...warningNodes(view)];
     const controls = useDerivedControls(view);
-    if (controls) row.append(controls);
-    return row;
+    if (controls) extras.push(controls);
+    if (extras.length === 0) return row;
+    return el("div", {}, [row, ...extras]);
   }
 
   function render() {

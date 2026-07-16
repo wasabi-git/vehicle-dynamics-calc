@@ -10,6 +10,8 @@
 
 import { el, clear } from "./dom_util.mjs";
 import { formatSignificant, PRECISION } from "../adapter/view_model.mjs";
+import { presentResultWarnings } from "./warnings_controller.mjs";
+import { warningBanner } from "./warnings_view.mjs";
 import {
   filterVariables,
   availableCategories,
@@ -176,12 +178,12 @@ export function initInputsView(app) {
           class: `row-diagnostic ${diagnostic.kind === "draft" ? "row-diagnostic--muted" : "row-diagnostic--danger"}`,
           text: diagnostic.message,
         });
-      } else if (instance && instance.range_status !== "normal") {
-        const danger = instance.range_status === "invalid";
-        diagnosticNode = el("p", {
-          class: `row-diagnostic ${danger ? "row-diagnostic--danger" : "row-diagnostic--warning"}`,
-          text: instance.warnings.map((w) => w.message).join(" "),
-        });
+      } else if (instance && instance.warnings.length > 0) {
+        diagnosticNode = el(
+          "div",
+          {},
+          presentResultWarnings(app, instance).map((presented) => warningBanner(presented, { app }))
+        );
       }
 
       const row = el(
