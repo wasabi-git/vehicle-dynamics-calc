@@ -189,4 +189,55 @@ export async function run() {
       assert(out.ok, `${formulaId} native output [${formula.native_output_unit}] must convert`);
     }
   });
+
+  // ---- public API: engine.convertUnitValue (owner-approved C9R3a) ----------
+  const { createEngineFromData } = await import("../index.mjs");
+  const engine = createEngineFromData(data);
+  const poolFingerprint = () =>
+    engine.getResults().map((r) => `${r.result_id}:${r.stale}:${r.active}`).sort().join("|");
+
+  await test("convertUnitValue: linear pairs convert through layer 1", () => {
+    const hp = engine.convertUnitValue(1000, "kilowatt", "horsepower_mechanical");
+    assert(hp.ok, "kW -> hp converts");
+    assertClose(hp.value, 1000 / 0.7456998715822702, 1e-9, "1000 kW in mechanical horsepower");
+    const kw = engine.convertUnitValue(1000, "horsepower_mechanical", "kilowatt");
+    assertClose(kw.value, 745.6998715822702, 1e-9, "1000 hp in kW");
+    assertClose(engine.convertUnitValue(12, "inch", "foot").value, 1, 1e-12, "12 in = 1 ft");
+    assertClose(engine.convertUnitValue(90, "percent", "decimal").value, 0.9, 1e-12, "90 % = 0.9");
+    assertClose(engine.convertUnitValue(180, "degree", "radian").value, Math.PI, 1e-12, "180 deg = pi rad");
+  });
+
+  await test("convertUnitValue: standard_gravity resolves through its constant reference", () => {
+    const g = engine.convertUnitValue(1, "standard_gravity", "meter_per_second_squared");
+    assert(g.ok, "g -> m/s2 converts");
+    assertClose(g.value, data.variables.get("gravity").constant_value_si, 1e-12, "1 g equals the registered constant");
+    const back = engine.convertUnitValue(g.value, "meter_per_second_squared", "standard_gravity");
+    assertClose(back.value, 1, 1e-12, "round trip through the constant-reference unit");
+  });
+
+  await test("convertUnitValue: structured diagnostics, never a throw", () => {
+    const cross = engine.convertUnitValue(1, "kilowatt", "newton");
+    assertEqual(cross.ok, false, "cross-dimension must fail");
+    assertEqual(cross.diagnostic.code, "dimension_mismatch", "cross-dimension code");
+    const unknown = engine.convertUnitValue(1, "furlong", "meter");
+    assertEqual(unknown.ok, false, "unknown unit must fail");
+    assertEqual(unknown.diagnostic.code, "unknown_unit", "unknown-unit code");
+    const notFinite = engine.convertUnitValue(Number.NaN, "meter", "inch");
+    assertEqual(notFinite.ok, false, "non-finite must fail");
+    assertEqual(notFinite.diagnostic.code, "value_not_finite", "non-finite code");
+  });
+
+  await test("convertUnitValue: zero pool/result_id/stale side effects", () => {
+    engine.setUserInput("engine_torque", 310, "foot_pound_force");
+    engine.setUserInput("engine_speed", 4800, "revolution_per_minute");
+    engine.solve();
+    const before = poolFingerprint();
+    engine.convertUnitValue(1000, "horsepower_mechanical", "kilowatt");
+    engine.convertUnitValue(1, "kilowatt", "newton"); // failing calls included
+    engine.convertUnitValue(Number.NaN, "meter", "inch");
+    assertEqual(poolFingerprint(), before, "pool untouched: same result_ids, stale flags, active flags");
+    const a = engine.convertUnitValue(12, "inch", "foot");
+    const b = engine.convertUnitValue(12, "inch", "foot");
+    assertEqual(a.value, b.value, "pure: identical calls give identical results");
+  });
 }

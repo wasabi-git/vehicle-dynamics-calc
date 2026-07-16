@@ -14,6 +14,9 @@
  *   engine.getFormulaStatus(formulaId)
  *   engine.getRecommendationStates()
  *   engine.displayValue(result, unitId)      // layer-2 conversion, on demand
+ *   engine.convertUnitValue(value, fromUnitId, toUnitId)
+ *                                            // layer-1 bare-value conversion,
+ *                                            // pure read-only (C9R3a)
  *
  * All stored values are SI; display conversion never enters the pool.
  */
@@ -53,6 +56,13 @@ export function createEngineFromData(data) {
     getRecommendationStates: () => solver.getRecommendationStates(),
 
     displayValue: (result, unitId) => unitSystem.variableOutputFromSI(result.variable_id, result.value_si, unitId),
+
+    // Pure read-only bare-value conversion between two REGISTERED units of
+    // the same dimension (owner-approved C9R3a: the UI presents metadata
+    // range bounds in the current display unit). Pure delegation to the
+    // layer-1 converter: never touches the pool, mints no Result, marks
+    // nothing stale, and does not expose the unit system itself.
+    convertUnitValue: (value, fromUnitId, toUnitId) => unitSystem.convert(value, fromUnitId, toUnitId),
   };
 }
 

@@ -29,6 +29,7 @@ One-shot gate: `node engine/tests/run.js`. Browser smoke: serve the repo root an
 - `getResults(variableId?)`, `getActive(variableId)`, `getByResultId(resultId)`
 - `getFormulaStatus(formulaId)`, `getRecommendationStates()`
 - `displayValue(result, unitId)` — layer-2 display conversion, on demand only
+- `convertUnitValue(value, fromUnitId, toUnitId)` — layer-1 bare-value conversion between two registered units of the same dimension (owner-approved C9R3a, for presenting metadata range bounds in the current display unit). Pure read-only delegation to the internal layer-1 converter: returns `{ok, value, diagnostic}`, reports `unknown_unit` / `dimension_mismatch` / `value_not_finite` as structured diagnostics, never touches the pool, mints no Result, marks nothing stale, and does not expose the unit system object
 
 ## Result contract
 
