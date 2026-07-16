@@ -12,6 +12,7 @@ import { buildCatalogAdapter } from "./adapter/catalog_adapter.mjs";
 import { createStore } from "./state/store.mjs";
 import { initInputsView } from "./render/inputs_view.mjs";
 import { initResultsView } from "./render/results_view.mjs";
+import { initTargetsView } from "./render/targets_view.mjs";
 
 const ROOT = new URL("./", document.baseURI);
 const textCache = new Map();
@@ -66,7 +67,8 @@ async function boot() {
     app = { engine, adapter, store, createScratchEngine, diagnostics };
     initInputsView(app);
     initResultsView(app);
-    // Later commits attach the warnings and target regions here.
+    initTargetsView(app);
+    // C9 attaches the assumptions panel, derivation details, and comparisons.
   } catch (error) {
     setBootStatus(`Startup failed: ${error.message}`);
   }
