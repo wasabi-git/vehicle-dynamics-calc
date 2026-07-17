@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VD system assertion page (Part 8)</title>
+  <link rel="stylesheet" href="../../ui/tokens.css">
+  <link rel="stylesheet" href="../../ui/app.css">
+  <style>
+    body { padding: 24px; }
+    main { max-width: 960px; margin: 0 auto; display: grid; gap: 16px; }
+    pre { white-space: pre-wrap; font-family: monospace, monospace; font-size: 13px; margin: 0; }
+  </style>
+</head>
+<body>
+  <main>
+  <header>
+    <h1 class="masthead__title">VD — browser system assertion page (Part 8)</h1>
+    <p class="masthead__subtitle">Serve the repository root statically (e.g. <code>python -m http.server</code>)
+       and open <code>/validation/system/system.html</code>. The page drives the real
+       bootstrap in same-origin iframes (success and controlled catalog failure),
+       then renders the B-channel checkpoints of the eight Part 2 §2.8 scenarios
+       through the real views against the real engine and catalog, and closes the
+       B set against the checkpoint manifest. Scenario fixtures appear in their
+       own cards while they run and are removed automatically; the bootstrap
+       frames stay visible for inspection. Record the outcome in docs/TESTING.md.</p>
+  </header>
+  <section class="card">
+    <h2 class="section-label">Assertion log</h2>
+    <pre id="log">loading…</pre>
+  </section>
+  <section class="card">
+    <h2 class="section-label">Bootstrap fixtures (success, then controlled failure)</h2>
+    <div id="frames"></div>
+  </section>
+  </main>
+  <script type="module">
+    import { CHECKPOINTS } from "./checkpoints.mjs";
+    import { createEngine } from "../../engine/index.mjs";
+    import { buildCatalogAdapter } from "../../ui/adapter/catalog_adapter.mjs";
+    import { createStore } from "../../ui/state/store.mjs";
+    import { submitValue, setDisplayUnit, applyTireCodeFlow } from "../../ui/render/inputs_controller.mjs";
+    import { runSolve } from "../../ui/render/results_controller.mjs";
+    import { setAssumptionFlow } from "../../ui/render/assumptions_controller.mjs";
+    import { selectTarget } from "../../ui/render/targets_controller.mjs";
+    import { initResultsView } from "../../ui/render/results_view.mjs";
+    import { initInputsView } from "../../ui/render/inputs_view.mjs";
+    import { initTargetsView } from "../../ui/render/targets_view.mjs";
+
+    const logEl = document.getElementById("log");
+    const lines = [];
+    let passed = 0, failed = 0;
+
+    // Error traps for the whole run; the final assertion demands zero across
+    // a delayed observation window that outlives every view timer.
+    const pageErrors = [];
+    window.addEventListener("error", (e) => pageErrors.push(`window error: ${e.message}`));
+    window.addEventListener("unhandledrejection", (e) => pageErrors.push(`unhandled rejection: ${String(e.reason)}`));
+    const nativeConsoleError = console.error.bind(console);
+    console.error = (...args) => { pageErrors.push(`console.error: ${args.map(String).join(" ")}`); nativeConsoleError(...args); };
+
+    const ok = (label, cond) => {
+      if (cond) { passed += 1; lines.push(`ok    ${label}`); }
+      else { failed += 1; lines.push(`FAIL  ${label}`); }
+      logEl.textContent = lines.join("\n");
+    };
+    const coveredB = new Set();
+    const cover = (id, label, cond) => { coveredB.add(id); ok(`${id}: ${label}`, cond); };
+    const settle = (ms) => new Promise((r) => setTimeout(r, ms));
+    const SETTLE = 200; // per-group DOM settle window (work package §7.5)
+
+    const ROOT = new URL("../../", document.baseURI);
+    const readText = async (rel) => {
+      const r = await fetch(new URL(rel, ROOT));
+      if (!r.ok) throw new Error(`HTTP ${r.status} for ${rel}`);
+      return r.text();
+    };
+
+    try {
+      const adapter = await buildCatalogAdapter(readText);
+      const freshApp = async () => {
+        const fresh = await createEngine(readText);
+        if (!fresh.ok) throw new Error("engine failed to load");
+        return {
+          engine: fresh.engine,
+          adapter,
+          store: createStore(),
+          createScratchEngine: async () => (await createEngine(readText)).engine,
+        };
+      };
+      const CHAIN = [
+        ["engine_torque", "310", "foot_pound_force"],
+        ["engine_speed", "4800", "revolution_per_minute"],
+        ["combined_gear_ratio", "8.0", "decimal"],
+        ["drivetrain_efficiency", "0.90", "decimal"],
+        ["wheel_radius", "0.311", "meter"],
+        ["vehicle_weight", "3500", "pound_force"],
+      ];
+      const enterChain = (app, omit = [], override = {}) => {
+        for (const [id, text, unit] of CHAIN) {
+          if (omit.includes(id)) continue;
+          const o = override[id];
+          submitValue(app, id, o ? o[0] : text, o ? o[1] : unit);
+        }
+      };
+      const makeCard = (title) => {
+        const card = document.createElement("section");
+        card.className = "card";
+        const label = document.createElement("h2");
+        label.className = "section-label";
+        label.textContent = title;
+        card.append(label);
+        const skeleton = document.createElement("div");
+        card.append(skeleton);
+        document.querySelector("main").append(card);
+        const mk = (tag, id) => { const n = document.createElement(tag); n.id = id; skeleton.append(n); return n; };
+        return { card, mk };
+      };
+      const mkResults = (mk) => { mk("button", "calculate-btn"); mk("span", "calc-status"); mk("div", "results-region"); };
+      const mkTargets = (mk) => { mk("select", "target-select"); mk("button", "target-query-btn"); mk("div", "target-report"); };
+      const mkInputs = (mk) => {
+        mk("input", "variable-search"); mk("div", "category-filter"); mk("ul", "variable-picker");
+        mk("ul", "input-list"); mk("p", "inputs-empty-note");
+        mk("input", "tire-width"); mk("input", "tire-aspect"); mk("input", "tire-rim");
+        mk("button", "tire-apply"); mk("button", "clear-all"); mk("div", "inputs-confirm-slot");
+      };
+
+      // ---- Bootstrap success fixture (same-origin iframe, real page) ----
+      const frames = document.getElementById("frames");
+      const pollBoot = async (frame, judge) => {
+        const POLL = 250, LIMIT = 10000;
+        let waited = 0;
+        while (waited <= LIMIT) {
+          const statusEl = frame.contentDocument ? frame.contentDocument.getElementById("boot-status") : null;
+          const verdict = judge(statusEl ? statusEl.textContent : "");
+          if (verdict !== null) return verdict;
+          await settle(POLL);
+          waited += POLL;
+        }
+        return false;
+      };
+      const bootFrame = document.createElement("iframe");
+      bootFrame.src = "../../index.html";
+      frames.append(bootFrame);
+      const booted = await pollBoot(bootFrame, (text) => {
+        if (text.startsWith("Catalog loaded (") && text.includes("Engine ready.")) return true;
+        if (text.includes("Catalog failed to load.") || text.includes("Startup failed:")) return false;
+        return null;
+      });
+      ok("bootstrap: the real page boots to Catalog loaded + Engine ready", booted === true);
+
+      // ---- Controlled catalog-failure fixture -----------------------------
+      // The collectors and the fetch stub live INSIDE the written document —
+      // nothing relies on listeners surviving document.open().
+      const rawIndex = await readText("index.html");
+      const inject = '<base href="../../"><script>' +
+        "window.__sysErrors = [];" +
+        "window.onerror = function (message) { window.__sysErrors.push(String(message)); };" +
+        "window.onunhandledrejection = function (event) { window.__sysErrors.push(String(event.reason)); };" +
+        "window.fetch = function () { return Promise.reject(new Error('controlled fetch failure')); };" +
+        "<\/script>";
+      const modifiedIndex = rawIndex.replace("<head>", "<head>" + inject);
+      const failFrame = document.createElement("iframe");
+      frames.append(failFrame);
+      const failDoc = failFrame.contentDocument;
+      failDoc.open();
+      failDoc.write(modifiedIndex);
+      failDoc.close();
+      const failedBoot = await pollBoot(failFrame, (text) => {
+        if (text.includes("Catalog failed to load.")) return true;
+        if (text.includes("Startup failed:")) return false;
+        return null;
+      });
+      ok("controlled failure: the stubbed page degrades to Catalog failed to load", failedBoot === true);
+      await settle(1800);
+      const sysErrors = failFrame.contentWindow ? failFrame.contentWindow.__sysErrors : null;
+      ok("controlled failure: zero collected errors in the failing document across its observation window",
+        Array.isArray(sysErrors) && sysErrors.length === 0);
+
+      // ---- R-S1 (S1.1–S1.5): normal forward calculation -------------------
+      {
+        const { card, mk } = makeCard("R-S1 fixture — auto-removed");
+        mkResults(mk);
+        let dispose = null;
+        try {
+          const app = await freshApp();
+          dispose = initResultsView(app);
+          enterChain(app);
+          runSolve(app);
+          await settle(SETTLE);
+          const region = document.getElementById("results-region");
+          cover("S1.1", "solving renders result cards into the region",
+            region.querySelectorAll(".result-card").length > 0);
+          const heroOf = () => [...region.querySelectorAll(".result-card")]
+            .find((c) => c.querySelector(".result-card__name") &&
+              c.querySelector(".result-card__name").textContent.startsWith("Longitudinal acceleration"));
+          const hero = heroOf();
+          cover("S1.2", "the hero card shows the acceleration value with an Active label",
+            Boolean(hero) &&
+            hero.querySelector(".hero-value .num") !== null &&
+            [...hero.querySelectorAll(".micro-label")].some((l) => l.textContent === "Active"));
+          const secondaryCard = [...region.querySelectorAll(".card")]
+            .find((c) => c.querySelector(".section-label") &&
+              c.querySelector(".section-label").textContent === "Other derived results");
+          cover("S1.3", "other derived results render in their own section",
+            Boolean(secondaryCard) &&
+            ["Vehicle speed", "Engine power", "Tractive force"].every((n) => secondaryCard.textContent.includes(n)));
+          const interCard = [...region.querySelectorAll(".card")]
+            .find((c) => c.querySelector(".section-label") &&
+              c.querySelector(".section-label").textContent === "Intermediate results");
+          const interDetails = interCard ? interCard.querySelector("details") : null;
+          cover("S1.4", "intermediates sit in a collapsed details section by default",
+            Boolean(interDetails) && interDetails.open === false &&
+            interCard.textContent.includes("Mass factor") && interCard.textContent.includes("Vehicle mass"));
+          const details1 = hero.querySelector("details.derivation");
+          details1.open = true;
+          details1.dispatchEvent(new Event("toggle"));
+          await settle(SETTLE);
+          const openDetails = heroOf().querySelector("details.derivation");
+          cover("S1.5", "the expanded derivation shows formula, substitutions with conversion, sources, and assumptions",
+            openDetails.open === true &&
+            openDetails.textContent.includes("Formula ·") &&
+            openDetails.querySelectorAll(".rail .rail-row").length > 0 &&
+            [...openDetails.querySelectorAll(".rail-row")].some((r) => r.textContent.includes("→")) &&
+            openDetails.textContent.includes("Sources") &&
+            openDetails.textContent.includes("Assumptions used:"));
+          ok("S1.5: suppressed private source placeholders never surface (C9R8 kept)",
+            !openDetails.textContent.includes("kept privately"));
+        } finally { if (dispose) dispose(); card.remove(); }
+      }
+
+      // ---- R-S2 (S2.2, S2.3): missing key variable ------------------------
+      {
+        const { card, mk } = makeCard("R-S2 fixture — auto-removed");
+        mkTargets(mk);
+        let dispose = null;
+        try {
+          const app = await freshApp();
+          enterChain(app, ["wheel_radius"]);
+          runSolve(app);
+          dispose = initTargetsView(app);
+          await settle(SETTLE);
+          const report = document.getElementById("target-report");
+          cover("S2.2", "the unmet primary target renders its missing conditions by default",
+            report.textContent.includes("Longitudinal acceleration") &&
+            report.querySelectorAll(".missing-list li").length > 0);
+          cover("S2.3", "each candidate path explains its own missing scheme with cause copy",
+            report.querySelectorAll(".path-option").length >= 2 &&
+            [...report.querySelectorAll(".missing-list__reason")].some((r) => r.textContent.includes("Missing input")));
+        } finally { if (dispose) dispose(); card.remove(); }
+      }
+
+      // ---- R-S3 (S3.1–S3.6): reverse target query -------------------------
+      {
+        const { card, mk } = makeCard("R-S3 fixture — auto-removed");
+        mkTargets(mk);
+        let dispose = null;
+        try {
+          const app = await freshApp();
+          submitValue(app, "engine_torque", "310", "foot_pound_force");
+          submitValue(app, "engine_speed", "4800", "revolution_per_minute");
+          dispose = initTargetsView(app);
+          await settle(SETTLE);
+          const report = document.getElementById("target-report");
+          cover("S3.1", "the target variable heading renders",
+            [...report.querySelectorAll(".result-card__name")].some((h) => h.textContent.startsWith("Longitudinal acceleration")));
+          const f007Name = adapter.formulasById.F007_engine_limited_acceleration.name;
+          const f008Name = adapter.formulasById.F008_ideal_power_acceleration_si.name;
+          const cardOf = (name) => [...report.querySelectorAll(".path-option")]
+            .find((c) => c.querySelector(".path-option__head span") &&
+              c.querySelector(".path-option__head span").textContent === name);
+          cover("S3.2", "both registered acceleration formulas render as reverse paths",
+            Boolean(cardOf(f007Name)) && Boolean(cardOf(f008Name)));
+          cover("S3.3", "required conditions render per path as missing lists",
+            report.querySelectorAll(".path-option .missing-list li").length > 0);
+          const f003Name = adapter.formulasById.F003_engine_power_from_torque_rpm.name;
+          const f003Card = cardOf(f003Name);
+          const satRow = f003Card ? f003Card.querySelector(":scope > .path-satisfied") : null;
+          cover("S3.4", "the F003 card renders exactly one satisfied row naming both entered inputs, underscore-free (U1)",
+            Boolean(f003Card) &&
+            f003Card.querySelectorAll(":scope > .path-satisfied").length === 1 &&
+            satRow.textContent.startsWith("Satisfied: ") &&
+            satRow.textContent.includes("Engine torque") &&
+            satRow.textContent.includes("Engine speed") &&
+            !satRow.textContent.includes("_"));
+          cover("S3.5", "missing conditions render with their cause copy",
+            [...report.querySelectorAll(".missing-list__reason")].some((r) => r.textContent.includes("Missing input")));
+          const modelLabelOf = (name) => {
+            const c = cardOf(name);
+            const label = c ? c.querySelector(".path-option__head .micro-label") : null;
+            return label ? label.textContent : null;
+          };
+          const m7 = modelLabelOf(f007Name);
+          const m8 = modelLabelOf(f008Name);
+          cover("S3.6", "the two paths are annotated with different physical models",
+            Boolean(m7) && Boolean(m8) && m7 !== m8);
+        } finally { if (dispose) dispose(); card.remove(); }
+      }
+
+      // ---- R-S4 branch a (S4.1, S4.2, S4.3, S4.6): keep the original ------
+      {
+        const { card, mk } = makeCard("R-S4a fixture — auto-removed");
+        mkInputs(mk);
+        let dispose = null;
+        try {
+          const app = await freshApp();
+          dispose = initInputsView(app);
+          enterChain(app, [], { wheel_radius: ["13.8", "foot"] });
+          runSolve(app);
+          await settle(SETTLE);
+          const row = () => document.getElementById("input-row-wheel_radius");
+          cover("S4.1", "the row warns of a possible unit mistake first",
+            row().textContent.includes("Possible unit mistake"));
+          const adoptText = `Adopt ${adapter.unitsById.inch.display_symbol}`;
+          const adoptBtn = [...row().querySelectorAll(".btn")].find((b) => b.textContent === adoptText);
+          cover("S4.2", "the recommended unit is offered as an Adopt action",
+            Boolean(adoptBtn));
+          cover("S4.3", "the physical meaning under the recommended unit is explained",
+            row().textContent.includes("far outside its plausible range") &&
+            row().textContent.includes("normal range"));
+          const keepBtn = [...row().querySelectorAll(".btn")].find((b) => b.textContent === "Keep my input");
+          keepBtn.click();
+          await settle(SETTLE);
+          cover("S4.6", "keeping the original value keeps the warning visible with the actions collapsed",
+            row().textContent.includes("Possible unit mistake") &&
+            ![...row().querySelectorAll(".btn")].some((b) => b.textContent === adoptText) &&
+            ![...row().querySelectorAll(".btn")].some((b) => b.textContent === "Keep my input"));
+        } finally { if (dispose) dispose(); card.remove(); }
+      }
+
+      // ---- R-S4 branch b (S4.5): adopt the suggestion ---------------------
+      {
+        const { card, mk } = makeCard("R-S4b fixture — auto-removed");
+        mkInputs(mk); mkResults(mk);
+        let disposeI = null, disposeR = null;
+        try {
+          const app = await freshApp();
+          disposeI = initInputsView(app);
+          disposeR = initResultsView(app);
+          enterChain(app, [], { wheel_radius: ["13.8", "foot"] });
+          runSolve(app);
+          await settle(SETTLE);
+          const adoptText = `Adopt ${adapter.unitsById.inch.display_symbol}`;
+          const adoptBtn = [...document.getElementById("input-row-wheel_radius").querySelectorAll(".btn")]
+            .find((b) => b.textContent === adoptText);
+          adoptBtn.click();
+          await settle(SETTLE);
+          cover("S4.5", "adopting marks the dependents needs-recalculation in the visible state",
+            document.getElementById("calculate-btn").textContent === "Recalculate" &&
+            document.getElementById("calc-status").textContent.includes("Inputs changed") &&
+            document.querySelectorAll("#results-region .is-stale").length > 0);
+        } finally { if (disposeI) disposeI(); if (disposeR) disposeR(); card.remove(); }
+      }
+
+      // ---- R-S5 (S5.1, S5.4, S5.5): invalid input -------------------------
+      {
+        const { card, mk } = makeCard("R-S5 fixture — auto-removed");
+        mkInputs(mk); mkResults(mk); mkTargets(mk);
+        let disposeI = null, disposeR = null, disposeT = null;
+        try {
+          const app = await freshApp();
+          disposeI = initInputsView(app);
+          disposeR = initResultsView(app);
+          disposeT = initTargetsView(app);
+          submitValue(app, "drivetrain_efficiency", "1.2", "decimal");
+          submitValue(app, "engine_torque", "310", "foot_pound_force");
+          submitValue(app, "engine_speed", "4800", "revolution_per_minute");
+          submitValue(app, "combined_gear_ratio", "8.0", "decimal");
+          submitValue(app, "wheel_radius", "0.311", "meter");
+          runSolve(app);
+          await settle(SETTLE);
+          cover("S5.1", "the row marks the value invalid",
+            document.getElementById("input-row-drivetrain_efficiency").textContent.includes("Invalid value"));
+          const region = document.getElementById("results-region");
+          cover("S5.4", "independent branches keep calculating and render their results",
+            region.textContent.includes("Engine power") && region.textContent.includes("Vehicle speed"));
+          selectTarget(app, "tractive_force");
+          await settle(SETTLE);
+          const reasons = [...document.getElementById("target-report").querySelectorAll("li, .missing-list__reason")]
+            .map((n) => n.textContent);
+          cover("S5.5", "the missing-conditions area classifies the efficiency Invalid input, never plain Missing",
+            reasons.some((t) => t.includes("Drivetrain efficiency") && t.includes("Invalid input")) &&
+            !reasons.some((t) => t.includes("Drivetrain efficiency — Missing input")));
+        } finally { if (disposeI) disposeI(); if (disposeR) disposeR(); if (disposeT) disposeT(); card.remove(); }
+      }
+
+      // ---- R-S6a (S6.4, S6.5, S6.6): user and derived coexist -------------
+      {
+        const { card, mk } = makeCard("R-S6a fixture — auto-removed");
+        mkResults(mk);
+        let dispose = null;
+        try {
+          const app = await freshApp();
+          dispose = initResultsView(app);
+          enterChain(app);
+          await applyTireCodeFlow(app, "195/55R16");
+          runSolve(app);
+          setDisplayUnit(app, "wheel_radius", "foot");
+          await settle(SETTLE);
+          const region = document.getElementById("results-region");
+          const wheelGroup = [...region.querySelectorAll(".result-group")]
+            .find((g) => g.textContent.includes("Wheel radius") &&
+              [...g.querySelectorAll(".btn")].some((b) => b.textContent === "Remove input and use derived result"));
+          cover("S6.4", "the user row presents the derived value as a check (comparison row present)",
+            Boolean(wheelGroup) && wheelGroup.textContent.includes("Difference vs derived"));
+          cover("S6.5", "the absolute difference renders in SI and in the chosen display unit",
+            Boolean(wheelGroup) &&
+            wheelGroup.textContent.includes(" SI") &&
+            wheelGroup.textContent.includes(` ${adapter.unitsById.foot.display_symbol}`));
+          cover("S6.6", "the percentage difference renders",
+            Boolean(wheelGroup) && wheelGroup.textContent.includes("%"));
+        } finally { if (dispose) dispose(); card.remove(); }
+      }
+
+      // ---- R-S6b (S6.8): use derived value, D25 flow ----------------------
+      {
+        const { card, mk } = makeCard("R-S6b fixture — auto-removed");
+        mkResults(mk);
+        let dispose = null;
+        try {
+          const app = await freshApp();
+          dispose = initResultsView(app);
+          enterChain(app);
+          runSolve(app);
+          submitValue(app, "vehicle_mass", "3500", "pound_mass");
+          runSolve(app);
+          await settle(SETTLE);
+          const region = document.getElementById("results-region");
+          const useBtn = [...region.querySelectorAll(".btn")]
+            .find((b) => b.textContent === "Remove input and use derived result");
+          ok("S6.8: the user vehicle-mass row offers the use-derived action", Boolean(useBtn));
+          useBtn.click();
+          await settle(SETTLE);
+          const banner = [...region.querySelectorAll(".banner--neutral")]
+            .find((b) => b.textContent.includes("This removes your input for Vehicle mass."));
+          ok("S6.8: the confirmation names the variable in the fixed copy", Boolean(banner));
+          const confirmBtn = [...banner.querySelectorAll(".btn")].find((b) => b.textContent === "Confirm");
+          confirmBtn.click();
+          await settle(SETTLE);
+          ok("S6.8: confirming turns the dependents stale and the button into Recalculate",
+            document.getElementById("calculate-btn").textContent === "Recalculate" &&
+            document.querySelectorAll("#results-region .is-stale").length > 0);
+          document.getElementById("calculate-btn").click();
+          await settle(SETTLE);
+          const massRow = [...document.querySelectorAll("#results-region .result-row")]
+            .find((r) => r.textContent.includes("Vehicle mass"));
+          cover("S6.8", "after Recalculate the derived mass is Active and nothing stays stale",
+            document.querySelectorAll("#results-region .is-stale").length === 0 &&
+            document.getElementById("calc-status").textContent.includes("up to date") &&
+            Boolean(massRow) &&
+            [...massRow.querySelectorAll(".micro-label")].some((l) => l.textContent === "Active"));
+        } finally { if (dispose) dispose(); card.remove(); }
+      }
+
+      // ---- R-S7 (S7.2, S7.3, S7.4, S7.5): assumptions ----------------------
+      {
+        const { card, mk } = makeCard("R-S7 fixture — auto-removed");
+        mkResults(mk); mkTargets(mk);
+        let disposeR = null, disposeT = null;
+        try {
+          const app = await freshApp();
+          disposeR = initResultsView(app);
+          disposeT = initTargetsView(app);
+          enterChain(app);
+          runSolve(app);
+          await settle(SETTLE);
+          const region = document.getElementById("results-region");
+          const heroOf = () => [...region.querySelectorAll(".result-card")]
+            .find((c) => c.querySelector(".result-card__name") &&
+              c.querySelector(".result-card__name").textContent.startsWith("Longitudinal acceleration"));
+          cover("S7.2", "the hero row carries the Uses assumptions label",
+            [...heroOf().querySelectorAll(".micro-label")].some((l) => l.textContent === "Uses assumptions"));
+          const details7 = heroOf().querySelector("details.derivation");
+          details7.open = true;
+          details7.dispatchEvent(new Event("toggle"));
+          await settle(SETTLE);
+          const openDetails = heroOf().querySelector("details.derivation");
+          cover("S7.3", "the expanded detail lists the specific assumptions",
+            openDetails.textContent.includes("Assumptions used:") &&
+            openDetails.textContent.includes("Road grade angle"));
+          cover("S7.4", "assumption dependencies show the assumption source",
+            [...openDetails.querySelectorAll(".rail-row .micro-label")].some((l) => l.textContent === "assumption"));
+          setAssumptionFlow(app, "road_grade_angle", false);
+          await settle(SETTLE);
+          const report = document.getElementById("target-report");
+          cover("S7.5", "disabling the assumption renders an Assumption disabled missing condition",
+            report.textContent.includes("Road grade angle") &&
+            report.textContent.includes("Assumption disabled"));
+        } finally { if (disposeR) disposeR(); if (disposeT) disposeT(); card.remove(); }
+      }
+
+      // ---- R-S8 (S8.2, S8.3, S8.6): stale marking and recalculation -------
+      {
+        const { card, mk } = makeCard("R-S8 fixture — auto-removed");
+        mkResults(mk);
+        let dispose = null;
+        try {
+          const app = await freshApp();
+          dispose = initResultsView(app);
+          enterChain(app);
+          runSolve(app);
+          await settle(SETTLE);
+          const region = document.getElementById("results-region");
+          const heroOf = () => [...region.querySelectorAll(".result-card")]
+            .find((c) => c.querySelector(".result-card__name") &&
+              c.querySelector(".result-card__name").textContent.startsWith("Longitudinal acceleration"));
+          const oldValueText = heroOf().querySelector(".hero-value .num").textContent;
+          submitValue(app, "vehicle_weight", "3575", "pound_force");
+          await settle(SETTLE);
+          cover("S8.2", "affected rows carry stale styling and the Needs recalculation label",
+            heroOf().classList.contains("is-stale") &&
+            [...heroOf().querySelectorAll(".micro-label")].some((l) => l.textContent === "Needs recalculation") &&
+            document.getElementById("calculate-btn").textContent === "Recalculate");
+          cover("S8.3", "the stale row keeps the old value for reference",
+            heroOf().querySelector(".hero-value .num").textContent === oldValueText);
+          document.getElementById("calculate-btn").click();
+          await settle(SETTLE);
+          cover("S8.6", "Recalculate refreshes the result: stale styling clears and the value updates",
+            document.querySelectorAll("#results-region .is-stale").length === 0 &&
+            document.getElementById("calc-status").textContent.includes("up to date") &&
+            heroOf().querySelector(".hero-value .num").textContent !== oldValueText);
+        } finally { if (dispose) dispose(); card.remove(); }
+      }
+
+      // ---- B-set closure against the manifest ------------------------------
+      const expectedB = new Set(CHECKPOINTS.filter((c) => c.channels.includes("B")).map((c) => c.id));
+      const missingB = [...expectedB].filter((id) => !coveredB.has(id));
+      const unknownB = [...coveredB].filter((id) => !expectedB.has(id));
+      ok(`B-set closure: ${coveredB.size}/${expectedB.size} covered, no missing, no unknown ids`,
+        missingB.length === 0 && unknownB.length === 0);
+
+      // ---- delayed observation window --------------------------------------
+      await settle(1800);
+      ok("zero window errors and zero console errors across the delayed observation window",
+        pageErrors.length === 0);
+      for (const entry of pageErrors) lines.push(`      ${entry}`);
+
+      lines.push("");
+      lines.push(`system assertions: ${passed} passed, ${failed} failed`);
+      lines.push(failed === 0 ? "SYSTEM BROWSER PASS" : "SYSTEM BROWSER FAIL");
+      logEl.textContent = lines.join("\n");
+    } catch (error) {
+      lines.push(`SYSTEM BROWSER FAIL: ${error.message}`);
+      logEl.textContent = lines.join("\n");
+    }
+  </script>
+</body>
+</html>
