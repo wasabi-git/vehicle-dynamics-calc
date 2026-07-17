@@ -104,4 +104,17 @@ export async function run(t) {
   const torque = queryTargetView({ engine: e2 }, "engine_torque");
   t.ok("engine_torque reports no registered direction with the engine's message",
     torque.noRegisteredDirection && torque.diagnostics.some((d) => d.code === "no_registered_output_direction"));
+
+  t.section("U1: satisfiedInputs through the sorted controller view");
+  const { engine: e5, adapter: a5 } = await t.freshApp();
+  e5.setUserInput("engine_torque", 310, "foot_pound_force");
+  e5.setUserInput("engine_speed", 4800, "revolution_per_minute");
+  const withAdapter = queryTargetView({ engine: e5, adapter: a5 }, "longitudinal_acceleration");
+  const f007Sorted = withAdapter.paths.find((p) => p.formulaId === "F007_engine_limited_acceleration");
+  t.ok("path ordering keeps the satisfied list intact (F007: the four default assumptions)",
+    JSON.stringify(f007Sorted.satisfiedInputs) ===
+    JSON.stringify(["aerodynamic_drag", "rolling_resistance", "road_grade_angle", "hitch_force"]));
+  const withoutAdapter = queryTargetView({ engine: e5 }, "longitudinal_acceleration");
+  t.ok("the no-adapter call form still reports satisfiedInputs === null on every path",
+    withoutAdapter.paths.length > 0 && withoutAdapter.paths.every((p) => p.satisfiedInputs === null));
 }

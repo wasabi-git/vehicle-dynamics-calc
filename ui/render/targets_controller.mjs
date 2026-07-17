@@ -69,9 +69,13 @@ export function recommendNextInput(paths) {
   return best ? best.variableId : null;
 }
 
-/** Query one target and return the ordered view plus the recommendation. */
-export function queryTargetView({ engine }, variableId) {
-  const view = buildTargetView(engine.queryTarget(variableId));
+/**
+ * Query one target and return the ordered view plus the recommendation.
+ * The adapter (U1) feeds the satisfied-inputs column; callers without one
+ * keep the pre-U1 behavior (`satisfiedInputs: null` on every path).
+ */
+export function queryTargetView({ engine, adapter }, variableId) {
+  const view = buildTargetView(engine.queryTarget(variableId), adapter);
   view.paths = [...view.paths].sort(comparePaths);
   view.recommendedNext = recommendNextInput(view.paths);
   return view;

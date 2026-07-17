@@ -182,6 +182,14 @@ export function initTargetsView(app) {
         modelName ? el("span", { class: "micro-label", text: modelName }) : null,
         el("span", { class: "micro-label", text: path.status }),
       ]),
+      // U1 (Part 2 S3.4): already-satisfied conditions, rendered as catalog
+      // display names only; empty and null lists render nothing.
+      path.satisfiedInputs?.length > 0
+        ? el("div", {
+            class: "path-satisfied",
+            text: `Satisfied: ${path.satisfiedInputs.map((id) => adapter.variablesById[id].name).join(", ")}`,
+          })
+        : null,
       formula ? formulaBlock(formatFormula(formula.expression)) : null,
       path.missingInputs.length > 0 ? missingList(path.missingInputs, myPrefix) : null,
       path.missingInputs.length === 0 && path.blockedReasons.length > 0

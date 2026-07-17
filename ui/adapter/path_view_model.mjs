@@ -56,7 +56,7 @@ export function classifyRecommendationMode(mode) {
   return null;
 }
 
-function buildVariableView(entry) {
+function buildVariableView(entry, adapter = null) {
   return {
     variableId: entry.variable_id,
     canBeUserInput: entry.can_be_user_input === true,
@@ -64,11 +64,26 @@ function buildVariableView(entry) {
     causeClass: classifyMissingVariable(entry),
     causeText: MISSING_CAUSE_CLASSES[classifyMissingVariable(entry)],
     depthLimitReached: entry.depth_limit_reached === true,
-    derivationOptions: (entry.derivation_options ?? []).map(buildPathView),
+    derivationOptions: (entry.derivation_options ?? []).map((candidate) => buildPathView(candidate, adapter)),
   };
 }
 
-function buildPathView(candidate) {
+/**
+ * Satisfied inputs of one path node (U1, Part 2 S3.4): the formula's
+ * required_inputs that are neither missing nor named by a blocked reason,
+ * with constants excluded ("Constants never appear"), in required_inputs
+ * order. Derived entirely from queryTarget output plus the frozen catalog
+ * copy — the engine is never consulted.
+ */
+function satisfiedInputsFor(view, adapter) {
+  const missing = new Set(view.missingInputs.map((m) => m.variableId));
+  const blocked = new Set(view.blockedReasons.map((r) => r.variableId).filter((id) => id !== null));
+  return adapter.formulasById[view.formulaId].required_inputs.filter(
+    (id) => !missing.has(id) && !blocked.has(id) && adapter.variablesById[id].is_constant !== true
+  );
+}
+
+function buildPathView(candidate, adapter = null) {
   if (candidate.cycle_detected === true) {
     return {
       formulaId: candidate.formula_id,
@@ -78,9 +93,10 @@ function buildPathView(candidate) {
       status: "blocked",
       blockedReasons: [],
       missingInputs: [],
+      satisfiedInputs: null,
     };
   }
-  return {
+  const view = {
     formulaId: candidate.formula_id,
     modelGroup: candidate.model_group,
     modelName: candidate.model_name,
@@ -95,14 +111,19 @@ function buildPathView(candidate) {
       causeClass: classifyBlockedReason(r.code),
       causeText: MISSING_CAUSE_CLASSES[classifyBlockedReason(r.code)],
     })),
-    missingInputs: (candidate.missing_inputs ?? []).map(buildVariableView),
+    missingInputs: (candidate.missing_inputs ?? []).map((entry) => buildVariableView(entry, adapter)),
   };
+  view.satisfiedInputs = adapter ? satisfiedInputsFor(view, adapter) : null;
+  return view;
 }
 
 /**
  * Build the target-query view from engine.queryTarget(variableId) output.
+ * With the optional adapter (U1), every path node — top-level candidates and
+ * nested derivationOptions alike — carries `satisfiedInputs`; without it the
+ * field is null everywhere.
  */
-export function buildTargetView(query) {
+export function buildTargetView(query, adapter = null) {
   return {
     target: query.target,
     ok: query.ok === true,
@@ -110,7 +131,7 @@ export function buildTargetView(query) {
     canBeUserInput: query.can_be_user_input === true,
     noRegisteredDirection: query.outcome === "no_registered_direction",
     causeClass: query.outcome === "no_registered_direction" ? "no_registered_direction" : null,
-    paths: (query.candidate_paths ?? []).map(buildPathView),
+    paths: (query.candidate_paths ?? []).map((candidate) => buildPathView(candidate, adapter)),
     diagnostics: query.diagnostics ?? [],
   };
 }

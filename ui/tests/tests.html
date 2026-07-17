@@ -544,6 +544,49 @@
         targetsCard.remove();
       }
 
+      // U1 (Part 2 S3.4): the satisfied-conditions row in the real targets
+      // view. Dedicated fixture — the C9R7 targets fixture above never enters
+      // torque/speed, so its F003 satisfied list stays empty and the row
+      // would never render there.
+      const satCard = document.createElement("section");
+      satCard.className = "card";
+      const satLabel = document.createElement("h2");
+      satLabel.className = "section-label";
+      satLabel.textContent = "Live satisfied-row fixture — auto-removed";
+      satCard.append(satLabel);
+      const satSkeleton = document.createElement("div");
+      const mkSat = (tag, id) => { const n = document.createElement(tag); n.id = id; satSkeleton.append(n); return n; };
+      mkSat("select", "target-select"); mkSat("button", "target-query-btn"); mkSat("div", "target-report");
+      satCard.append(satSkeleton);
+      document.querySelector("main").append(satCard);
+      let disposeSatView = null;
+      try {
+        const fresh5 = await createEngine(readText);
+        const store5 = (await import("../state/store.mjs")).createStore();
+        const app5 = { engine: fresh5.engine, adapter, store: store5 };
+        submitValue(app5, "engine_torque", "310", "foot_pound_force");
+        submitValue(app5, "engine_speed", "4800", "revolution_per_minute");
+        disposeSatView = (await import("../render/targets_view.mjs")).initTargetsView(app5);
+        await new Promise((r) => setTimeout(r, 60));
+        const f003Name = adapter.formulasById.F003_engine_power_from_torque_rpm.name;
+        const f003Card = [...document.querySelectorAll("#target-report .path-option")]
+          .find((c) => c.querySelector(".path-option__head span")?.textContent === f003Name);
+        ok("U1: the F003 option card renders exactly one satisfied row",
+          f003Card !== undefined &&
+          f003Card.querySelectorAll(":scope > .path-satisfied").length === 1 &&
+          document.querySelectorAll("#target-report .path-satisfied").length > 1);
+        const satRow = f003Card.querySelector(":scope > .path-satisfied");
+        ok("U1: the row names both entered inputs by display name",
+          satRow.textContent.startsWith("Satisfied: ") &&
+          satRow.textContent.includes("Engine torque") &&
+          satRow.textContent.includes("Engine speed"));
+        ok("U1: the whole satisfied row is underscore-free",
+          !satRow.textContent.includes("_"));
+      } finally {
+        if (disposeSatView) disposeSatView();
+        satCard.remove();
+      }
+
       // C9R6R1 #4: delayed observation window — outlives every view timer
       // (highlight 1.6s) so late renders into detached nodes would surface.
       await new Promise((r) => setTimeout(r, 1800));

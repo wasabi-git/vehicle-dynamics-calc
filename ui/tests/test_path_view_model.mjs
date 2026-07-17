@@ -111,4 +111,52 @@ export async function run(t) {
   t.ok("computed F008 reports state computed with no reasons",
     computed.state === "computed" && computed.reasons.length === 0);
   t.ok("unknown formula id yields null view", buildFormulaStatusView(e2.getFormulaStatus("F999_missing")) === null);
+
+  t.section("U1: satisfied-conditions field (Part 2 S3.4)");
+  // ① no-adapter form: the new field is null and the existing field set holds.
+  const bare = buildTargetView(engine.queryTarget("longitudinal_acceleration"));
+  t.ok("without an adapter every path reports satisfiedInputs === null",
+    bare.paths.length > 0 && bare.paths.every((p) => p.satisfiedInputs === null));
+  t.ok("existing path fields are all still present alongside the new column",
+    bare.paths.every((p) =>
+      ["formulaId", "modelGroup", "modelName", "pathRole", "depth", "status", "cycleDetected", "blockedReasons", "missingInputs"]
+        .every((k) => k in p)));
+  // ② with the adapter, against the real engine: torque + speed entered.
+  const { engine: e3, adapter } = await t.freshApp();
+  e3.setUserInput("engine_torque", 310, "foot_pound_force");
+  e3.setUserInput("engine_speed", 4800, "revolution_per_minute");
+  const satView = buildTargetView(e3.queryTarget("longitudinal_acceleration"), adapter);
+  const f007 = satView.paths.find((p) => p.formulaId === "F007_engine_limited_acceleration");
+  const f008 = satView.paths.find((p) => p.formulaId === "F008_ideal_power_acceleration_si");
+  t.ok("F007 top level: exactly the four enabled default assumptions, in required_inputs order",
+    JSON.stringify(f007.satisfiedInputs) ===
+    JSON.stringify(["aerodynamic_drag", "rolling_resistance", "road_grade_angle", "hitch_force"]));
+  const f004 = f007.missingInputs.find((m) => m.variableId === "tractive_force")
+    .derivationOptions.find((o) => o.formulaId === "F004_tractive_force_from_engine_torque");
+  t.ok("nested F004 under tractive_force lists the entered engine_torque as satisfied",
+    f004.satisfiedInputs.includes("engine_torque"));
+  const f003 = f008.missingInputs.find((m) => m.variableId === "engine_power")
+    .derivationOptions.find((o) => o.formulaId === "F003_engine_power_from_torque_rpm");
+  t.ok("nested F003 under engine_power is exactly [engine_torque, engine_speed]",
+    JSON.stringify(f003.satisfiedInputs) === JSON.stringify(["engine_torque", "engine_speed"]));
+  const f002 = f008.missingInputs.find((m) => m.variableId === "vehicle_speed")
+    .derivationOptions.find((o) => o.formulaId === "F002_vehicle_speed_from_engine_speed");
+  t.ok("nested F002 under vehicle_speed is exactly [engine_speed]",
+    JSON.stringify(f002.satisfiedInputs) === JSON.stringify(["engine_speed"]));
+  // ③ family unions across each candidate tree.
+  const unionOf = (path) => {
+    const acc = new Set(path.satisfiedInputs ?? []);
+    for (const m of path.missingInputs ?? []) {
+      for (const option of m.derivationOptions) {
+        for (const id of unionOf(option)) acc.add(id);
+      }
+    }
+    return acc;
+  };
+  const u7 = unionOf(f007);
+  const u8 = unionOf(f008);
+  t.ok("F007 family union sees engine_torque (via F004) but never engine_speed",
+    u7.has("engine_torque") && !u7.has("engine_speed"));
+  t.ok("F008 family union sees both engine_torque and engine_speed",
+    u8.has("engine_torque") && u8.has("engine_speed"));
 }
