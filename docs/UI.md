@@ -240,4 +240,9 @@ recorded here for the reviewer.
 session, per the deployment boundary); root page, catalog fetch, module and
 assertion-page URLs verified 200 by both sides on 2026-07-16.
 
-- [ ] Final branch verification record (reviewer re-run, §9.4)
+- [x] Final branch verification record (reviewer re-run, §9.4): PASS —
+  independent reviewer terminal verification, 2026-07-17: three governance-file
+  SHA-256 matched; B1 re-verified; all 32 post-B1 commits re-verified per tree
+  (32/32); HEAD bfc9418 gates green with a clean tree; Part 2 completion
+  standard 15/15, delivery standard 11/11; Pages run #6 deployed, five URLs
+  verified, 50/50 live browser assertions. Reviewer evidence archived privately.
