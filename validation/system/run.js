@@ -13,9 +13,10 @@
 
 import { readdir } from "node:fs/promises";
 import { freshApp, createCoverage } from "./harness.mjs";
+import { CHECKPOINTS } from "./checkpoints.mjs";
 
 const SYSTEM_DIR = new URL("./", import.meta.url);
-const EXPECTED_MODULES = ["sys_consistency", "sys_payload"];
+const EXPECTED_MODULES = ["sys_consistency", "sys_payload", "sys_scenarios"];
 
 let passed = 0;
 let failed = 0;
@@ -75,5 +76,24 @@ for (const stem of EXPECTED_MODULES) {
   }
 }
 
-console.log(`\nsystem tests: ${passed} passed, ${failed} failed`);
+// N-set closure (from T3): the covered checkpoint-id set must equal the
+// 49-entry manifest exactly — missing, duplicate, and unknown ids all fail.
+const manifestIds = CHECKPOINTS.map((c) => c.id);
+const manifestSet = new Set(manifestIds);
+if (manifestSet.size !== manifestIds.length) {
+  failed += 1;
+  console.log("\nFAIL: the manifest carries a duplicate checkpoint id");
+}
+const missing = manifestIds.filter((id) => !coverage.covered.has(id));
+const unknown = [...coverage.covered].filter((id) => !manifestSet.has(id));
+if (missing.length > 0) {
+  failed += 1;
+  console.log(`\nFAIL: uncovered checkpoint ids: ${missing.join(", ")}`);
+}
+if (unknown.length > 0) {
+  failed += 1;
+  console.log(`\nFAIL: covered ids missing from the manifest: ${unknown.join(", ")}`);
+}
+console.log(`\ncoverage closure: ${coverage.covered.size}/${manifestIds.length} checkpoint ids covered`);
+console.log(`system tests: ${passed} passed, ${failed} failed`);
 if (failed > 0) process.exitCode = 1;
