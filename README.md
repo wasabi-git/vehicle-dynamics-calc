@@ -203,6 +203,8 @@ Reverse-search limit:    5
 
 See [`validation/validation-report.v0.1.json`](validation/validation-report.v0.1.json) for the complete report.
 
+System-level test evidence (scenario, degradation, consistency, payload, and deployed-fingerprint checks) is recorded in [docs/TESTING.md](docs/TESTING.md).
+
 Reproduce the validation report from the repository root:
 
 ```bash
@@ -275,6 +277,8 @@ python -m http.server           # from the repository root,
 node ui/tests/run.js            # UI logic gate (Node, zero dependencies)
                                 # /ui/tests/tests.html runs the browser
                                 # assertion page on the same local server
+node validation/system/run.js   # system gate (Node, zero dependencies)
+                                # /validation/system/system.html runs the browser system page
 ```
 
 On GitHub Pages the calculator is served from the repository root of the existing Pages configuration (standard form `https://wasabi-git.github.io/vehicle-dynamics-calc/`).

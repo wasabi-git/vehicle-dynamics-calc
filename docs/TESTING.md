@@ -35,6 +35,7 @@ tree at exit.
 | T3 | Eight-scenario mechanization + 49-checkpoint manifest closure | `validation/system/checkpoints.mjs`, `validation/system/sys_scenarios.mjs`, `validation/system/run.js` |
 | T4 | Bootstrap degradation and system error paths | `validation/system/sys_degradation.mjs`, `validation/system/run.js` |
 | T5 | Browser system assertion page | `validation/system/system.html` |
+| R8-1 | Duplicate checkpoint-id registrations fail coverage closure on both sides (owner-approved fix, ruling D65) | `validation/system/harness.mjs`, `validation/system/run.js`, `validation/system/system.html` |
 | T6 | Evidence recording (this document) + README testing entry | `docs/TESTING.md`, `README.md` |
 | T7 | Final verification record + roadmap advance — executed only after the reviewer's §9.4 PASS and owner approval | `docs/TESTING.md`, `README.md` |
 
@@ -74,9 +75,9 @@ U1 any drift in the re-pinned values stops the branch.
 
 | Value | Meaning | Result |
 |---|---|---|
-| N₁ | `node ui/tests/run.js` passing count after U1 | pending (recorded at T6) |
-| B₁ | `ui/tests/tests.html` passing count after U1 | pending (recorded at T6) |
-| P₁ | startup payload byte total after U1 (sum of the 42 HEAD blob sizes; file list and count unchanged) | pending (recorded at T6) |
+| N₁ | `node ui/tests/run.js` passing count after U1 | **397** (397 passed, 0 failed; measured inside U1 construction, 2026-07-17) |
+| B₁ | `ui/tests/tests.html` passing count after U1 | **53** (53 passed, 0 failed, UI BROWSER PASS; measured inside U1 construction) |
+| P₁ | startup payload byte total after U1 (sum of the 42 HEAD blob sizes; file list and count unchanged) | **330,250 bytes** (42 files; measured after the U1 commit and before its push, re-derived identically by `sys_payload.mjs` at T2) |
 
 ## Coverage manifest — 49 checkpoints
 
@@ -84,59 +85,65 @@ Channels: N = Node scenario suite (`sys_scenarios.mjs`); B = browser system
 page (`system.html`); A = existing-gate cross-reference (not counted for
 closure). The runner enforces N-set identity (all 49) from T3 on; the
 browser page enforces B-set identity (the 32 rows marked B). Evidence cells
-are filled at T6.
+were filled at T6: "N green" means the row's labeled assertions passed in
+the Node system gate (104 passed, 0 failed; coverage closure 49/49), which
+runs at every applicable commit gate (step 6, from the T2 tree on);
+"B green" means they passed on the browser system page (41 passed, 0
+failed; B-set closure 32/32), which was run in the four T6 matrix
+environments below. The cells record the T6-time terminal state,
+2026-07-17.
 
 | ID | Checkpoint (Part 2 lines) | Channels | Recipe | Evidence |
 |---|---|---|---|---|
-| S1.1 | Compute currently available results (2462–2470) | N+B | R-S1 | pending |
-| S1.2 | Show the primary result | N+B | R-S1 | pending |
-| S1.3 | Show other derived results | N+B | R-S1 | pending |
-| S1.4 | Collapse intermediate results | N+B | R-S1 | pending |
-| S1.5 | Expanded view shows formula, substitution, conversion, sources, assumptions | N+B | R-S1 | pending |
-| S2.1 | Compute the computable partial results (2472–2480) | N | R-S2 | pending |
-| S2.2 | Show missing conditions for important targets | N+B | R-S2 | pending |
-| S2.3 | Explain what is missing per path scheme | N+B+A (ui: test_path_view_model) | R-S2 | pending |
-| S2.4 | Recommend the next input | N+A (ui: test_targets) | R-S2 | pending |
-| S2.5 | Invalid / assumption-off never shown as plain Missing (missing-cause key-set identity, no Conflict class, D24) | N | R-S2/S5/S7 | pending |
-| S3.1 | Show the target variable (2482–2492) | N+B | R-S3 | pending |
-| S3.2 | List feasible paths in reverse | N+B+A (engine: test_reverse) | R-S3 | pending |
-| S3.3 | Show each path's required conditions | N+B | R-S3 | pending |
-| S3.4 | Show already-satisfied conditions (U1 real product output: satisfiedInputs field + `.path-satisfied` row) | N+B+A (ui: U1 regression group) | R-S3 | pending |
-| S3.5 | Show missing conditions | N+B | R-S3 | pending |
-| S3.6 | Mark different physical-model paths | N+B | R-S3 | pending |
-| S3.7 | No fabricated numeric results | N | R-S3 | pending |
-| S4.1 | Warn first of probable unit misuse (2494–2503) | N+B+A (engine: test_unit_misuse) | R-S4 | pending |
-| S4.2 | Show the recommended unit | N+B | R-S4 | pending |
-| S4.3 | Show the physical meaning under the recommended unit | N+B | R-S4 | pending |
-| S4.4 | Never auto-modify the unit | N+A (ui: test_inputs_controller G4) | R-S4 | pending |
-| S4.5 | Accepting marks dependents needs-recalculation | N+B | R-S4 branch b | pending |
-| S4.6 | Keeping the original value keeps the warning | N+B | R-S4 branch a | pending |
-| S5.1 | Mark the value invalid (2505–2513) | N+B | R-S5 | pending |
-| S5.2 | Invalid value never participates in calculation | N+A (engine: invalid blocking) | R-S5 | pending |
-| S5.3 | Block only dependent branches | N | R-S5 | pending |
-| S5.4 | Independent branches keep calculating | N+B | R-S5 | pending |
-| S5.5 | Missing-conditions area says Invalid, not Missing | N+B | R-S5 | pending |
-| S6.1 | Keep the user input value (2515–2526) | N | R-S6a | pending |
-| S6.2 | Keep the derived value | N | R-S6a | pending |
-| S6.3 | User input Active by default | N+A (engine: user-input default Active) | R-S6a | pending |
-| S6.4 | Derived value serves as a check | N+B | R-S6a | pending |
-| S6.5 | Show the absolute difference | N+B+A (ui: test_comparison) | R-S6a | pending |
-| S6.6 | Show the percentage difference | N+B | R-S6a | pending |
-| S6.7 | No silent overwrite of user input | N | R-S6a | pending |
-| S6.8 | Use derived value → pending recalculation (D25 seven steps; full-chain fixture with the real dependent going stale) | N+B+A (ui: test_results_controller D25) | R-S6b | pending |
-| S7.1 | Normal calculation with assumptions (2528–2537) | N | R-S7 | pending |
-| S7.2 | Show "Uses assumptions" | N+B | R-S7 | pending |
-| S7.3 | Expanded view lists the specific assumptions | N+B | R-S7 | pending |
-| S7.4 | Show source Assumed | N+B | R-S7 | pending |
-| S7.5 | Disabling an assumption → missing-conditions state | N+B | R-S7 | pending |
-| S7.6 | Real value displaces the assumption | N+A (engine: displacement/suppression semantics) | R-S7 | pending |
-| S8.1 | Find affected results (2539–2549) | N | R-S8a | pending |
-| S8.2 | Mark Needs recalculation | N+B | R-S8a | pending |
-| S8.3 | Keep old values for reference | N+B | R-S8a | pending |
-| S8.4 | Stale results never feed later calculation | N+A (engine: test_stale) | R-S8a | pending |
-| S8.5 | Unaffected results stay valid | N | R-S8a | pending |
-| S8.6 | Recalculate updates results and derivations | N+B | R-S8a | pending |
-| S8.7 | Recalc cannot reproduce the result → moved out and explained as missing conditions | N | R-S8b | pending |
+| S1.1 | Compute currently available results (2462–2470) | N+B | R-S1 | N green; B green |
+| S1.2 | Show the primary result | N+B | R-S1 | N green; B green |
+| S1.3 | Show other derived results | N+B | R-S1 | N green; B green |
+| S1.4 | Collapse intermediate results | N+B | R-S1 | N green; B green |
+| S1.5 | Expanded view shows formula, substitution, conversion, sources, assumptions | N+B | R-S1 | N green; B green |
+| S2.1 | Compute the computable partial results (2472–2480) | N | R-S2 | N green |
+| S2.2 | Show missing conditions for important targets | N+B | R-S2 | N green; B green |
+| S2.3 | Explain what is missing per path scheme | N+B+A (ui: test_path_view_model) | R-S2 | N green; B green |
+| S2.4 | Recommend the next input | N+A (ui: test_targets) | R-S2 | N green |
+| S2.5 | Invalid / assumption-off never shown as plain Missing (missing-cause key-set identity, no Conflict class, D24) | N | R-S2/S5/S7 | N green |
+| S3.1 | Show the target variable (2482–2492) | N+B | R-S3 | N green; B green |
+| S3.2 | List feasible paths in reverse | N+B+A (engine: test_reverse) | R-S3 | N green; B green |
+| S3.3 | Show each path's required conditions | N+B | R-S3 | N green; B green |
+| S3.4 | Show already-satisfied conditions (U1 real product output: satisfiedInputs field + `.path-satisfied` row) | N+B+A (ui: U1 regression group) | R-S3 | N green; B green |
+| S3.5 | Show missing conditions | N+B | R-S3 | N green; B green |
+| S3.6 | Mark different physical-model paths | N+B | R-S3 | N green; B green |
+| S3.7 | No fabricated numeric results | N | R-S3 | N green |
+| S4.1 | Warn first of probable unit misuse (2494–2503) | N+B+A (engine: test_unit_misuse) | R-S4 | N green; B green |
+| S4.2 | Show the recommended unit | N+B | R-S4 | N green; B green |
+| S4.3 | Show the physical meaning under the recommended unit | N+B | R-S4 | N green; B green |
+| S4.4 | Never auto-modify the unit | N+A (ui: test_inputs_controller G4) | R-S4 | N green |
+| S4.5 | Accepting marks dependents needs-recalculation | N+B | R-S4 branch b | N green; B green |
+| S4.6 | Keeping the original value keeps the warning | N+B | R-S4 branch a | N green; B green |
+| S5.1 | Mark the value invalid (2505–2513) | N+B | R-S5 | N green; B green |
+| S5.2 | Invalid value never participates in calculation | N+A (engine: invalid blocking) | R-S5 | N green |
+| S5.3 | Block only dependent branches | N | R-S5 | N green |
+| S5.4 | Independent branches keep calculating | N+B | R-S5 | N green; B green |
+| S5.5 | Missing-conditions area says Invalid, not Missing | N+B | R-S5 | N green; B green |
+| S6.1 | Keep the user input value (2515–2526) | N | R-S6a | N green |
+| S6.2 | Keep the derived value | N | R-S6a | N green |
+| S6.3 | User input Active by default | N+A (engine: user-input default Active) | R-S6a | N green |
+| S6.4 | Derived value serves as a check | N+B | R-S6a | N green; B green |
+| S6.5 | Show the absolute difference | N+B+A (ui: test_comparison) | R-S6a | N green; B green |
+| S6.6 | Show the percentage difference | N+B | R-S6a | N green; B green |
+| S6.7 | No silent overwrite of user input | N | R-S6a | N green |
+| S6.8 | Use derived value → pending recalculation (D25 seven steps; full-chain fixture with the real dependent going stale) | N+B+A (ui: test_results_controller D25) | R-S6b | N green; B green |
+| S7.1 | Normal calculation with assumptions (2528–2537) | N | R-S7 | N green |
+| S7.2 | Show "Uses assumptions" | N+B | R-S7 | N green; B green |
+| S7.3 | Expanded view lists the specific assumptions | N+B | R-S7 | N green; B green |
+| S7.4 | Show source Assumed | N+B | R-S7 | N green; B green |
+| S7.5 | Disabling an assumption → missing-conditions state | N+B | R-S7 | N green; B green |
+| S7.6 | Real value displaces the assumption | N+A (engine: displacement/suppression semantics) | R-S7 | N green |
+| S8.1 | Find affected results (2539–2549) | N | R-S8a | N green |
+| S8.2 | Mark Needs recalculation | N+B | R-S8a | N green; B green |
+| S8.3 | Keep old values for reference | N+B | R-S8a | N green; B green |
+| S8.4 | Stale results never feed later calculation | N+A (engine: test_stale) | R-S8a | N green |
+| S8.5 | Unaffected results stay valid | N | R-S8a | N green |
+| S8.6 | Recalculate updates results and derivations | N+B | R-S8a | N green; B green |
+| S8.7 | Recalc cannot reproduce the result → moved out and explained as missing conditions | N | R-S8b | N green |
 
 ## Recipe correspondence (work-package §7.1)
 
@@ -161,16 +168,24 @@ with the manifest.
 | R-S8a | CHAIN → solve → re-enter `vehicle_weight` 3575 | S8.1–S8.6 |
 | R-S8b | CHAIN → solve → remove `wheel_radius` + confirm → solve | S8.7 |
 
-## Release cycle log (per push; T1–T5 and U1 recorded at T6, T6 recorded at T7)
+## Release cycle log (per push; T1–T5, U1, and R8-1 recorded at T6, T6 recorded at T7)
 
-| Cycle | Pre-push probe | Deployment identity | Changed-path fingerprints | Notes |
+The seven completed push cycles below (T1, U1, T2–T5, R8-1) all pushed on
+2026-07-17; the T6 and T7 rows are future placeholders, recorded at T7 and
+in the closure report respectively. "queued / queued" is the leftover-run
+probe before and after the push; deployment identity means the Pages
+workflow run for exactly the pushed commit reached completed success and
+the latest Pages build reported that commit.
+
+| Cycle | Pre/post probe | Deployment identity | Changed-path fingerprints | Notes |
 |---|---|---|---|---|
-| T1 | pending | pending | pending | |
-| U1 | pending | pending | pending | |
-| T2 | pending | pending | pending | |
-| T3 | pending | pending | pending | |
-| T4 | pending | pending | pending | |
-| T5 | pending | pending | pending | |
+| T1 (c1e9d92) | queued / queued | success; built c1e9d92 | 2/2 PASS | |
+| U1 (16d2b6e) | queued / queued | success; built 16d2b6e | 6/6 PASS | |
+| T2 (0269a6a) | queued / queued | success; built 0269a6a | 4/4 PASS | |
+| T3 (c41a2cd) | queued / queued | success; built c41a2cd | 3/3 PASS | |
+| T4 (7cef8ca) | queued / queued | success; built 7cef8ca | 2/2 PASS | |
+| T5 (c4235d5) | queued / queued | success; built c4235d5 | 1/1 PASS | |
+| R8-1 (e0ea84d) | queued / queued | success; built e0ea84d | 3/3 PASS | owner-approved fix (register below) |
 | T6 | recorded at T7 | recorded at T7 | recorded at T7 | closure set (31 paths) additionally |
 | T7 | closure report | closure report | closure report | recorded in the closure report, not in the repository |
 
@@ -178,8 +193,11 @@ with the manifest.
 
 Actions run 29540514903 (an incident-period leftover on the Pages
 build-and-deployment workflow; head commit bfc9418): status observed
-`queued` at T1 construction time, 2026-07-17. Discipline: probed read-only
-before and after every push. Still `queued`, or gone/recycled → proceed
+`queued` at T1 construction time, 2026-07-17, and `queued` again on all
+fifteen read-only probes to date — fourteen push-cycle probes (one before
+and one after each of the seven pushes: T1, U1, T2–T5, R8-1) plus one
+pre-matrix probe at T6. Discipline: probed read-only before and after
+every push. Still `queued`, or gone/recycled → proceed
 (deployment-identity verification is mandatory regardless); any transition
 to `in_progress` or another state → stop and report. Never rerun, never
 request builds, never touch Pages or Actions configuration.
@@ -187,38 +205,70 @@ request builds, never touch Pages or Actions configuration.
 ## Environment facts (tool names and versions only)
 
 Git Bash with GNU coreutils 8.32 (`timeout`, `sha256sum`); node v24.18.0;
-Python 3.11.9; gh 2.96.0; curl 8.14.1. Browsers: local Chrome, local Edge,
-local Firefox 149 (exact versions recorded in the matrix at T6); the online
-environment is the public GitHub Pages site.
+Python 3.11.9; gh 2.96.0; curl 8.14.1. Browsers (exact product versions,
+read from the installed binaries at T6): Chrome 150.0.7871.128, Edge
+150.0.4078.65, Firefox 149.0; the online environment is the public GitHub
+Pages site.
 
 ## Deviation and correction register
 
-None registered.
+- **D65 bounded exception (owner ruling, 2026-07-17).** During early Part 8
+  execution, one broad wildcard file listing over the validation tree run
+  by the execution session also surfaced file names from its private,
+  excluded areas; the execution session reported that it read no file
+  contents, and no such contents have been found entering any public
+  artifact. The owner ruled this a one-time bounded exception: the T1–T5
+  commits stand unchanged, and from the ruling on the execution session may
+  access only the validation paths explicitly allowlisted in the work
+  package — any further wildcard, recursive, or broad enumeration there
+  stops the work and ends the session. Recorded here in generalized wording
+  per the same ruling.
+- **R8-1 (owner-approved fix under D65, commit e0ea84d).** Duplicate
+  checkpoint-id registrations now fail coverage closure explicitly on both
+  sides: the Node collector records second registrations and the runner
+  fails on them; the browser page detects both B-manifest duplicates and
+  cover-call duplicates inside its single closure assertion. With no
+  duplicates the measured counts stay 104 (Node) and 41 (browser). Proven
+  with read-only negative examples on both sides, including the masquerade
+  case (full 49-id coverage plus one duplicate still fails).
 
 ## Acceptance records
 
-**SB1 (owner batch, after T5, before T6 construction)** — local system page,
-mechanical suite results, the U1 satisfied row on the live page, and the
-three re-pinned values, reviewed as a short list: pending.
+**SB1 (owner batch, after T5, before T6 construction)** — signed 2026-07-17:
+the owner broadly reviewed the system page, the mechanical suite results,
+the U1 satisfied row on the live page, and the three re-pinned values;
+no issue reported. The R8-1 fix (register above) was owner-approved and
+landed before the sign-off.
 
-**SB2 (owner batch, during T6 construction, before the T6 commit)** — matrix
-evidence and README diff preview: pending.
+**SB2 (owner batch, during T6 construction, before the T6 commit)** —
+signed 2026-07-17: the owner broadly reviewed the four-environment matrix
+evidence and the README diff preview; no issue reported. One reviewer round
+(D67) landed before the sign-off: the Firefox external-console observation
+was re-taken with a validated stdout-echo observer and five documentation
+wordings were corrected; the sign-off covers the corrected state.
 
 Owner-review evidence is always recorded as "broadly reviewed, no issue
 reported" — never as exhaustive per-item verification.
 
 **Browser matrix (four fixed environments, executed and recorded during T6
-construction)**:
+construction, 2026-07-17)**. Before the matrix, the same-day deployment
+identity check passed for the current commit (e0ea84d: workflow completed
+success; latest Pages build reported it) and the three-path load-surface
+fingerprint (root page, tests page, system page) passed. Local cells were
+served from the clean working tree equal to that commit; online cells from
+the byte-verified Pages deployment.
 
-| Environment | tests.html | system.html | Bootstrap console |
+| Environment | tests.html | system.html | Bootstrap console (external observation) |
 |---|---|---|---|
-| Local Chrome (version pending) | pending | pending | pending |
-| Local Edge (version pending) | pending | pending | pending |
-| Local Firefox 149 | pending | pending | pending |
-| Pages online, Chrome | pending | pending | pending |
+| Local Chrome 150.0.7871.128 (headed, driven) | 53 passed, 0 failed — UI BROWSER PASS | 41 passed, 0 failed — SYSTEM BROWSER PASS | console read across the full system-page run incl. the bootstrap frame: zero errors |
+| Local Edge 150.0.4078.65 (headless run) | 53 passed, 0 failed — UI BROWSER PASS | 41 passed, 0 failed — SYSTEM BROWSER PASS | stderr console capture: zero page-source error or warning lines |
+| Local Firefox 149.0 (headed run) | 53 passed, 0 failed — UI BROWSER PASS | 41 passed, 0 failed — SYSTEM BROWSER PASS | dedicated system-page re-run under the browser's stdout console echo (clean profile; observer first validated with a positive control that echoes both log and error lines): zero page-content console lines across the full run incl. the bootstrap frame, same-session terminal state 41 passed, 0 failed; stderr carried only browser-internal Windows-integration noise, no page content |
+| Pages online, Chrome 150.0.7871.128 | 53 passed, 0 failed — UI BROWSER PASS | 41 passed, 0 failed — SYSTEM BROWSER PASS | console read: zero errors |
 
-**System suite measured counts** (Node runner and browser system page):
-pending (recorded at T6).
+**System suite measured counts** (terminal state at the R8-1 tree,
+2026-07-17): Node runner — `system tests: 104 passed, 0 failed`, coverage
+closure 49/49; browser system page — `system assertions: 41 passed, 0
+failed`, B-set closure 32/32.
 
 ## Final verification (§9.4)
 
