@@ -16,7 +16,7 @@ import { freshApp, createCoverage } from "./harness.mjs";
 import { CHECKPOINTS } from "./checkpoints.mjs";
 
 const SYSTEM_DIR = new URL("./", import.meta.url);
-const EXPECTED_MODULES = ["sys_consistency", "sys_payload", "sys_scenarios"];
+const EXPECTED_MODULES = ["sys_consistency", "sys_degradation", "sys_payload", "sys_scenarios"];
 
 let passed = 0;
 let failed = 0;
