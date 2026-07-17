@@ -65,7 +65,12 @@
       logEl.textContent = lines.join("\n");
     };
     const coveredB = new Set();
-    const cover = (id, label, cond) => { coveredB.add(id); ok(`${id}: ${label}`, cond); };
+    const duplicateB = new Set();
+    const cover = (id, label, cond) => {
+      if (coveredB.has(id)) duplicateB.add(id);
+      else coveredB.add(id);
+      ok(`${id}: ${label}`, cond);
+    };
     const settle = (ms) => new Promise((r) => setTimeout(r, ms));
     const SETTLE = 200; // per-group DOM settle window (work package §7.5)
 
@@ -523,11 +528,22 @@
       }
 
       // ---- B-set closure against the manifest ------------------------------
-      const expectedB = new Set(CHECKPOINTS.filter((c) => c.channels.includes("B")).map((c) => c.id));
+      // Missing, unknown, and duplicate ids all fail — whether the duplicate
+      // sits in the manifest's B list or in this page's cover calls (R8-1).
+      const expectedBIds = CHECKPOINTS.filter((c) => c.channels.includes("B")).map((c) => c.id);
+      const expectedB = new Set(expectedBIds);
+      const manifestDuplicates = expectedBIds.filter((id, i) => expectedBIds.indexOf(id) !== i);
       const missingB = [...expectedB].filter((id) => !coveredB.has(id));
       const unknownB = [...coveredB].filter((id) => !expectedB.has(id));
-      ok(`B-set closure: ${coveredB.size}/${expectedB.size} covered, no missing, no unknown ids`,
-        missingB.length === 0 && unknownB.length === 0);
+      ok(`B-set closure: ${coveredB.size}/${expectedB.size} covered, no missing, no unknown, no duplicate ids`,
+        missingB.length === 0 && unknownB.length === 0 &&
+        manifestDuplicates.length === 0 && duplicateB.size === 0);
+      if (manifestDuplicates.length > 0) {
+        lines.push(`      duplicate B manifest ids: ${[...new Set(manifestDuplicates)].join(", ")}`);
+      }
+      if (duplicateB.size > 0) {
+        lines.push(`      duplicate cover registrations: ${[...duplicateB].join(", ")}`);
+      }
 
       // ---- delayed observation window --------------------------------------
       await settle(1800);

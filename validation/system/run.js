@@ -77,12 +77,18 @@ for (const stem of EXPECTED_MODULES) {
 }
 
 // N-set closure (from T3): the covered checkpoint-id set must equal the
-// 49-entry manifest exactly — missing, duplicate, and unknown ids all fail.
+// 49-entry manifest exactly — missing, unknown, and duplicate ids all fail,
+// whether the duplicate sits in the manifest or in the suite's own cover
+// registrations (R8-1).
 const manifestIds = CHECKPOINTS.map((c) => c.id);
 const manifestSet = new Set(manifestIds);
 if (manifestSet.size !== manifestIds.length) {
   failed += 1;
   console.log("\nFAIL: the manifest carries a duplicate checkpoint id");
+}
+if (coverage.duplicates.size > 0) {
+  failed += 1;
+  console.log(`\nFAIL: duplicate coverage registrations: ${[...coverage.duplicates].join(", ")}`);
 }
 const missing = manifestIds.filter((id) => !coverage.covered.has(id));
 const unknown = [...coverage.covered].filter((id) => !manifestSet.has(id));

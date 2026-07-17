@@ -35,13 +35,21 @@ export async function freshApp() {
   return { engine, adapter, store, createScratchEngine };
 }
 
-/** Coverage collector: the runner exposes cover(id) to every module. */
+/**
+ * Coverage collector: the runner exposes cover(id) to every module. A second
+ * registration of the same id is recorded in `duplicates` — the runner fails
+ * the closure on any entry there (R8-1), so a double-covered checkpoint can
+ * never masquerade as broader coverage.
+ */
 export function createCoverage() {
   const covered = new Set();
+  const duplicates = new Set();
   return {
     covered,
+    duplicates,
     cover(id) {
-      covered.add(id);
+      if (covered.has(id)) duplicates.add(id);
+      else covered.add(id);
     },
   };
 }
