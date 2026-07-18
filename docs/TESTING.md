@@ -170,12 +170,13 @@ with the manifest.
 
 ## Release cycle log (per push; T1–T5, U1, and R8-1 recorded at T6, T6 recorded at T7)
 
-The seven completed push cycles below (T1, U1, T2–T5, R8-1) all pushed on
-2026-07-17; the T6 and T7 rows are future placeholders, recorded at T7 and
-in the closure report respectively. "queued / queued" is the leftover-run
-probe before and after the push; deployment identity means the Pages
-workflow run for exactly the pushed commit reached completed success and
-the latest Pages build reported that commit.
+The eight completed push cycles below (T1, U1, T2–T5, R8-1, T6) all
+pushed on 2026-07-17; the T6 row was recorded at T7. Only the T7 cycle
+itself remains in the closure report, outside the repository.
+"queued / queued" is the leftover-run probe before and after the push;
+deployment identity means the Pages workflow run for exactly the pushed
+commit reached completed success and the latest Pages build reported that
+commit.
 
 | Cycle | Pre/post probe | Deployment identity | Changed-path fingerprints | Notes |
 |---|---|---|---|---|
@@ -199,10 +200,11 @@ closure report, outside the repository.
 Actions run 29540514903 (an incident-period leftover on the Pages
 build-and-deployment workflow; head commit bfc9418): status observed
 `queued` at T1 construction time, 2026-07-17, and `queued` again on all
-fifteen read-only probes to date — fourteen push-cycle probes (one before
-and one after each of the seven pushes: T1, U1, T2–T5, R8-1) plus one
-pre-matrix probe at T6. Discipline: probed read-only before and after
-every push. Still `queued`, or gone/recycled → proceed
+seventeen read-only probes recorded in this repository — sixteen
+push-cycle probes (one before and one after each of the eight pushes: T1,
+U1, T2–T5, R8-1, T6) plus one pre-matrix probe at T6; the T7 cycle's own
+pre/post probes are recorded in the closure report, outside the
+repository. Discipline: probed read-only before and after every push. Still `queued`, or gone/recycled → proceed
 (deployment-identity verification is mandatory regardless); any transition
 to `in_progress` or another state → stop and report. Never rerun, never
 request builds, never touch Pages or Actions configuration.
