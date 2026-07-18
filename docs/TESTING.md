@@ -186,8 +186,13 @@ the latest Pages build reported that commit.
 | T4 (7cef8ca) | queued / queued | success; built 7cef8ca | 2/2 PASS | |
 | T5 (c4235d5) | queued / queued | success; built c4235d5 | 1/1 PASS | |
 | R8-1 (e0ea84d) | queued / queued | success; built e0ea84d | 3/3 PASS | owner-approved fix (register below) |
-| T6 | recorded at T7 | recorded at T7 | recorded at T7 | closure set (31 paths) additionally |
+| T6 (fda1da0) | queued / queued | success; built fda1da0 | 2/2 PASS | closure set additionally, see below |
 | T7 | closure report | closure report | closure report | recorded in the closure report, not in the repository |
+
+After the T6 push, the §7.6 closure fingerprint set ran against the
+deployed site: all 31 paths matched their HEAD blobs byte for byte
+(31/31 PASS) at commit fda1da0. The T7 cycle itself is recorded in the
+closure report, outside the repository.
 
 ## Leftover Actions run (read-only watch item)
 
@@ -272,7 +277,16 @@ failed`, B-set closure 32/32.
 
 ## Final verification (§9.4)
 
-- [ ] Final branch verification record (reviewer re-run, §9.4): pending —
-  to be recorded only after the reviewer's independent terminal verification
-  returns PASS (including the two private validations, archived privately)
-  and the owner approves T7.
+- [x] Final branch verification record (reviewer re-run, §9.4): PASS —
+  independent reviewer terminal verification, 2026-07-17, across the full
+  §9.4 scope: per-tree re-runs of the gate commands over the Part 8 commits
+  (T1, U1, T2–T6, R8-1 included; the system gate from the T2 tree on); the
+  post-T6 HEAD baseline taken independently via ls-remote and matched
+  against the execution session's reported closure value (fda1da0);
+  independent deployment-identity verification and the 31-path closure
+  fingerprint set; 49/49 and 32/32 closure confirmed; the completion and
+  delivery standard cross-references checked; the three re-pinned values
+  re-measured (N₁ 397, B₁ 53, P₁ 330,250 bytes); TESTING.md wording and
+  evidence-strength audit passed; and both private validations PASS
+  (reviewer evidence archived privately). The owner approved T7 on that
+  verdict, 2026-07-17.
