@@ -93,6 +93,65 @@ function isWriteShapedCommand(command) {
   );
 }
 
+const SQ = String.fromCharCode(39);
+const DQ = String.fromCharCode(34);
+const BS = String.fromCharCode(92);
+const BT = String.fromCharCode(96);
+const NL = String.fromCharCode(10);
+const CR = String.fromCharCode(13);
+const TB = String.fromCharCode(9);
+const RE_SEG = new RegExp("[;&|" + NL + CR + "]+");
+const RE_WS = new RegExp("[ " + TB + NL + CR + "]+");
+const RE_SHELL = new RegExp("^(?:sh|bash)$", "i");
+const RE_NAMED = new RegExp("g8_scan", "i");
+const RE_MODE = new RegExp("^[a-z]+$");
+const EXPANSION = ["$", BT, "*", "?", "[", "]", "{", "}", "~", DQ, SQ, BS];
+const APPROVED_SCAN_SCRIPT_PATH = resolved("../g8_scan.sh", PROJECT_ROOT);
+const APPROVED_SCAN_MODES = ["tree", "head", "msg", "struct"];
+
+function hasExpansion(token) {
+  return EXPANSION.some((character) => token.indexOf(character) !== -1);
+}
+
+function endsSh(token) {
+  return token.toLowerCase().endsWith(".sh");
+}
+
+function evaluateApprovedScriptArguments(command, cwd) {
+  const base = cwd || PROJECT_ROOT;
+  for (const segment of String(command ?? "").split(RE_SEG)) {
+    const tokens = segment.trim().split(RE_WS).filter(Boolean);
+    if (tokens.length === 0) continue;
+    for (let i = 0; i !== tokens.length; i += 1) {
+      if (!RE_SHELL.test(tokens[i])) continue;
+      const target = tokens[i + 1];
+      if (target === undefined || hasExpansion(target) || !endsSh(target)) {
+        return block("G8_MODE_DENIED", "sh or bash must invoke a literal .sh path");
+      }
+    }
+    const named = tokens.findIndex((token) => RE_NAMED.test(token));
+    if (named === -1) continue;
+    const lead = tokens.slice(0, named);
+    if (lead.length !== 0 && !(lead.length === 1 && RE_SHELL.test(lead[0]))) {
+      return block("G8_MODE_DENIED", "the approved scan script may only run directly or through sh/bash");
+    }
+    if (hasExpansion(tokens[named])) {
+      return block("G8_MODE_DENIED", "the approved scan script path must be a bare literal");
+    }
+    if (resolved(tokens[named], base) !== APPROVED_SCAN_SCRIPT_PATH) {
+      return block("G8_MODE_DENIED", "only the approved scan script at its registered path may run");
+    }
+    const args = tokens.slice(named + 1);
+    if (args.length !== 1) {
+      return block("G8_MODE_DENIED", "the approved scan script takes exactly one mode argument");
+    }
+    if (!RE_MODE.test(args[0]) || !APPROVED_SCAN_MODES.includes(args[0])) {
+      return block("G8_MODE_DENIED", "the scan mode must be one literal word from the registered set");
+    }
+  }
+  return null;
+}
+
 function evaluateBash(input, cwd) {
   const command = String(input.command ?? "");
   if (!command.trim()) return block("BASH_EMPTY", "Bash command must be non-empty");
@@ -105,6 +164,9 @@ function evaluateBash(input, cwd) {
   if (commandMentionsProtectedGovernancePath(command) && isWriteShapedCommand(command)) {
     return block("GATE_MUTATION_DENIED", "execution sessions cannot modify the governance gate");
   }
+
+  const approvedScript = evaluateApprovedScriptArguments(command, cwd);
+  if (approvedScript) return approvedScript;
 
   const deniedShapes = [
     [
@@ -282,6 +344,9 @@ export async function verifyGovernanceGate(root = PROJECT_ROOT) {
     "| G3-M | P3/P6/P10 |",
     "只写提示语不算机器闸门",
     "v1.1 登记 Part 9 执行边界事件；强化 G6/G10，新增 G3-M 机器闸门与销案条件（起草：评审方；批准：项目决策人）",
+    "### 2026-07-19 · 获批脚本参数面授权边界事件",
+    "获批脚本只能以其登记真实路径与全局登记模式集内的单个字面模式实参调用",
+    "v1.3 登记获批脚本参数面授权边界事件；G3-M 增补参数面有限命令门与常设正负例（起草：制包 CC；批准：项目决策人）",
   ]) {
     assertCheck(checks, principles.includes(required), `PRINCIPLES marker: ${required}`);
   }
@@ -376,6 +441,23 @@ export async function verifyGovernanceGate(root = PROJECT_ROOT) {
       fixture("Edit", { file_path: path.join(root, "PRINCIPLES.md") }),
       "GATE_MUTATION_DENIED",
     ],
+    ["scan without a mode", fixture("Bash", { command: "sh ../g8_scan.sh" }), "G8_MODE_DENIED"],
+    ["scan unknown mode", fixture("Bash", { command: "sh ../g8_scan.sh file" }), "G8_MODE_DENIED"],
+    ["scan listing mode", fixture("Bash", { command: "sh ../g8_scan.sh list" }), "G8_MODE_DENIED"],
+    ["scan variable mode", fixture("Bash", { command: 'sh ../g8_scan.sh "$MODE"' }), "G8_MODE_DENIED"],
+    ["scan extra argument", fixture("Bash", { command: "sh ../g8_scan.sh tree extra" }), "G8_MODE_DENIED"],
+    ["scan same name relative path", fixture("Bash", { command: "sh ./evil/g8_scan.sh msg" }), "G8_MODE_DENIED"],
+    ["scan same name absolute path", fixture("Bash", { command: "sh /c/Users/x/g8_scan.sh tree" }), "G8_MODE_DENIED"],
+    ["scan glob question mark", fixture("Bash", { command: "sh ../g8_scan.s? list" }), "G8_MODE_DENIED"],
+    ["scan glob bracket", fixture("Bash", { command: "sh ../g8_scan.s[h] list" }), "G8_MODE_DENIED"],
+    ["scan variable path", fixture("Bash", { command: "sh $S list" }), "G8_MODE_DENIED"],
+    ["scan brace constructed path", fixture("Bash", { command: "sh ${P}scan.sh list" }), "G8_MODE_DENIED"],
+    ["scan assignment then variable", fixture("Bash", { command: "S=../g8_scan.sh; sh $S list" }), "G8_MODE_DENIED"],
+    ["scan backtick substitution", fixture("Bash", { command: "sh `echo ../g8_scan.sh` tree" }), "G8_MODE_DENIED"],
+    ["scan tilde path", fixture("Bash", { command: "sh ~/g8_scan.sh tree" }), "G8_MODE_DENIED"],
+    ["scan quoted path", fixture("Bash", { command: 'sh "../g8_scan.sh" tree' }), "G8_MODE_DENIED"],
+    ["scan quoted mention", fixture("Bash", { command: "grep -n 'g8_scan.sh' README.md" }), "G8_MODE_DENIED"],
+    ["scan through sh -c", fixture("Bash", { command: 'sh -c "../g8_scan.sh list"' }), "G8_MODE_DENIED"],
   ];
   for (const [label, event, expectedCode] of deniedCases) {
     const result = evaluateToolCall(event, root);
@@ -393,6 +475,14 @@ export async function verifyGovernanceGate(root = PROJECT_ROOT) {
     ["system gate", fixture("Bash", { command: "node validation/system/run.js" })],
     ["Git status", fixture("Bash", { command: "git status --short" })],
     ["named grep", fixture("Bash", { command: "grep -n G10 PRINCIPLES.md" })],
+    ["scan tree mode", fixture("Bash", { command: "sh ../g8_scan.sh tree" })],
+    ["scan struct mode", fixture("Bash", { command: "sh ../g8_scan.sh struct" })],
+    ["scan head mode", fixture("Bash", { command: "sh ../g8_scan.sh head" })],
+    ["scan msg mode", fixture("Bash", { command: "sh ../g8_scan.sh msg" })],
+    ["scan direct without sh", fixture("Bash", { command: "../g8_scan.sh tree" })],
+    ["unrelated subshell status", fixture("Bash", { command: 'test -z "$(git --no-optional-locks status --porcelain)"' })],
+    ["unrelated ls-remote", fixture("Bash", { command: "timeout 60 git ls-remote --tags origin" })],
+    ["unrelated approved script", fixture("Bash", { command: "sh validation/system/pages_check.sh CHANGELOG.md docs/RELEASE.md" })],
   ];
   for (const [label, event] of allowedCases) {
     assertCheck(checks, evaluateToolCall(event, root).allowed, `allow: ${label}`);
