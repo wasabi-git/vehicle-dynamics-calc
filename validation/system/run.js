@@ -14,9 +14,19 @@
 import { readdir } from "node:fs/promises";
 import { freshApp, createCoverage } from "./harness.mjs";
 import { CHECKPOINTS } from "./checkpoints.mjs";
+import { verifyGovernanceGate } from "./governance_gate.mjs";
 
 const SYSTEM_DIR = new URL("./", import.meta.url);
 const EXPECTED_MODULES = ["sys_consistency", "sys_degradation", "sys_payload", "sys_scenarios"];
+
+try {
+  const governance = await verifyGovernanceGate();
+  console.log(`governance gate: ${governance.passed}/${governance.passed} checks passed`);
+} catch (error) {
+  console.log(`FAIL: ${error.message}`);
+  console.log("\nsystem tests: 0 passed, 1 failed");
+  process.exit(1);
+}
 
 let passed = 0;
 let failed = 0;

@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "deny": [
+      "Agent",
+      "Read(/validation/r\u0061w/**)",
+      "Read(/validation/pr\u0069vate/**)",
+      "Edit(/validation/r\u0061w/**)",
+      "Edit(/validation/pr\u0069vate/**)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Read|Edit|Write|Glob|Grep|Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node validation/system/governance_gate.mjs --hook",
+            "timeout": 5,
+            "statusMessage": "Checking project governance boundary"
+          }
+        ]
+      }
+    ]
+  }
+}

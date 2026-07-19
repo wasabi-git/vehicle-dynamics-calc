@@ -26,3 +26,8 @@ validation/raw/
 
 # Private provenance records (transcriptions, attributions, review trails) — never commit
 validation/private/
+
+# Share the Claude Code governance gate, while keeping machine-local settings private
+!.claude/
+.claude/*
+!.claude/settings.json
