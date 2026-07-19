@@ -53,19 +53,19 @@ Part 9 may be declared closed.
 
 | Field | Value |
 |---|---|
-| Tag | filled at V3 (S1) |
-| Tagged commit | filled at V3 (S2) |
-| Tag verification | filled at V3 (S3) |
-| Release id / URL | filled at V3 (S4) |
-| Release body identity | filled at V3 (S5) |
+| Tag | v0.1.0 |
+| Tagged commit | adea3b098cdd39ee6f35f62ba7aec7665e6324c9 |
+| Tag verification | annotated (object.type "tag"); remote tag refs 2/2; peeled ref = tagged commit; verified 2026-07-18 |
+| Release id / URL | id 356232580; https://github.com/wasabi-git/vehicle-dynamics-calc/releases/tag/v0.1.0 |
+| Release body identity | normalized body identical to the changelog extract; asserted 2026-07-19 |
 
 ## Release cycle log (per push; V1/V2/TAG filled at V3 per the work-package slot templates; the V3 cycle is recorded in the closure report, outside the repository)
 
 | Cycle | Pre/post probe | Deployment identity | Changed-path fingerprints | Notes |
 |---|---|---|---|---|
-| V1 | filled at V3 (S6) | filled at V3 (S7) | filled at V3 (S8) | |
-| V2 | filled at V3 (S9) | filled at V3 (S10) | filled at V3 (S11) | |
-| TAG | filled at V3 (S12) | filled at V3 (S13) | n/a (no content change) | tag push only; no new build expected |
+| V1 | queued / queued | success; built e33a21ece66c8393328d670ff72918d48e89cfd6 | 1/1 PASS | |
+| V2 | queued / queued | success; built adea3b098cdd39ee6f35f62ba7aec7665e6324c9 | 2/2 PASS | |
+| TAG | queued / queued | no new run for the tagged commit; head-sha run set unchanged; latest build built adea3b098cdd39ee6f35f62ba7aec7665e6324c9 | n/a (no content change) | tag push only; no new build expected |
 | V3 | closure report | closure report | closure report | includes the 33-path closure fingerprint set and the formal closing gate (V3 CLOSING PASS) |
 
 ## Leftover Actions run (read-only watch item)
@@ -83,7 +83,7 @@ regardless); any transition to `in_progress` or another state → stop
 and report. Never rerun, never request builds, never touch Pages or
 Actions configuration. Part 9 observations are recorded at V3 below.
 
-Part 9 observations: filled at V3 (S14).
+Part 9 observations: V1 queued/queued; V2 queued/queued; TAG queued/queued; V3 recorded in the closure report.
 
 ## Known limitations at release
 
@@ -110,15 +110,15 @@ commit SHA is.
 ## Acceptance records
 
 Reviewer pre-release audit (PRE-RELEASE, after the V2 cycle, before the
-owner go): filled at V3 (S15).
+owner go): PASS, 2026-07-18, bound to checklist sha256 6ed6e16fa0fa7e7c8f2e0a930849831d2f4ff4c3b0e826e39a6bb694fdced011 (reviewer evidence archived privately).
 
-SB-GO (owner release trigger, after PRE-RELEASE PASS, before TAG): filled at V3 (S16).
+SB-GO (owner release trigger, after PRE-RELEASE PASS, before TAG): given 2026-07-18 — the owner's fixed authorization sentence for commit adea3b098cdd39ee6f35f62ba7aec7665e6324c9.
 
-SB2 (owner batch, after REL, before final verification): filled at V3 (S17).
+SB2 (owner batch, after REL, before final verification): signed 2026-07-18 — owner broadly reviewed the live tag and Release pages; no issue reported.
 
 Owner-review evidence is always recorded as "broadly reviewed, no issue
 reported" — never as exhaustive per-item verification.
 
 ## Final verification (§9.4)
 
-- [ ] Final branch verification record (reviewer re-run, §9.4): filled at V3 (S18).
+- [x] Final branch verification record (reviewer re-run, §9.4): PASS — independent reviewer verification, 2026-07-18, across the full §9.4 scope: per-tree gate re-runs for V1 and V2; independent deployment-identity verification and the 33-path closure fingerprint set at the V2 head; independent tag and Release verification including body identity; wording and evidence-strength audit; both private validations PASS (reviewer evidence archived privately). The owner approved V3 on that verdict, 2026-07-18.

@@ -245,8 +245,8 @@ The Phase 2 formula notes preserve cleaned formulas and future-module reference 
 6. Interface and interaction               Complete
 7. Formula-module expansion                Deferred to v0.2
 8. System testing and validation           Complete
-9. Release and documentation               Next
-10. Promotion and portfolio packaging      Planned
+9. Release and documentation               Complete
+10. Promotion and portfolio packaging      Next
 ```
 
 v0.1 redline: 2026-08-03. If the redline is missed, v0.1 development stops unconditionally and the current project state is archived as-is.
