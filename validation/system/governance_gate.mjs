@@ -179,6 +179,12 @@ export function evaluateToolCall(event, cwd = event?.cwd || PROJECT_ROOT) {
   if (toolName === "Agent") {
     return block("AGENT_DENIED", "derived roles are disabled by project governance");
   }
+  if (toolName === "Monitor") {
+    return block("BACKGROUND_DENIED", "background monitors are disabled by project governance");
+  }
+  if (toolName === "PowerShell") {
+    return block("POWERSHELL_TOOL_DENIED", "PowerShell is disabled; use the governed Bash surface");
+  }
   if (toolName === "Bash") return evaluateBash(input, cwd);
 
   if (["Read", "Edit", "Write"].includes(toolName)) {
@@ -228,7 +234,7 @@ export async function verifyGovernanceGate(root = PROJECT_ROOT) {
   const gitignore = await readFile(path.join(root, ".gitignore"), "utf8");
 
   const deny = settings?.permissions?.deny ?? [];
-  const requiredDenyRules = ["Agent"];
+  const requiredDenyRules = ["Agent", "Monitor", "PowerShell"];
   for (const leaf of FORBIDDEN_LEAF_NAMES) {
     requiredDenyRules.push(`Read(/validation/${leaf}/**)`);
     requiredDenyRules.push(`Edit(/validation/${leaf}/**)`);
@@ -248,6 +254,25 @@ export async function verifyGovernanceGate(root = PROJECT_ROOT) {
     );
   assertCheck(checks, Boolean(hook), "shared PreToolUse governance hook");
   assertCheck(checks, hook?.timeout === 5, "governance hook has bounded timeout");
+  const requiredHookTools = [
+    "Bash",
+    "Read",
+    "Edit",
+    "Write",
+    "Glob",
+    "Grep",
+    "Agent",
+    "Monitor",
+    "PowerShell",
+  ];
+  assertCheck(
+    checks,
+    preToolGroups.some((group) => {
+      const matchedTools = String(group.matcher ?? "").split("|");
+      return requiredHookTools.every((tool) => matchedTools.includes(tool));
+    }),
+    "PreToolUse matcher covers every governed tool"
+  );
 
   for (const required of ["!.claude/", ".claude/*", "!.claude/settings.json"]) {
     assertCheck(checks, gitignore.split(/\r?\n/).includes(required), `.gitignore: ${required}`);
@@ -256,6 +281,7 @@ export async function verifyGovernanceGate(root = PROJECT_ROOT) {
     "### 2026-07-18 · Part 9 执行边界事件",
     "| G3-M | P3/P6/P10 |",
     "只写提示语不算机器闸门",
+    "v1.1 登记 Part 9 执行边界事件；强化 G6/G10，新增 G3-M 机器闸门与销案条件（起草：评审方；批准：项目决策人）",
   ]) {
     assertCheck(checks, principles.includes(required), `PRINCIPLES marker: ${required}`);
   }
@@ -275,6 +301,16 @@ export async function verifyGovernanceGate(root = PROJECT_ROOT) {
   });
   const deniedCases = [
     ["Agent", fixture("Agent", { prompt: "inspect everything" }), "AGENT_DENIED"],
+    [
+      "Monitor background tool",
+      fixture("Monitor", { command: "poll deployment", run_in_background: true }),
+      "BACKGROUND_DENIED",
+    ],
+    [
+      "PowerShell tool",
+      fixture("PowerShell", { command: "Get-Content README.md" }),
+      "POWERSHELL_TOOL_DENIED",
+    ],
     [
       "derived-role tool use",
       fixture("Read", { file_path: "README.md" }, { agent_type: "Explore" }),

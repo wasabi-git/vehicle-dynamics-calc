@@ -3,6 +3,8 @@
   "permissions": {
     "deny": [
       "Agent",
+      "Monitor",
+      "PowerShell",
       "Read(/validation/r\u0061w/**)",
       "Read(/validation/pr\u0069vate/**)",
       "Edit(/validation/r\u0061w/**)",
@@ -12,7 +14,7 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Bash|Read|Edit|Write|Glob|Grep|Agent",
+        "matcher": "Bash|Read|Edit|Write|Glob|Grep|Agent|Monitor|PowerShell",
         "hooks": [
           {
             "type": "command",
