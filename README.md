@@ -253,6 +253,8 @@ v0.1 redline: 2026-08-03. If the redline is missed, v0.1 development stops uncon
 
 Version history: [CHANGELOG.md](CHANGELOG.md).
 
+Verified-claim inventory and citation map: [docs/PORTFOLIO.md](docs/PORTFOLIO.md).
+
 The two deferred obligations registered in Part 5 were fulfilled in Part 6 (user-confirmed flow; upstream-abnormality rendering).
 
 ## Engine (v0.1)
