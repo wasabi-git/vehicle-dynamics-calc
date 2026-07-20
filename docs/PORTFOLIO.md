@@ -105,13 +105,13 @@ deferred to v0.2.
 
 | Cycle | Record |
 |---|---|
-| W1 | filled at W2 (S1) |
+| W1 | deployment identity verified: workflow run 29711126907 completed/success for commit 23af0b35dbe1c3847476715a8a405123bad0c11f; latest Pages build reported that commit; changed-path fingerprints 2/2 PASS |
 | W2 | recorded in the Part 10 closure report, outside this repository |
 
 ## Final verification
 
-- [ ] Final branch verification record (reviewer re-run, §9.4): filled at W2 (S2).
+- [x] Final branch verification record (reviewer re-run, §9.4): PASS — independent reviewer verification, 2026-07-19, across the full §9.4 scope, including both private validations (reviewer evidence archived privately). The owner approved W2 on that verdict, 2026-07-19.
 
 ## v0.1 cycle closure
 
-filled at W2 (S3).
+The v0.1 cycle closed on 2026-07-19, the date the owner approved the closing commit. The v0.1 product and its release were completed in part 9; part 10 packaged the portfolio afterwards and closed roadmap item 10. Roadmap terminal state: parts 1-6, 8, 9, and 10 Complete; part 7 deferred to v0.2.

@@ -107,6 +107,19 @@ artifacts; implementation-session dialogue logs are not citable. GitHub's
 auto-generated source archives are not citation anchors — the tagged
 commit SHA is.
 
+The Part 10 verified-claim inventory `docs/PORTFOLIO.md` is a citation map,
+not independent evidence: it lists the closed set of claims made in that
+document about v0.1 and points each one at the anchor here that verifies
+it. Where the map and an anchor disagree, the anchor governs. Two further
+anchor groups serve process claims. The governance artifacts —
+`PRINCIPLES.md`, `CLAUDE.md`, and `validation/system/governance_gate.mjs` —
+are pinned to the `main` branch, not to tag `v0.1.0`: they were committed
+after the tagged commit and do not exist in the v0.1.0 tree. The anonymized
+acceptance suite under `validation/acceptance/` anchors statements about
+the acceptance baseline. The v0.1 product and its release were completed in
+part 9; part 10 packaged the portfolio afterwards and closed roadmap item
+10.
+
 ## Acceptance records
 
 Reviewer pre-release audit (PRE-RELEASE, after the V2 cycle, before the
