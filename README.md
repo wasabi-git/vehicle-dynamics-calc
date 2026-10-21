@@ -288,3 +288,7 @@ node validation/system/run.js   # system gate (Node, zero dependencies)
 On GitHub Pages the calculator is served from the repository root of the existing Pages configuration (standard form `https://wasabi-git.github.io/vehicle-dynamics-calc/`).
 
 Local-development note: `python -m http.server` sends no cache headers, so browsers may keep serving older `.mjs` modules after an update. Hard-refresh (Ctrl+F5) or enable "Disable cache" in the developer-tools Network tab when the page seems stale.
+
+## License
+
+Released under the [MIT License](LICENSE).
